@@ -9,7 +9,7 @@ Write a durable plan for humans to review and use when directing later work. Foc
 
 ## Ground the plan
 
-Read the repository's `AGENTS.md`, `README.md`, relevant research under `docs/research/`, any related plans under `docs/plans/`, and the implementation where it exists. Distinguish the user's confirmed scope, implemented behavior, recommendations, and unresolved choices. Research recommendations are not automatically project decisions.
+Read the repository guidelines in `.agents/AGENTS.md` or root `AGENTS.md`, `README.md`, relevant research under `docs/research/`, any related plans under `docs/plans/`, and the implementation where it exists. Distinguish the user's confirmed scope, implemented behavior, recommendations, and unresolved choices. Research recommendations are not automatically project decisions.
 
 Use the user's stated objective as the scope. For a whole-project plan, account for the globe, route planner, astronaut HUD, and their shared data and state. For a component plan, include only the cross-component dependencies that matter. Do not expand every plan to the whole project.
 
@@ -32,6 +32,8 @@ Use a descriptive title, date, and status such as `Draft`. Do not imply that a p
 Keep the plan overarching: describe outcomes and sequencing rather than exhaustive file edits, shell commands, function signatures, or daily task lists. Include implementation details only when they explain a consequential decision or dependency. Avoid unsupported dates and effort estimates.
 
 For data-dependent milestones, identify the required coverage, alignment, and quality checks. Keep environmental scenarios and EVA resource assumptions explicit when relevant to the scope.
+
+Make milestone statuses easy to update during implementation. After a feature or milestone is implemented, the [review-feature skill](../review-feature/SKILL.md) checks its completion evidence and updates the existing plan.
 
 ## Finish
 

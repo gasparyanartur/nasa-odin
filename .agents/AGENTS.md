@@ -18,7 +18,11 @@ There are no source, test, or packaged asset directories yet. Update this guide 
 
 ## Planning
 
-For overarching project or feature planning, use the [make-plan skill](.agents/skills/make-plan/SKILL.md), which can also be requested as `$make-plan`. Read its instructions before drafting. Save plans under `docs/plans/` using `YYYY-MM-DD-short-topic.md`; revise an existing plan when requested. Focus on scope, architecture, dependencies, major milestones, and success criteria rather than detailed task checklists. A request to create a plan does not authorize starting implementation.
+For overarching project or feature planning, use the [make-plan skill](skills/make-plan/SKILL.md), which can also be requested as `$make-plan`. Read its instructions before drafting. Save plans under `docs/plans/` using `YYYY-MM-DD-short-topic.md`; revise an existing plan when requested. Focus on scope, architecture, dependencies, major milestones, and success criteria rather than detailed task checklists. A request to create a plan does not authorize starting implementation.
+
+## Feature Completion Review
+
+After implementing a feature or planned milestone, use the [review-feature skill](skills/review-feature/SKILL.md) before reporting completion; do not wait for a separate review request. It can also be invoked as `$review-feature`. Compare the work with the relevant plan in `docs/plans/`, resolve remaining work and cleanup within scope, verify the result, and update that plan's status and review evidence. Keep incomplete or unverified items visible, and distinguish a completed milestone from completion of the whole plan.
 
 ## Build, Test, and Development Commands
 
