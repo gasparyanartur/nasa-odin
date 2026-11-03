@@ -6,6 +6,8 @@ This workspace currently contains research for the NASA Space Apps Martian Map p
 
 - `docs/research/background-research.md`: challenge context, Mars datasets, precedents, and scientific limitations.
 - `docs/research/tech-stack.md`: proposed globe, route planner, astronaut HUD, and implementation checkpoints. React/TypeScript and CesiumJS are recommendations, not installed dependencies.
+- `docs/plans/`: overarching project and feature plans, created as needed.
+- `.agents/skills/`: repository-local agent skills.
 - `tmp/`: downloaded metadata, service responses, and dated access checks, including `tmp/feasibility-2026-11-03/access_checks.json`. This directory is ignored by `.gitignore`.
 
 There are no source, test, or packaged asset directories yet. Update this guide when introducing them.
@@ -13,6 +15,10 @@ There are no source, test, or packaged asset directories yet. Update this guide 
 ## Documentation Audience
 
 `README.md` is for human readers. Lead with the project's purpose, capabilities, and intended user experience. Include technical details when they help people understand or use the project. Keep agent instructions and contributor workflow rules in `AGENTS.md`.
+
+## Planning
+
+For overarching project or feature planning, use the [make-plan skill](.agents/skills/make-plan/SKILL.md), which can also be requested as `$make-plan`. Read its instructions before drafting. Save plans under `docs/plans/` using `YYYY-MM-DD-short-topic.md`; revise an existing plan when requested. Focus on scope, architecture, dependencies, major milestones, and success criteria rather than detailed task checklists. A request to create a plan does not authorize starting implementation.
 
 ## Build, Test, and Development Commands
 
@@ -36,7 +42,7 @@ When implementing routing, verify nodata and barrier handling, disconnected endp
 
 ## Commit & Pull Request Guidelines
 
-No Git metadata or commit history is available in this workspace. Until conventions are established, use concise imperative subjects, such as `docs: clarify terrain coverage limits`. Pull requests should explain the change, link relevant issues or sources, and report validation and remaining uncertainty. Include screenshots for visual changes.
+The Git history currently contains only an initial commit, so no message convention is established. Use concise imperative subjects, such as `docs: clarify terrain coverage limits`. Pull requests should explain the change, link relevant issues or sources, and report validation and remaining uncertainty. Include screenshots for visual changes.
 
 ## Scientific Data & Agent Instructions
 
