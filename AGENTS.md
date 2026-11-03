@@ -1,0 +1,45 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+This workspace currently contains research for the NASA Space Apps Martian Map project; no application has been implemented.
+
+- `docs/research/background-research.md`: challenge context, Mars datasets, precedents, and scientific limitations.
+- `docs/research/tech-stack.md`: proposed globe, route planner, astronaut HUD, and implementation checkpoints. React/TypeScript and CesiumJS are recommendations, not installed dependencies.
+- `tmp/`: downloaded metadata, service responses, and dated access checks, including `tmp/feasibility-2026-11-03/access_checks.json`. This directory is ignored by `.gitignore`.
+
+There are no source, test, or packaged asset directories yet. Update this guide when introducing them.
+
+## Documentation Audience
+
+`README.md` is for human readers. Lead with the project's purpose, capabilities, and intended user experience. Include technical details when they help people understand or use the project. Keep agent instructions and contributor workflow rules in `AGENTS.md`.
+
+## Build, Test, and Development Commands
+
+No build system, dependency manifest, development server, or automated test runner is configured. Useful inspection commands from the repository root:
+
+- `rg --files`: list documents and local evidence files.
+- `python3 -m json.tool tmp/feasibility-2026-11-03/access_checks.json`: validate and inspect the saved service-check JSON; this does not recheck endpoints.
+- `mkdir -p tmp/<task-name>`: create a local scratch directory.
+
+Document installation, run, build, and test commands alongside the first implementation.
+
+## Coding Style & Naming Conventions
+
+Use concise Markdown, descriptive headings, fenced command examples, and relative links between local documents. Keep established report names uppercase; use descriptive lowercase filenames for downloaded evidence and `YYYY-MM-DD` in dated check directories. Use two-space indentation for new JSON. No code formatter, linter, or language-specific style is configured.
+
+## Validation Guidelines
+
+There is no test framework or coverage threshold. For documentation changes, check local links and keep source URLs, check dates, assumptions, and observed results explicit. Endpoint access alone does not establish usable raster coverage or rendering performance.
+
+When implementing routing, verify nodata and barrier handling, disconnected endpoints, directed slope costs, and A* agreement with Dijkstra on small grids. Verify alignment between map, terrain, and HUD coordinates.
+
+## Commit & Pull Request Guidelines
+
+No Git metadata or commit history is available in this workspace. Until conventions are established, use concise imperative subjects, such as `docs: clarify terrain coverage limits`. Pull requests should explain the change, link relevant issues or sources, and report validation and remaining uncertainty. Include screenshots for visual changes.
+
+## Scientific Data & Agent Instructions
+
+Preserve product identifiers, resolution, footprints, acquisition dates, coordinate conventions, and vertical datums. Distinguish measurements, derived values, and scenarios; calculate slopes from numeric terrain rasters. Keep EVA resource assumptions explicit.
+
+Use repository-local `tmp/` for temporary files; avoid `/tmp`.
