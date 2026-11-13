@@ -1,14 +1,16 @@
 # Martian Map
 
-Explore Mars, plan a local excursion, and follow it on foot with an astronaut HUD. The prototype connects a global globe to a real 2 × 2 km terrain patch around Curiosity's Bradbury landing area in Gale crater.
+Explore Mars through selectable real datasets, choose a region, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
 ## Try the excursion
 
-1. Open **Explore** to rotate the globe, replace its imagery dataset, or fly to Gale.
-2. Open **Plan excursion**. Inspect the orbital imagery, slope and elevation. Place a habitat/start and destination, or use the prepared example.
-3. Set the mission assumptions and **Compare routes**. Choose the shortest permitted path or a gentler-terrain alternative. Both include a separately calculated return estimate.
-4. Select **Walk selected route**, click the terrain, and use **WASD** and the mouse. **Esc** pauses the mission clock and releases the pointer. The optional **Simulation pace** control accelerates movement and mission time together for demonstrations.
-5. Follow the HUD's minimap and waypoints. Return estimates update as you move. Reset the excursion to start again.
+1. On **Explore**, choose **Gale · Bradbury** or **Jezero** using a globe marker or the region list. The camera flies to the region and its details explain what is available.
+2. Choose **MOLA · Global relief** or **CTX · Orbital imagery** in **Global basemap**. Change visibility and opacity without moving the camera. Advanced JSON import remains available.
+3. In Gale, select regional imagery, elevation and slope overlays independently. Their legends and opacity controls apply only to the outlined 2 × 2 km prepared footprint. Historical REMS/RAD observations appear as site context.
+4. Select **Plan excursion** in Gale. Place a habitat/start and destination, or use the prepared example. Layer settings carry over from Explore.
+5. Set the mission assumptions and **Compare routes**. Choose the shortest permitted path or a gentler-terrain alternative. Both include a separately calculated return estimate.
+6. Select **Walk selected route**, click the terrain, and use **WASD** and the mouse. **Esc** pauses the mission clock and releases the pointer. **Simulation pace** accelerates movement and mission time together for demonstrations.
+7. Return to Explore to inspect the same region and layers. Selecting a different region clears the previous excursion; Jezero clearly indicates that planning and walking are unavailable.
 
 The optional exclusion tool marks user-declared 40 m restricted areas. These are not measurements of actual hazards. The habitat is a demonstration location, not a real structure on Mars.
 
@@ -24,7 +26,13 @@ python3 -m venv .venv
 npm run dev:all
 ```
 
-Open [the local application](http://127.0.0.1:5173). One command starts Vite and the local Python planner API on port 8100. Keep both running while using the application. `npm run dev` alone starts only the frontend.
+Open [the local application](http://127.0.0.1:5173). To keep another checkout running, start this workspace on separate ports:
+
+```bash
+API_PORT=8200 WEB_PORT=5273 npm run dev:all
+```
+
+Then open [the separate workspace](http://127.0.0.1:5273). One command starts Vite and the local Python planner API on port 8100. Keep both running while using the application. `npm run dev` alone starts only the frontend.
 
 For a production preview:
 
@@ -34,6 +42,19 @@ npm run demo
 ```
 
 Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared Gale imagery, terrain and environmental observations are bundled locally. No Cesium ion account is needed. A static-only deployment cannot compute routes: host the Python API and proxy `/api` to it, as the local setup does.
+
+## Deploy the public demo
+
+The Docker image serves the frontend, prepared local assets and FastAPI planner from one origin. It does not download or regenerate terrain at startup.
+
+```bash
+docker build -t martian-map:explore .
+docker run --rm -p 127.0.0.1:8373:10000 martian-map:explore
+```
+
+Open [the container demo](http://127.0.0.1:8373). `GET /api/health` reports the terrain dataset/version. Missing files and unknown API routes return 404s.
+
+For Render, sign in with GitHub, connect this repository and select the `codex/integrated-explore` branch. Create a **Blueprint** from `render.yaml`, or create a **Docker Web Service** on the Free plan with health check `/api/health`. No database, account system, API secret or custom domain is required. Prepared Gale assets are bundled; global MOLA/CTX tiles still require external network access. Free services can take about a minute to start after inactivity. See [deployment and release instructions](docs/release.md).
 
 ## What the data represents
 
@@ -74,4 +95,4 @@ TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npx playwright ins
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
 ```
 
-The browser suite starts the production frontend and API, checks real global layer replacement and recovery, then exercises Gale layers, routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
+The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.

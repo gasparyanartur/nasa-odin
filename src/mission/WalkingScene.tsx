@@ -19,9 +19,9 @@ function Ground({data}:{data:TerrainData}) {
   },[data]);
   const [texture,setTexture]=useState<ReturnType<TextureLoader['load']>|null>(null);
   useEffect(()=>{
-    let alive=true;const loader=new TextureLoader();const tex=loader.load('/gale/ortho.jpg',t=>{t.colorSpace=SRGBColorSpace;t.anisotropy=8;t.needsUpdate=true;if(alive)setTexture(t);});
+    let alive=true;const loader=new TextureLoader();const tex=loader.load(`${data.baseUrl}/ortho.jpg`,t=>{t.colorSpace=SRGBColorSpace;t.anisotropy=8;t.needsUpdate=true;if(alive)setTexture(t);});
     return()=>{alive=false;tex.dispose();};
-  },[]);
+  },[data.baseUrl]);
   useEffect(()=>()=>geometry.dispose(),[geometry]);
   return <mesh geometry={geometry}><meshStandardMaterial key={texture?.uuid??'loading'} map={texture} color={texture?'#c8a681':'#a9876e'} roughness={1}/></mesh>;
 }

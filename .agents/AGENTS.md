@@ -11,11 +11,12 @@ This workspace contains the integrated Gale prototype: globe, local route planne
 - `tmp/`: downloaded metadata, service responses, and dated access checks, including `tmp/feasibility-2026-11-03/access_checks.json`. This directory is ignored by `.gitignore`.
 
 - `src/`: React UI, WMTS definitions/lifecycle, Cesium globe, shared terrain/mission geometry and Three.js walking/HUD.
-- `public/datasets/mola.json`: global WMTS example; keep source-specific values here.
+- `src/datasets/catalog.ts`: regions, capability gates, basemap references and regional overlay definitions.
+- `public/datasets/`: selectable MOLA/CTX WMTS definitions; keep source-specific values here.
 - `public/gale/`: prepared real terrain, imagery, environment and metadata; shared by browser and backend.
 - `server/`: FastAPI/A* planner and Python tests.
 - `scripts/`: reproducible data preparation and paired frontend/API startup.
-- `tests/`: production globe/mission acceptance checks and QA-only CTX manifest.
+- `tests/`: production globe/mission acceptance checks and an older CTX import fixture.
 - `docs/datasets.md`: integration contract and supported coordinate/tiling limits.
 - `docs/gale-data.md`: scientific references, processing and model assumptions.
 
@@ -38,7 +39,8 @@ Use Node 22.23.4 from `.nvmrc` and npm. The host default may still be Node 18. C
 - `npm ci`: install locked dependencies.
 - `npm run dev`: Vite development server.
 - `npm run dev:all`: Vite and local Python planner (requires `.venv` and `requirements.txt`).
-- `npm run demo`: production preview and planner; build first.
+- `npm run demo`: production preview and planner; build first. `API_PORT`/`WEB_PORT` support separate checkouts.
+- `npm run record:demo`: record the production server at `DEMO_URL` (default port 8373); requires Playwright Chromium and ffmpeg.
 - `npm run build`: TypeScript check and production bundle, including Cesium assets/workers.
 - `npm run preview`: serve `dist/`.
 - `npm test`: manifest/lifecycle and shared mission geometry tests.

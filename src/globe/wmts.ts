@@ -1,5 +1,6 @@
-import { Credit, Ellipsoid, GeographicTilingScheme, ImageryLayer, Rectangle, Viewer, WebMapTileServiceImageryProvider } from 'cesium';
+import { Credit, Ellipsoid, GeographicTilingScheme, ImageryLayer, Rectangle, Viewer, WebMapTileServiceImageryProvider, type TileProviderError } from 'cesium';
 import type { DatasetDefinition } from '../datasets/definition';
+import { tileRetryBudget } from '../datasets/tile-retries';
 import type { LayerHandle } from '../datasets/layer-slot';
 
 export function attachWmts(viewer: Viewer, definition: DatasetDefinition, onError: () => void): LayerHandle {
@@ -13,8 +14,15 @@ export function attachWmts(viewer: Viewer, definition: DatasetDefinition, onErro
     credit: new Credit(definition.attribution),
   });
   const layer = new ImageryLayer(provider, { show: false });
-  const removeError = provider.errorEvent.addEventListener(onError);
+  const retryTile = tileRetryBudget();
+  const removeError = provider.errorEvent.addEventListener((error: TileProviderError) => {
+    // Public tile services can transiently fail individual requests. Retry twice,
+    // then preserve an actionable failure instead of hiding persistent gaps.
+    if (retryTile(error)) error.retry = true;
+    else onError();
+  });
   viewer.imageryLayers.add(layer);
+  viewer.imageryLayers.lowerToBottom(layer);
   return {
     setVisible: (visible) => { layer.show = visible; viewer.scene.requestRender(); },
     setOpacity: (opacity) => { layer.alpha = opacity; viewer.scene.requestRender(); },

@@ -1,94 +1,97 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseDataset, type DatasetDefinition } from './datasets/definition';
-import { GlobeController } from './globe/controller';
+import { BASEMAPS, REGIONS, canPlan, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
+import { GlobeController, type RegionMarker } from './globe/controller';
+import RegionalLayers from './RegionalLayers';
 import type { TerrainData, Route } from './mission/data';
 
-type Loader = () => Promise<unknown>;
+interface Props {
+  data?:TerrainData; dataError?:string; route?:Route; selectedRegionId?:RegionId;
+  onRegionChange:(id?:RegionId)=>void; onExplore:()=>void;
+  basemap:DatasetDefinition; onBasemapChange:(definition:DatasetDefinition)=>void;
+  visible:boolean; onVisibleChange:(visible:boolean)=>void; opacity:number; onOpacityChange:(value:number)=>void;
+  overlays:OverlaySettings; onOverlayChange:(id:OverlayId,patch:Partial<OverlaySettings[OverlayId]>)=>void;
+  conditionsVisible:boolean; onConditionsChange:(visible:boolean)=>void;
+}
 
-export default function GlobeExplorer({data,route,onExplore}:{data?:TerrainData;route?:Route;onExplore:()=>void}) {
-  const container = useRef<HTMLDivElement>(null);
-  const controller = useRef<GlobeController | null>(null);
-  const sequence = useRef(0);
-  const retry = useRef<Loader | null>(null);
-  const [dataset, setDataset] = useState<DatasetDefinition | null>(null);
-  const [visible, setVisible] = useState(true);
-  const [opacity, setOpacity] = useState(1);
-  const [pending, setPending] = useState(false);
-  const [tilesLoading, setTilesLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fatal, setFatal] = useState(false);
-  const [localSlope,setLocalSlope]=useState(false);
+export default function GlobeExplorer(p:Props) {
+  const container=useRef<HTMLDivElement>(null),controller=useRef<GlobeController|null>(null);
+  const onSelect=useRef(p.onRegionChange);onSelect.current=p.onRegionChange;
+  const sequence=useRef(0),importSequence=useRef(0);
+  const [dataset,setDataset]=useState<DatasetDefinition|null>(null);
+  const [pending,setPending]=useState(false),[tilesLoading,setTilesLoading]=useState(false),[fatal,setFatal]=useState(false);
+  const [error,setError]=useState(''),[localError,setLocalError]=useState(''),[localRetry,setLocalRetry]=useState(0);
+  const [markers,setMarkers]=useState<RegionMarker[]>([]);
+  const region=getRegion(p.selectedRegionId);
 
-  async function load(loader: Loader) {
-    const request = ++sequence.current;
-    controller.current?.invalidatePending();
-    retry.current = loader;
-    setPending(true);
-    setError('');
+  async function load(definition:DatasetDefinition) {
+    const request=++sequence.current;
+    controller.current?.invalidatePending();setPending(true);setError('');
     try {
-      const definition = parseDataset(await loader());
-      if (request !== sequence.current || !controller.current) return;
-      const committed = await controller.current.replaceDataset(definition);
-      if (committed && request === sequence.current) setDataset(definition);
-    } catch (reason) {
-      if (request === sequence.current) setError(reason instanceof Error ? reason.message : 'Could not load this dataset.');
-    } finally {
-      if (request === sequence.current) setPending(false);
-    }
+      const committed=await controller.current?.replaceDataset(definition);
+      if(committed&&request===sequence.current)setDataset(definition);
+    } catch(reason) { if(request===sequence.current)setError(reason instanceof Error?reason.message:'Could not load this dataset.'); }
+    finally { if(request===sequence.current)setPending(false); }
   }
-
-  useEffect(() => {
+  useEffect(()=>{
     try {
-      controller.current = new GlobeController(container.current!, (status) => {
-        setTilesLoading(status.loading);
-        if (status.error) setError(status.error);
-      });
-      void load(async () => {
-        const response = await fetch(`${import.meta.env.BASE_URL}datasets/mola.json`);
-        if (!response.ok) throw new Error('The initial dataset manifest could not load.');
-        return response.json();
-      });
-    } catch {
-      setFatal(true);
-      setError('The globe could not start. Use a browser with WebGL enabled and reload this page.');
-    }
-    return () => {
-      sequence.current++;
-      controller.current?.dispose();
-      controller.current = null;
-    };
-  }, []);
-  useEffect(()=>{if(data&&controller.current)void controller.current.setLocalData(data).catch(()=>setError('Local terrain overlay could not load. Reload to retry.'));},[data]);
-  useEffect(()=>{controller.current?.setRoute(route);},[route,data]);
-
-  const loading = pending || tilesLoading;
+      controller.current=new GlobeController(container.current!,status=>{setTilesLoading(status.loading);if(status.error)setError(status.error);},id=>onSelect.current(id),setMarkers);
+    } catch {setFatal(true);setError('The globe could not start. Use a browser with WebGL enabled and reload this page.');}
+    return()=>{sequence.current++;importSequence.current++;controller.current?.dispose();controller.current=null;};
+  },[]);
+  useEffect(()=>{void load(p.basemap);},[p.basemap]);
+  useEffect(()=>{controller.current?.setVisible(p.visible);},[p.visible]);
+  useEffect(()=>{controller.current?.setOpacity(p.opacity);},[p.opacity]);
+  useEffect(()=>{if(region)controller.current?.focusRegion(region);else controller.current?.home();},[region]);
+  useEffect(()=>{
+    let active=true;setLocalError('');
+    void controller.current?.setLocalData(p.data).catch(()=>{if(active)setLocalError('Regional overlays could not load. Check the local assets and retry.');});
+    return()=>{active=false;};
+  },[p.data,localRetry]);
+  useEffect(()=>{controller.current?.setOverlays(p.overlays);},[p.overlays]);
+  useEffect(()=>{controller.current?.setRoute(p.route);},[p.route,p.data]);
+  const loading=pending||tilesLoading;
+  const weather=p.data?.environment.weather.find(w=>w.hour===12);
+  const selectRegion=(id:RegionId)=>{if(id===p.selectedRegionId)controller.current?.focusRegion(getRegion(id)!);else p.onRegionChange(id);};
 
   return <main className="explorer">
     <aside className="sidebar" aria-label="Dataset controls">
-      <header className="brand"><span className="brand-mark" aria-hidden="true">◉</span><div>MARTIAN MAP<span>SURFACE EXPLORER</span></div><span className="version">MVP / 01</span></header>
-      <section className="intro"><div className="eyebrow">A PLANET OF POSSIBILITIES</div><h1>Explore the <br />surface.</h1><p>One globe. A new perspective with every dataset.</p></section>
-      <section className="gale-entry"><div className="section-label">PREPARED EXCURSION / GALE</div><p>Real terrain. A route to follow.</p><div className="button-row"><button className="secondary" disabled={!data} onClick={()=>controller.current?.focusGale()}>Fly to Gale ↗</button><button className="primary" disabled={!data} onClick={onExplore}>Plan excursion →</button></div><label className="check"><input type="checkbox" checked={localSlope} onChange={e=>{setLocalSlope(e.target.checked);controller.current?.setLocalSlope(e.target.checked);}}/> Local slope overlay</label></section>
-      <section className="dataset-section">
-        <div className="section-label"><span>01 / ACTIVE DATASET</span><span className="tag">RASTER</span></div>
-        <h2>{dataset?.name ?? 'Preparing the globe'}</h2>
-        <p className="description">{dataset?.description ?? 'Loading the initial surface layer…'}</p>
-        <div className="status" role="status" aria-label="Layer status"><span className={`status-dot ${error ? 'warning' : loading ? 'busy' : ''}`} />{error ? 'Needs attention' : loading ? 'Loading surface tiles' : visible ? 'Layer active' : 'Layer hidden'}</div>
-        <div className="layer-controls">
-          <label className="visibility"><span>Show layer</span><input type="checkbox" role="switch" checked={visible} disabled={fatal} onChange={(event) => { setVisible(event.target.checked); controller.current?.setVisible(event.target.checked); }} /></label>
-          <label className="opacity"><span>Opacity <output>{Math.round(opacity * 100)}%</output></span><input type="range" min="0" max="100" value={opacity * 100} disabled={fatal} onChange={(event) => { const value = Number(event.target.value) / 100; setOpacity(value); controller.current?.setOpacity(value); }} /></label>
-        </div>
-        {error && <div className="error" role="alert"><p>{error}</p>{!fatal && <button onClick={() => { if (retry.current) void load(retry.current); }}>Retry loading <span aria-hidden="true">↻</span></button>}</div>}
-        <label className={`import-button ${fatal ? 'disabled' : ''}`}><span aria-hidden="true">＋</span> Load dataset JSON<input aria-label="Load dataset JSON" type="file" accept=".json,application/json" disabled={fatal} onChange={(event) => { const file = event.target.files?.[0]; if (file) void load(async () => { try { return JSON.parse(await file.text()); } catch { throw new Error('Could not read this manifest. Choose a valid JSON dataset file.'); } }); event.target.value = ''; }} /></label>
-        <div className="import-note">Replace the active layer without leaving the globe. <a href={`${import.meta.env.BASE_URL}datasets/mola.json`} download="dataset-example.json">Get the example manifest ↗</a></div>
+      <header className="brand"><span className="brand-mark" aria-hidden="true">◉</span><div>MARTIAN MAP<span>SURFACE EXPLORER</span></div><span className="version">REAL MARS</span></header>
+      <section className="intro"><div className="eyebrow">A PLANET OF POSSIBILITIES</div><h1>Explore the <br/>surface.</h1><p>Choose a region. Discover its data. Find your way across Mars.</p></section>
+      <section className="region-section" aria-label="Regions">
+        <div className="section-label">01 / CHOOSE A REGION <span className="tag">2 REGIONS</span></div>
+        <div className="region-list">{REGIONS.map(r=><button key={r.id} className="region-card" aria-pressed={r.id===p.selectedRegionId} onClick={()=>selectRegion(r.id)}><strong>{r.shortName}<span>↗</span></strong><small>{canPlan(r)?'Explore · Plan · Walk':'Orbital exploration'}</small></button>)}</div>
+        {!region&&<p className="caption">Select a marker on the globe or a region above to get started.</p>}
       </section>
-      {dataset && <section className="details"><div className="section-label">02 / DATA NOTES</div><dl><dt>Source</dt><dd><a href={dataset.sourceUrl} target="_blank" rel="noreferrer">{dataset.source} ↗</a></dd><dt>Resolution</dt><dd>{dataset.resolution}</dd><dt>Coordinates</dt><dd>Mars · east-positive longitude<br />{dataset.reference}</dd></dl>{dataset.legend && <p className="legend-note">{dataset.legend}</p>}</section>}
-      <footer className="sidebar-footer"><span className="small-orbit" aria-hidden="true">◌</span><span>REAL DATA. ROOM TO EXPLORE.</span></footer>
+      {region&&<section className="region-details" aria-label="Selected region">
+        <div className="eyebrow">SELECTED REGION</div><h2>{region.name}</h2><p className="description">{region.description}</p>
+        <p className="region-coordinates">{Math.abs(region.center.latitude).toFixed(4)}° {region.center.latitude<0?'S':'N'} · {region.center.longitude.toFixed(4)}° E</p>
+        {canPlan(region)?<><span className="capability">2 × 2 KM PREPARED / 5 M TERRAIN GRID</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Plan excursion →':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available in Gale · Bradbury.</p></div>}
+        <details className="region-source"><summary>Location and coverage</summary><p>{region.locationNote}</p><a href={region.sourceUrl} target="_blank" rel="noreferrer">Location source ↗</a></details>
+      </section>}
+      <section className="dataset-section">
+        <div className="section-label">02 / GLOBAL BASEMAP</div>
+        <label className="basemap-label">Dataset<select aria-label="Global basemap" disabled={fatal} value={p.basemap.id} onChange={e=>{importSequence.current++;p.onBasemapChange(BASEMAPS.find(b=>b.id===e.target.value)!);}}>{BASEMAPS.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}{!BASEMAPS.some(b=>b.id===p.basemap.id)&&<option value={p.basemap.id}>{p.basemap.name} (imported)</option>}</select></label>
+        <h2>{dataset?.name??'Preparing the globe'}</h2><p className="description">{dataset?.description??'Loading the initial surface layer…'}</p>
+        <div className="status" role="status" aria-label="Layer status"><span className={`status-dot ${error?'warning':loading?'busy':''}`}/>{error?'Needs attention':loading?'Loading surface tiles':p.visible?'Layer active':'Layer hidden'}</div>
+        <div className="layer-controls"><label className="visibility"><span>Show basemap</span><input aria-label="Show basemap" type="checkbox" role="switch" checked={p.visible} disabled={fatal} onChange={e=>p.onVisibleChange(e.target.checked)}/></label><label className="opacity"><span>Opacity <output>{Math.round(p.opacity*100)}%</output></span><input aria-label="Basemap opacity" type="range" min="0" max="100" value={p.opacity*100} disabled={fatal} onChange={e=>p.onOpacityChange(Number(e.target.value)/100)}/></label></div>
+        {error&&<div className="error" role="alert"><p>{error}</p>{!fatal&&<button onClick={()=>void load(p.basemap)}>Retry loading ↻</button>}</div>}
+        {dataset&&<details className="basemap-notes"><summary>Basemap source and legend</summary><p>{dataset.legend}</p><p>{dataset.resolution}</p><p>Mars · east-positive longitude · {dataset.reference}</p><a href={dataset.sourceUrl} target="_blank" rel="noreferrer">{dataset.source} ↗</a></details>}
+        <details className="advanced-import"><summary>Advanced: import a dataset</summary><label className={`import-button ${fatal?'disabled':''}`}>＋ Load dataset JSON<input aria-label="Load dataset JSON" type="file" accept=".json,application/json" disabled={fatal} onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;const generation=++importSequence.current;let value:unknown;try{value=JSON.parse(await file.text());}catch{if(generation!==importSequence.current)return;setError('Could not read this manifest. Choose a valid JSON dataset file.');return;}if(generation!==importSequence.current)return;try{p.onBasemapChange(parseDataset(value));}catch(reason){setError((reason as Error).message);}}}/></label><div className="import-note">Replace the basemap without moving the camera.<a href="/datasets/mola.json" download="dataset-example.json">Get the example manifest ↗</a></div></details>
+      </section>
+      {region&&<section className="regional-section" aria-label="Regional data">
+        <div className="section-label">03 / REGIONAL DATA</div>
+        {region.terrain?<><p className="caption">Overlays apply only inside the prepared Gale footprint.</p><RegionalLayers prefix="Explore " settings={p.overlays} onChange={p.onOverlayChange}/>{localError&&<p className="error" role="alert">{localError} <button onClick={()=>setLocalRetry(n=>n+1)}>Retry overlays</button></p>}<label className="check"><input type="checkbox" checked={p.conditionsVisible} onChange={e=>p.onConditionsChange(e.target.checked)}/>Historical conditions</label>{p.conditionsVisible&&p.data&&<div className="observation-card"><strong>Curiosity · Sol {p.data.environment.sol}</strong><p>REMS noon temperature: {weather?.temperatureK?.toFixed(1)??'Unavailable'} K<br/>Pressure: {weather?.pressurePa?.toFixed(1)??'Unavailable'} Pa<br/>Wind: {weather?.windMps==null?'Unavailable':`${weather.windMps} m/s`}<br/>RAD: {p.data.environment.radiation.rateMicroGyH.toFixed(2)} µGy/h detector-dose proxy</p><p>Historical site observations, not a spatial forecast or astronaut dose estimate.</p><a href={p.data.environment.weatherSource} target="_blank" rel="noreferrer">REMS source ↗</a> · <a href={p.data.environment.radiation.source} target="_blank" rel="noreferrer">RAD source ↗</a></div>}</>:<p className="caption">Use MOLA for relief context or CTX for orbital imagery. Local elevation, slope, and environmental observations are not bundled for Jezero.</p>}
+      </section>}
+      <footer className="sidebar-footer">REAL DATA. ROOM TO EXPLORE.</footer>
     </aside>
     <section className="map-panel" aria-label="Interactive Mars globe">
-      <div ref={container} className="globe" />
-      <div className="map-header"><span className="map-caption"><span className="crosshair" aria-hidden="true">＋</span> MARS <span>/</span> GLOBAL VIEW</span><button className="home-button" onClick={() => controller.current?.home()} disabled={fatal} aria-label="Reset globe view">Reset view ↗</button></div>
-      <div className="map-guide"><span>DRAG TO ROTATE</span><i /> <span>SCROLL TO ZOOM</span><i /><span>CTRL + DRAG TO TILT</span></div>
-      <div className="map-footnote">Global context is a sphere.<br />Gale relief is relative to the patch minimum.</div>
+      <div ref={container} className="globe"/>
+      <div className="region-markers">{markers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.x,top:m.y}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
+      <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
+      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<button className="primary" disabled={!p.data} onClick={p.onExplore}>Plan excursion →</button>}</div>}
+      <div className="map-guide"><span>DRAG TO ROTATE</span><i/><span>SCROLL TO ZOOM</span><i/><span>SELECT A REGION TO EXPLORE</span></div>
+      <div className="map-footnote">Global context is a sphere.<br/>Gale relief is relative to the patch minimum.</div>
     </section>
   </main>;
 }

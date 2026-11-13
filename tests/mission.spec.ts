@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test('real Gale layers, route comparison, walkable HUD and reset',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
+  await page.getByRole('button',{name:'Gale · Bradbury',exact:false}).first().click();
   await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Plan excursion/}).click();
   await expect(page.getByRole('button',{name:'Compare routes →'})).toBeEnabled();
   await expect(page.getByText('REMS air temperature')).toBeVisible();
@@ -55,7 +56,7 @@ test('real Gale layers, route comparison, walkable HUD and reset',async({page},i
   await page.getByRole('button',{name:'Clear exclusions'}).click();
   await page.route('**/api/routes',route=>route.abort());
   await page.getByRole('button',{name:'Compare routes →'}).click();
-  await expect(page.getByRole('alert')).toContainText('Planner is unavailable');
+  await expect(page.getByRole('alert')).toContainText('Route planning is temporarily unavailable');
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:info.outputPath('gale-mobile.png'),fullPage:true});
   expect(errors).toEqual([]);

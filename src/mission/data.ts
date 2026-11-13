@@ -13,7 +13,7 @@ export interface Environment {
   sol: number; weather: Observation[]; weatherSource: string; weatherProduct: string; weatherNote: string;
   radiation: { rateMicroGyH: number; source: string; product: string; note: string; observations: number };
 }
-export interface TerrainData { meta: Meta; heights: Float32Array; slopes: Float32Array; valid: Uint8Array; environment: Environment }
+export interface TerrainData { baseUrl: string; meta: Meta; heights: Float32Array; slopes: Float32Array; valid: Uint8Array; environment: Environment }
 export interface Settings {
   speedMps: number; maxSlopeDeg: number; maxDurationMin: number; doseRateMicroGyH: number; maxDoseMicroGy: number;
   temperatureK: number; minTemperatureK: number; windMps: number; maxWindMps: number; exclusions: Exclusion[];
@@ -24,9 +24,11 @@ export interface Alternative extends Route { returnRoute: Route; roundTripS: num
 export interface RouteResult { datasetId: string; version: number; settings: Settings; routes: Alternative[]; assumptions: string }
 export interface ReturnResult { route: Route | null; warnings: string[]; atHabitat?: boolean }
 
-export async function loadTerrain(signal?: AbortSignal): Promise<TerrainData> {
+export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Promise<TerrainData> {
   const get = async (file: string) => {
-    const r = await fetch(`/gale/${file}`, { signal });
+    let r: Response;
+    try { r = await fetch(`${baseUrl}/${file}`, { signal }); }
+    catch (error) { if ((error as Error).name === 'AbortError') throw error; throw new Error(`Local Gale data could not load (${file}). Check the prepared data package and retry.`); }
     if (!r.ok) throw new Error(`Local Gale data could not load (${file}). Restore the prepared data package and retry.`);
     return r;
   };
@@ -36,7 +38,7 @@ export async function loadTerrain(signal?: AbortSignal): Promise<TerrainData> {
     get('environment.json').then(r => r.json()),
   ]);
   if (h.byteLength !== meta.size**2*4 || s.byteLength !== h.byteLength || v.byteLength !== meta.size**2) throw new Error('Gale data arrays do not match their manifest.');
-  return { meta, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
+  return { baseUrl, meta, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
 }
 
 export function localToGeo(meta: Meta, p: Point): [number, number] {
@@ -86,11 +88,11 @@ export function routeProgress(route: Route, point: Point) {
 export async function api<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   let r: Response;
   try { r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal}); }
-  catch (error) { if ((error as Error).name==='AbortError') throw error; throw new Error('Planner is unavailable. Start the local API with npm run dev:all.'); }
+  catch (error) { if ((error as Error).name==='AbortError') throw error; throw new Error('Route planning is temporarily unavailable. Please try again.'); }
   if (!r.ok) {
     let detail: unknown;
     try { detail=(await r.json()).detail; } catch { /* Development proxy may return an empty 502. */ }
-    throw new Error(typeof detail==='string'?detail:r.status===422?'Invalid mission settings or endpoints.':'Planner is unavailable. Start the local API with npm run dev:all.');
+    throw new Error(typeof detail==='string'?detail:r.status===422?'Invalid mission settings or endpoints.':'Route planning is temporarily unavailable. Please try again.');
   }
   return r.json();
 }
