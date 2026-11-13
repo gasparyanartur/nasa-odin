@@ -2,15 +2,22 @@
 
 ## Project Structure & Module Organization
 
-This workspace currently contains research for the NASA Space Apps Martian Map project; no application has been implemented.
+This workspace contains the integrated Gale prototype: globe, local route planner and walkable astronaut HUD, plus supporting research.
 
 - `docs/research/background-research.md`: challenge context, Mars datasets, precedents, and scientific limitations.
-- `docs/research/tech-stack.md`: proposed globe, route planner, astronaut HUD, and implementation checkpoints. React/TypeScript and CesiumJS are recommendations, not installed dependencies.
+- `docs/research/tech-stack.md`: earlier feasibility research; distinguish proposals there from current implementation.
 - `docs/plans/`: overarching project and feature plans, created as needed.
 - `.agents/skills/`: repository-local agent skills.
 - `tmp/`: downloaded metadata, service responses, and dated access checks, including `tmp/feasibility-2026-11-03/access_checks.json`. This directory is ignored by `.gitignore`.
 
-There are no source, test, or packaged asset directories yet. Update this guide when introducing them.
+- `src/`: React UI, WMTS definitions/lifecycle, Cesium globe, shared terrain/mission geometry and Three.js walking/HUD.
+- `public/datasets/mola.json`: global WMTS example; keep source-specific values here.
+- `public/gale/`: prepared real terrain, imagery, environment and metadata; shared by browser and backend.
+- `server/`: FastAPI/A* planner and Python tests.
+- `scripts/`: reproducible data preparation and paired frontend/API startup.
+- `tests/`: production globe/mission acceptance checks and QA-only CTX manifest.
+- `docs/datasets.md`: integration contract and supported coordinate/tiling limits.
+- `docs/gale-data.md`: scientific references, processing and model assumptions.
 
 ## Documentation Audience
 
@@ -26,21 +33,34 @@ After implementing a feature or planned milestone, use the [review-feature skill
 
 ## Build, Test, and Development Commands
 
-No build system, dependency manifest, development server, or automated test runner is configured. Useful inspection commands from the repository root:
+Use Node 22.23.4 from `.nvmrc` and npm. The host default may still be Node 18. Commands from the repository root:
+
+- `npm ci`: install locked dependencies.
+- `npm run dev`: Vite development server.
+- `npm run dev:all`: Vite and local Python planner (requires `.venv` and `requirements.txt`).
+- `npm run demo`: production preview and planner; build first.
+- `npm run build`: TypeScript check and production bundle, including Cesium assets/workers.
+- `npm run preview`: serve `dist/`.
+- `npm test`: manifest/lifecycle and shared mission geometry tests.
+- `npm run test:api`: Python planner/API tests, including real prepared terrain.
+- `npm run prepare:data`: regenerate real Gale assets using public range-readable rasters/PDS records.
+- `TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser`: production browser acceptance check; install Chromium as documented in README first.
+
+Useful inspection commands:
 
 - `rg --files`: list documents and local evidence files.
 - `python3 -m json.tool tmp/feasibility-2026-11-03/access_checks.json`: validate and inspect the saved service-check JSON; this does not recheck endpoints.
 - `mkdir -p tmp/<task-name>`: create a local scratch directory.
 
-Document installation, run, build, and test commands alongside the first implementation.
+Keep installation, run, build, and test commands current in README.
 
 ## Coding Style & Naming Conventions
 
-Use concise Markdown, descriptive headings, fenced command examples, and relative links between local documents. Keep established report names uppercase; use descriptive lowercase filenames for downloaded evidence and `YYYY-MM-DD` in dated check directories. Use two-space indentation for new JSON. No code formatter, linter, or language-specific style is configured.
+Use concise Markdown, descriptive headings, fenced command examples, and relative links between local documents. Keep established report names uppercase; use descriptive lowercase filenames for downloaded evidence and `YYYY-MM-DD` in dated check directories. Use two-space indentation for new JSON. TypeScript uses strict checking. Keep dataset definitions and lifecycle free of renderer imports; confine Cesium to `src/globe/`. No formatter or linter is configured.
 
 ## Validation Guidelines
 
-There is no test framework or coverage threshold. For documentation changes, check local links and keep source URLs, check dates, assumptions, and observed results explicit. Endpoint access alone does not establish usable raster coverage or rendering performance.
+Vitest covers manifest/lifecycle and mission geometry; Python unittest covers routing/API; Playwright verifies production globe and complete excursion flows. No coverage threshold is configured. Inspect visual changes. For documentation, check local links and retain source URLs, dates, assumptions and observed results. Endpoint access alone does not establish usable raster coverage or rendering performance.
 
 When implementing routing, verify nodata and barrier handling, disconnected endpoints, directed slope costs, and A* agreement with Dijkstra on small grids. Verify alignment between map, terrain, and HUD coordinates.
 

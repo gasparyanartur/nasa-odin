@@ -1,5 +1,7 @@
 **Martian Map — background research**
 
+Update, 13 November 2026: the official resources have been released. See the [resource-release investigation](2026-11-13-resource-release.md) for the five links, verified changes and implications for the current Gale prototype. The note below preserves the earlier research snapshot.
+
 Researched on 31 October 2026. This note separates the official challenge, available scientific data, documented precedents, and suggested project directions. Suggestions are research conclusions, not additional NASA requirements. This is background preparation; no application has been implemented.
 
 **What the challenge asks**
