@@ -1,0 +1,341 @@
+{
+  "sol": 10,
+  "weather": [
+    {
+      "timeLabel": "Sol 10, 00:00\u201300:59 LMST",
+      "hour": 0,
+      "temperatureK": 207.5,
+      "pressurePa": 759.36,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 01:00\u201301:59 LMST",
+      "hour": 1,
+      "temperatureK": 208.54,
+      "pressurePa": 758.99,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 02:00\u201302:59 LMST",
+      "hour": 2,
+      "temperatureK": 204.395,
+      "pressurePa": 758.96,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 03:00\u201303:59 LMST",
+      "hour": 3,
+      "temperatureK": 199.72,
+      "pressurePa": 762.77,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 04:00\u201304:59 LMST",
+      "hour": 4,
+      "temperatureK": 201.97,
+      "pressurePa": 763.38,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 05:00\u201305:59 LMST",
+      "hour": 5,
+      "temperatureK": 201.57,
+      "pressurePa": 762.83,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 06:00\u201306:59 LMST",
+      "hour": 6,
+      "temperatureK": 200.11,
+      "pressurePa": 767.03,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 07:00\u201307:59 LMST",
+      "hour": 7,
+      "temperatureK": 210.13,
+      "pressurePa": 775.745,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 08:00\u201308:59 LMST",
+      "hour": 8,
+      "temperatureK": 217.18,
+      "pressurePa": 775.08,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 09:00\u201309:59 LMST",
+      "hour": 9,
+      "temperatureK": 222.455,
+      "pressurePa": 755.97,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 10:00\u201310:59 LMST",
+      "hour": 10,
+      "temperatureK": 231.35,
+      "pressurePa": 738.99,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 11:00\u201311:59 LMST",
+      "hour": 11,
+      "temperatureK": 243.81,
+      "pressurePa": 728.17,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 12:00\u201312:59 LMST",
+      "hour": 12,
+      "temperatureK": 249.38,
+      "pressurePa": 719.41,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 13:00\u201313:59 LMST",
+      "hour": 13,
+      "temperatureK": 253.795,
+      "pressurePa": 709.58,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 14:00\u201314:59 LMST",
+      "hour": 14,
+      "temperatureK": 255.865,
+      "pressurePa": 701.28,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 15:00\u201315:59 LMST",
+      "hour": 15,
+      "temperatureK": 250.03,
+      "pressurePa": 692.61,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 3195,
+        "pressure": 3195,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 16:00\u201316:59 LMST",
+      "hour": 16,
+      "temperatureK": 245.91,
+      "pressurePa": 691.64,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 405,
+        "pressure": 405,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 17:00\u201317:59 LMST",
+      "hour": 17,
+      "temperatureK": 232.9,
+      "pressurePa": 694.095,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 18:00\u201318:59 LMST",
+      "hour": 18,
+      "temperatureK": 225.79,
+      "pressurePa": 708.4,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 19:00\u201319:59 LMST",
+      "hour": 19,
+      "temperatureK": 225.99,
+      "pressurePa": 736.675,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 20:00\u201320:59 LMST",
+      "hour": 20,
+      "temperatureK": 218.715,
+      "pressurePa": 741.055,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 21:00\u201321:59 LMST",
+      "hour": 21,
+      "temperatureK": 212.54,
+      "pressurePa": 740.085,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 22:00\u201322:59 LMST",
+      "hour": 22,
+      "temperatureK": 209.37,
+      "pressurePa": 746.3,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    },
+    {
+      "timeLabel": "Sol 10, 23:00\u201323:59 LMST",
+      "hour": 23,
+      "temperatureK": 209.215,
+      "pressurePa": 754.715,
+      "windMps": null,
+      "acceptedSamples": {
+        "temperature": 300,
+        "pressure": 300,
+        "wind": 0
+      }
+    }
+  ],
+  "weatherSource": "https://atmos.nmsu.edu/PDS/data/PDS4/msl_rems_bundle/data_calibrated/SOL_00001_00089/SOL00010/RME_398334213RMD00100000000_______PA.TAB",
+  "weatherProduct": "RME_398334213RMD00100000000_______PA",
+  "weatherNote": "Historical Curiosity observations, Sol 10 (2012-08-15/16). Hourly medians in LMST; missing/unknown/unreliable samples excluded using ambient-temperature reliability byte 8, pressure shadow byte 1, wind reliability byte 5. Other confidence flags retained in the audit. Site-level context, not a spatial weather map. Missing wind remains null; editable wind is an assumption.",
+  "radiation": {
+    "rateMicroGyH": 8.110422692307692,
+    "source": "https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_00000_00089/RAD_RDR_2012_228_20_41_0010_V00.TXT",
+    "product": "RAD_RDR_2012_228_20_41_0010_V00",
+    "observations": 26,
+    "note": "Historical mean of Sol 10 RAD detector E dose-rate observations with all-zero QC. Label units: microGray / Hour. Unweighted observation mean, used as a uniform fixed-rate demonstration proxy. Detector absorbed dose is not astronaut dose equivalent; no suit or terrain shielding is modeled."
+  },
+  "audit": {
+    "weatherRows": 10200,
+    "qualityFlags": {
+      "AMBIENT_TEMP_CONFIDENCE_LEVEL": [
+        "000XX1111",
+        "001XX1101",
+        "001XX1111",
+        "011XX1101",
+        "011XX1111",
+        "101XX0011",
+        "101XX1101",
+        "101XX1111",
+        "111XX0011",
+        "111XX1101",
+        "111XX1111"
+      ],
+      "PS_CONFIDENCE_LEVEL": [
+        "01",
+        "11"
+      ],
+      "WS_CONFIDENCE_LEVEL": [
+        "001100",
+        "101000",
+        "101010",
+        "101100",
+        "101110",
+        "XXXXXX"
+      ]
+    },
+    "radMin": 0.25002,
+    "radMax": 8.75191,
+    "sourceChecksums": {
+      "RAD_RDR_2012_228_20_41_0010_V00.LBL": "774b2691ce38edc10dbc100a90d6ada1e3be3e492e5a6b83055df514e8ca6614",
+      "RME_398334213RMD00100000000_______PA.TAB": "692db9d9fbc51308e5a5f4e19ee275cfc9ff9a1027af3d81288ff37878ff327f",
+      "RME_398334213RMD00100000000_______PA.xml": "9dd7dd11aac913f619a23befb1b39ea6cdbd6a1637b11589e93e5bd55142c361",
+      "RAD_RDR_2012_228_20_41_0010_V00.TXT": "5dbeca0afce53729434ae78a7b0a17562169911e7f2350db506091df5514f656"
+    }
+  }
+}
