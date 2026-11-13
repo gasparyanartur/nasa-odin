@@ -1,0 +1,23 @@
+{
+  "id": "ctx-global-imagery",
+  "name": "CTX · Orbital imagery",
+  "description": "MRO Context Camera mosaic for regional optical context. This uncontrolled mosaic is display imagery; it supplies no numeric elevation or guaranteed local registration.",
+  "source": "NASA / MRO · CTX / Caltech",
+  "sourceUrl": "https://trek.nasa.gov/tiles/Mars/EQ/CTX_beta01_uncontrolled_5m_Caltech/1.0.0/WMTSCapabilities.xml",
+  "attribution": "NASA / JPL / MSSS / Caltech · Mars Trek",
+  "resolution": "Approximately 5 m/pixel source; service zoom and coverage vary",
+  "reference": "EPSG:104905",
+  "bounds": [-180, -90, 180, 90],
+  "legend": "Grayscale orbital imagery. Gaps and mosaic seams are possible; pixels are not calibrated terrain heights.",
+  "provider": {
+    "type": "wmts",
+    "url": "https://astro.arcgis.com/arcgis/rest/services/OnMars/CTX/MapServer/tile/{TileMatrix}/{TileRow}/{TileCol}",
+    "layer": "CTX_beta01_uncontrolled_5m_Caltech",
+    "style": "default",
+    "format": "image/png",
+    "tileMatrixSetID": "default028mm",
+    "tileMatrixLabels": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+    "tileWidth": 512,
+    "tileHeight": 512
+  }
+}

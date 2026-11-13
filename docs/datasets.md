@@ -1,6 +1,6 @@
 # Dataset integration
 
-The global globe has one replaceable WMTS imagery slot, alongside the independently prepared Gale patch. Its initial definition is [the MOLA manifest](../public/datasets/mola.json). Download that file using the sidebar, edit it, and load it with **Load dataset JSON**. A supported replacement needs no rebuild and leaves the camera and controls unchanged. Reloading restores the bundled source. See [Gale data](gale-data.md) for numeric terrain, scientific overlays and environmental products.
+The global globe has one replaceable WMTS basemap slot, alongside independent regional overlays. MOLA and CTX are selectable in the UI. The region catalog separates geographic discovery from prepared numeric planning coverage. The initial definition is [the MOLA manifest](../public/datasets/mola.json). Download that file under **Advanced: import a dataset**, edit it, and load it with **Load dataset JSON**. A supported replacement needs no rebuild and leaves the camera and controls unchanged. Reloading restores the bundled source. See [Gale data](gale-data.md) for numeric terrain, scientific overlays and environmental products.
 
 ## Replacing a WMTS source
 
@@ -45,7 +45,7 @@ Invalid manifests keep the current layer and show the validation error. Valid ma
 
 The MOLA capabilities describe JPEG, 256-pixel tiles, matrix set `default028mm`, levels 0–7 and Mars reference `EPSG:104905`. The initial product is `Mars_MGS_MOLA_ClrShade_merge_global_463m` from [NASA Mars Trek](https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml).
 
-The CTX definition under `tests/fixtures/` is QA-only. It uses the actual ArcGIS tile endpoint advertised by [the CTX capabilities](https://trek.nasa.gov/tiles/Mars/EQ/CTX_beta01_uncontrolled_5m_Caltech/1.0.0/WMTSCapabilities.xml) and 512-pixel tiles, demonstrating that source and tile layout are replaceable. It is not copied into `dist/`.
+The shipped CTX definition is `public/datasets/ctx.json`; the older `tests/fixtures/` copy remains an import-test fixture. It uses the actual ArcGIS tile endpoint advertised by [the CTX capabilities](https://trek.nasa.gov/tiles/Mars/EQ/CTX_beta01_uncontrolled_5m_Caltech/1.0.0/WMTSCapabilities.xml) and 512-pixel tiles, demonstrating that source and tile layout are replaceable. The shipped definition is copied into `dist/`. CTX is an uncontrolled display mosaic; it is not the registered local orthoimage or numeric elevation source.
 
 ## Local route API
 
@@ -54,3 +54,11 @@ The CTX definition under `tests/fixtures/` is QA-only. It uses the actual ArcGIS
 Settings expose speed, maximum slope, excursion duration, fixed dose-rate proxy and budget, temperature/wind with departure limits, and up to 30 local circular exclusions (`x`, `y`, `radius`). Invalid values, blocked/disconnected points and unsupported dataset IDs return HTTP 422. Reference details are in the dataset manifest. No-data is never assigned a low-cost default.
 
 `POST /api/return` accepts the same coordinate/settings contract plus route `mode` and `elapsedS`. Here `start` is the current astronaut and `goal` the habitat. It returns a current directed return estimate and budget warnings, or `atHabitat`. `GET /api/health` reports the loaded dataset/version. Vite dev/preview proxy `/api` to port 8100; production hosting needs the equivalent reverse proxy.
+
+## Regions and overlay state
+
+`src/datasets/catalog.ts` defines Gale–Bradbury and Jezero, location sources, basemap references, and explicit planning/walking capabilities. Gale’s exact prepared bounds come from its terrain manifest. Jezero’s marker uses the Perseverance landing position in Bell et al. (2022), [NASA record](https://ntrs.nasa.gov/citations/20230016428); its camera extent is illustrative, not a terrain-data footprint.
+
+`App` owns selection, basemap visibility/opacity, overlay visibility/opacity, and the region’s mission. Region changes abort pending requests and clear incompatible mission state. Navigating between Explore, Plan and HUD preserves the selected region and settings. Prepared arrays load only when a plannable region is selected.
+
+Regional imagery, elevation and slope render in that order above the global basemap; route annotations sit above them. Both globe overlays and planner images use the manifest footprint and shared settings. The HUD minimap deliberately keeps its navigation imagery visible independently. REMS/RAD remain dated contextual observations with original sources; Jezero never inherits Gale observations. Layer controls are session-only.

@@ -3,14 +3,18 @@ from pathlib import Path
 from typing import Literal
 import json
 import math
+import os
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from .planner import Terrain, NoRoute
 
 DATA = Path(__file__).resolve().parents[1] / 'public' / 'gale'
 app = FastAPI(title='Martian Map local planner', version='1.0')
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 class Point(BaseModel):
@@ -125,3 +129,12 @@ def return_route(req: ReturnRequest):
         return {'route':back,'warnings':warnings(req.settings,total,total/3600*req.settings.doseRateMicroGyH)}
     except NoRoute as exc:
         raise HTTPException(422,str(exc)) from exc
+
+
+# Mount after API routes so unknown APIs/assets remain proper 404s.
+# Vite handles development; the container serves the production build directly.
+STATIC = Path(os.environ.get('MARTIAN_STATIC_DIR', DATA.parents[1] / 'dist'))
+if os.environ.get('MARTIAN_STATIC_DIR') and not STATIC.is_dir():
+    raise RuntimeError('MARTIAN_STATIC_DIR does not contain a production build.')
+if STATIC.is_dir():
+    app.mount('/', StaticFiles(directory=STATIC, html=True), name='frontend')

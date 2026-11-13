@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Alternative, Exclusion, Point, Pose, TerrainData } from './data';
 import { sample } from './data';
+import { OVERLAYS, type OverlaySettings } from '../datasets/catalog';
 
 export type PickMode = 'inspect' | 'start' | 'goal' | 'exclude';
 interface Props {
   data: TerrainData; start: Point; goal: Point; routes?: Alternative[]; selected: number;
-  pose?: Pose; exclusions: Exclusion[]; slope: boolean; elevation: boolean;
+  pose?: Pose; exclusions: Exclusion[]; overlays: OverlaySettings;
   mode?: PickMode; onPick?: (p: Point) => void; onInspect?: (p: Point) => void; mini?: boolean;
 }
 
@@ -14,12 +15,12 @@ export default function SurfaceMap(p: Props) {
   const [images,setImages]=useState<HTMLImageElement[]>([]);
   const [imageError,setImageError]=useState(false);
   useEffect(() => {
-    let active=true;
-    Promise.all(['ortho.jpg','slope.png','elevation.png'].map(file => new Promise<HTMLImageElement>((resolve,reject) => {
-      const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=`/gale/${file}`;
+    let active=true;setImages([]);setImageError(false);
+    Promise.all(OVERLAYS.map(layer=>layer.file).map(file => new Promise<HTMLImageElement>((resolve,reject) => {
+      const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=`${p.data.baseUrl}/${file}`;
     }))).then(imgs => { if(active)setImages(imgs); }).catch(()=>{if(active)setImageError(true);});
     return()=>{active=false;};
-  },[]);
+  },[p.data.baseUrl]);
   useEffect(()=>{
     const el=canvas.current;
     if(!el)return;
@@ -27,9 +28,7 @@ export default function SurfaceMap(p: Props) {
     const size=800, half=p.data.meta.extentM/2;
     const pixel=(v:Point)=>[(v.x+half)/(2*half)*size,(half-v.y)/(2*half)*size];
     ctx.clearRect(0,0,size,size);ctx.fillStyle='#4b463d';ctx.fillRect(0,0,size,size);
-    if(images[0])ctx.drawImage(images[0],0,0,size,size);
-    if(p.elevation&&images[2])ctx.drawImage(images[2],0,0,size,size);
-    if(p.slope&&images[1])ctx.drawImage(images[1],0,0,size,size);
+    OVERLAYS.forEach((layer,index)=>{const state=p.overlays[layer.id];if(state.visible&&images[index]){ctx.globalAlpha=state.opacity;ctx.drawImage(images[index],0,0,size,size);}});ctx.globalAlpha=1;
     ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
     for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(i*100,0);ctx.lineTo(i*100,size);ctx.moveTo(0,i*100);ctx.lineTo(size,i*100);ctx.stroke();}
     p.exclusions.forEach(e=>{const [x,y]=pixel(e);ctx.beginPath();ctx.arc(x,y,e.radius/(2*half)*size,0,Math.PI*2);ctx.fillStyle='#e46e5d70';ctx.fill();ctx.strokeStyle='#ffb49b';ctx.lineWidth=2;ctx.stroke();});
