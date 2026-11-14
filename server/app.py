@@ -14,7 +14,7 @@ from .planner import Terrain, NoRoute
 from .conditions import evaluate
 
 DATA = Path(__file__).resolve().parents[1] / 'public' / 'gale'
-app = FastAPI(title='Martian Map local planner', version='0.4.0')
+app = FastAPI(title='Martian Map local planner', version='0.6.0')
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 

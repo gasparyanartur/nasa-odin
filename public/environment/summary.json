@@ -1,0 +1,495 @@
+{
+  "id": "mars-environment-v1",
+  "layers": [
+    {
+      "id": "grs-k",
+      "name": "Potassium \u00b7 Odyssey GRS",
+      "quantity": "potassium_mass_fraction",
+      "unit": "wt%",
+      "instrument": "Odyssey GRS",
+      "kind": "observation",
+      "geometry": "cells",
+      "sourceUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/k_5x5.tab",
+      "labelUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/k_5x5.lbl",
+      "period": "2002-06-04 to 2005-04-03",
+      "timeBasis": "Multi-year composition map",
+      "resolution": "Unsmoothed 5\u00b0 \u00d7 5\u00b0 accumulation bins; not local surface detail.",
+      "note": "Radioactive-element composition is not astronaut radiation dose.",
+      "coordinateNote": "Source Mars latitude/longitude bin centers; longitude normalized to \u2212180\u2026180\u00b0. Labels do not specify latitude convention: displayed in the app spherical frame without a fine datum correction. Bin edges are accumulation bounds, not precise chemical contacts.",
+      "samples": 2592,
+      "valid": 2575
+    },
+    {
+      "id": "grs-th",
+      "name": "Thorium \u00b7 Odyssey GRS",
+      "quantity": "thorium_mass_fraction",
+      "unit": "ppm",
+      "instrument": "Odyssey GRS",
+      "kind": "observation",
+      "geometry": "cells",
+      "sourceUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/th_5x5.tab",
+      "labelUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/th_5x5.lbl",
+      "period": "2002-06-04 to 2005-04-03",
+      "timeBasis": "Multi-year composition map",
+      "resolution": "Unsmoothed 5\u00b0 \u00d7 5\u00b0 accumulation bins; not local surface detail.",
+      "note": "Radioactive-element composition is not astronaut radiation dose.",
+      "coordinateNote": "Source Mars latitude/longitude bin centers; longitude normalized to \u2212180\u2026180\u00b0. Labels do not specify latitude convention: displayed in the app spherical frame without a fine datum correction. Bin edges are accumulation bounds, not precise chemical contacts.",
+      "samples": 2592,
+      "valid": 2468
+    },
+    {
+      "id": "grs-h2o",
+      "name": "Water-equivalent hydrogen \u00b7 Odyssey GRS",
+      "quantity": "water_equivalent_hydrogen",
+      "unit": "wt%",
+      "instrument": "Odyssey GRS",
+      "kind": "observation",
+      "geometry": "cells",
+      "sourceUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/h2o_5x5.tab",
+      "labelUrl": "https://pds-geosciences.wustl.edu/ody/ody-m-grs-5-elements-v1/odgm_xxxx/data/unsmoothed/5x5/h2o_5x5.lbl",
+      "period": "2002-06-04 to 2005-04-03",
+      "timeBasis": "Multi-year composition map",
+      "resolution": "Unsmoothed 5\u00b0 \u00d7 5\u00b0 accumulation bins; not local surface detail.",
+      "note": "Hydrogen expressed as equivalent water mass; not a measurement of liquid water or current moisture.",
+      "coordinateNote": "Source Mars latitude/longitude bin centers; longitude normalized to \u2212180\u2026180\u00b0. Labels do not specify latitude convention: displayed in the app spherical frame without a fine datum correction. Bin edges are accumulation bounds, not precise chemical contacts.",
+      "samples": 2592,
+      "valid": 1496
+    },
+    {
+      "id": "mcs-temperature",
+      "name": "Surface temperature \u00b7 MRO MCS",
+      "quantity": "surface_temperature",
+      "unit": "K",
+      "instrument": "MRO MCS",
+      "kind": "observation",
+      "geometry": "points",
+      "sourceUrl": "https://atmos.nmsu.edu/PDS/data/MROM_2104/DATA/2015/201504/20150401/",
+      "labelUrl": "https://atmos.nmsu.edu/PDS/data/MROM_2104/DOCUMENT/DP_SIS.ASC",
+      "period": "2015-04-01 UTC",
+      "timeBasis": "Individual UTC and local true solar time; different locations/times are not simultaneous.",
+      "resolution": "Surface sounding coordinates; point glyphs do not represent a measured pixel footprint. No interpolation.",
+      "note": "Retrieved surface temperature, not near-surface air temperature. Unobserved locations remain unknown; retained surface-quality codes require source interpretation.",
+      "coordinateNote": "MCS areocentric spherical latitude, east longitude (source SIS).",
+      "rejected": 856,
+      "samples": 1104,
+      "valid": 1104
+    }
+  ],
+  "sols": 19,
+  "hourlyRecords": 456,
+  "forecast": {
+    "issueSol": 28,
+    "targetSol": 29,
+    "trainingSols": [
+      22,
+      28
+    ],
+    "method": "Seven-sol same-hour median; at least three observations per hour.",
+    "spreadNote": "10th\u201390th percentile of training observations, not a calibrated prediction interval.",
+    "temperature": [
+      {
+        "hour": 0,
+        "value": 207.575,
+        "low": 205.978,
+        "high": 212.973,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 1,
+        "value": 206.555,
+        "low": 204.9,
+        "high": 208.666,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 2,
+        "value": 204.625,
+        "low": 203.63,
+        "high": 207.126,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 3,
+        "value": 203.685,
+        "low": 201.848,
+        "high": 206.521,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 4,
+        "value": 200.73,
+        "low": 198.694,
+        "high": 202.952,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 5,
+        "value": 198.42,
+        "low": 197.766,
+        "high": 199.182,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 6,
+        "value": 202.33,
+        "low": 201.606,
+        "high": 204.722,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 7,
+        "value": 218.995,
+        "low": 211.192,
+        "high": 221.305,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 8,
+        "value": 222.515,
+        "low": 219.161,
+        "high": 232.645,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 9,
+        "value": 232.155,
+        "low": 229.404,
+        "high": 235.25,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 10,
+        "value": 237.1,
+        "low": 233.188,
+        "high": 239.007,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 11,
+        "value": 244.62,
+        "low": 242.378,
+        "high": 247.568,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 12,
+        "value": 247.85,
+        "low": 246.873,
+        "high": 253.954,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 13,
+        "value": 253.655,
+        "low": 252.537,
+        "high": 259.482,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 14,
+        "value": 255.5,
+        "low": 253.94,
+        "high": 257.793,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 15,
+        "value": 256.215,
+        "low": 254.537,
+        "high": 257.848,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 16,
+        "value": 249.97,
+        "low": 245.528,
+        "high": 251.454,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 17,
+        "value": 234.86,
+        "low": 232.834,
+        "high": 235.398,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 18,
+        "value": 227.565,
+        "low": 225.626,
+        "high": 229.592,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 19,
+        "value": 225.04,
+        "low": 222.284,
+        "high": 226.641,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 20,
+        "value": 219.495,
+        "low": 218.478,
+        "high": 228.654,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 21,
+        "value": 218.015,
+        "low": 215.654,
+        "high": 222.255,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 22,
+        "value": 212.46,
+        "low": 211.484,
+        "high": 216.953,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 23,
+        "value": 210.44,
+        "low": 209.539,
+        "high": 211.19,
+        "trainingSamples": 7
+      }
+    ],
+    "radiation": [
+      {
+        "hour": 0,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 1,
+        "value": 8.58061,
+        "low": 8.49453,
+        "high": 8.67491,
+        "trainingSamples": 3
+      },
+      {
+        "hour": 2,
+        "value": 8.40203,
+        "low": 7.73887,
+        "high": 19.22542,
+        "trainingSamples": 5
+      },
+      {
+        "hour": 3,
+        "value": 8.42089,
+        "low": 8.19739,
+        "high": 13.25294,
+        "trainingSamples": 5
+      },
+      {
+        "hour": 4,
+        "value": 8.57016,
+        "low": 8.41629,
+        "high": 8.68044,
+        "trainingSamples": 3
+      },
+      {
+        "hour": 5,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 0
+      },
+      {
+        "hour": 6,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 7,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 2
+      },
+      {
+        "hour": 8,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 9,
+        "value": 8.57168,
+        "low": 8.4479,
+        "high": 8.81503,
+        "trainingSamples": 5
+      },
+      {
+        "hour": 10,
+        "value": 8.6434,
+        "low": 8.47845,
+        "high": 8.8689,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 11,
+        "value": 8.64547,
+        "low": 8.49429,
+        "high": 9.00273,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 12,
+        "value": 8.76898,
+        "low": 8.65364,
+        "high": 9.00682,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 13,
+        "value": 8.9599,
+        "low": 8.33029,
+        "high": 16.43473,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 14,
+        "value": 8.71491,
+        "low": 8.32239,
+        "high": 8.96396,
+        "trainingSamples": 7
+      },
+      {
+        "hour": 15,
+        "value": 8.56896,
+        "low": 8.35156,
+        "high": 8.82811,
+        "trainingSamples": 5
+      },
+      {
+        "hour": 16,
+        "value": 8.65066,
+        "low": 7.84293,
+        "high": 8.89684,
+        "trainingSamples": 6
+      },
+      {
+        "hour": 17,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 18,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 19,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 0
+      },
+      {
+        "hour": 20,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 0
+      },
+      {
+        "hour": 21,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 0
+      },
+      {
+        "hour": 22,
+        "value": null,
+        "low": null,
+        "high": null,
+        "trainingSamples": 1
+      },
+      {
+        "hour": 23,
+        "value": 8.65156,
+        "low": 8.46537,
+        "high": 8.80035,
+        "trainingSamples": 6
+      }
+    ],
+    "validation": {
+      "temperature": {
+        "firstTestSol": 24,
+        "lastTestSol": 28,
+        "samples": 120,
+        "mae": 2.5441875000000027,
+        "pairedSamples": 120,
+        "pairedModelMae": 2.5441875000000027,
+        "persistenceMae": 2.887166666666668,
+        "perSol": [
+          {
+            "sol": 24,
+            "pairedSamples": 24
+          },
+          {
+            "sol": 25,
+            "pairedSamples": 24
+          },
+          {
+            "sol": 26,
+            "pairedSamples": 24
+          },
+          {
+            "sol": 27,
+            "pairedSamples": 24
+          },
+          {
+            "sol": 28,
+            "pairedSamples": 24
+          }
+        ]
+      },
+      "radiation": {
+        "firstTestSol": 24,
+        "lastTestSol": 28,
+        "samples": 46,
+        "mae": 1.045263695652174,
+        "pairedSamples": 42,
+        "pairedModelMae": 0.7024547619047619,
+        "persistenceMae": 1.1944190476190475,
+        "perSol": [
+          {
+            "sol": 24,
+            "pairedSamples": 9
+          },
+          {
+            "sol": 25,
+            "pairedSamples": 8
+          },
+          {
+            "sol": 26,
+            "pairedSamples": 9
+          },
+          {
+            "sol": 27,
+            "pairedSamples": 9
+          },
+          {
+            "sol": 28,
+            "pairedSamples": 7
+          }
+        ]
+      }
+    }
+  },
+  "sources": 109
+}

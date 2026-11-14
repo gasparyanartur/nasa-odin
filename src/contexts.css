@@ -18,3 +18,17 @@
 .projected-waypoint{width:30px;height:30px}.projected-waypoint>span{height:30px}.waypoint-caption{position:absolute;top:calc(30px + var(--label-offset,0px));left:50%;width:154px;transform:translateX(-50%);white-space:normal}.waypoint-caption b{display:block;font-size:11px;line-height:1.5;font-weight:500;letter-spacing:.3px;background:#182b2266;border-radius:3px;padding:3px 6px}.waypoint-caption small{display:block;font-size:11px;padding:3px}.waypoint-caption:before{content:'';position:absolute;left:calc(50% + var(--anchor-offset,0px));top:calc(0px - var(--label-offset,0px));height:var(--label-offset,0px);width:1px;background:#fff2c580}
 @media(max-width:700px){.hud-page .hud-clock-panel{top:205px;left:14px;right:14px;max-width:none}.hud-clock-panel .mission-clocks{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.waypoint-caption b{font-size:10px}}
 @media(max-width:700px){.hud-clock-panel .mission-clocks:has(>div:only-child){grid-template-columns:1fr}.hud-clock-panel .mission-clocks>div:has(strong)>span{display:none}}
+
+/* The Tablet is a workspace, with compact controls for a desktop mouse. */
+@media (pointer:fine) and (min-width:901px){
+  .tablet-explore .terrain-workspace{padding:20px 24px}
+  .tablet-explore .workspace-header{margin-bottom:14px}
+  .tablet-explore .workspace-header h2{font-size:24px}
+  .tablet-explore button,.tablet-explore select{min-height:36px}
+  .tablet-explore .tablet-mission-state{padding:8px 12px;margin-bottom:12px}
+  .tablet-explore .layer-bar{padding:8px 12px;gap:6px 14px}
+  .tablet-explore .layer-bar label{min-height:32px;gap:8px}
+  .tablet-explore .layer-bar input[type=checkbox]{width:18px;height:18px}
+  .tablet-explore .layer-bar input[type=range]{min-height:32px}
+  .tablet-explore .map-tools span{font-size:11px}
+}

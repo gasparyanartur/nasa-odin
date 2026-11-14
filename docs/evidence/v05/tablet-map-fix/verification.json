@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-14",
+  "status": "Complete locally",
+  "problem": "Full-width square maps overflowed the Tablet display and appeared zoomed/cropped; desktop controls were oversized.",
+  "fix": [
+    "Fit Explore and Field data canvases to both available width and height, preserving square geometry and full coverage.",
+    "Resize with the pane/window and notices; retain map pan/zoom while changing layout.",
+    "Keep map symbols and the metric scale legible at smaller display sizes.",
+    "Use compact Explore controls on wide screens with a fine pointer; retain touch-sized controls for coarse pointers.",
+    "Show mouse, keyboard and touch navigation hints."
+  ],
+  "checks": {
+    "build": "passed",
+    "frontend_tests": 42,
+    "browser_regression": {
+      "command": "npm run test:browser -- tests/tablet-map.spec.ts tests/contexts.spec.ts tests/field-data.spec.ts",
+      "passed": 8,
+      "duration": "2.4 min"
+    },
+    "final_layout_and_input": {
+      "command": "npm run test:browser -- tests/tablet-map.spec.ts",
+      "passed": 2,
+      "duration": "9.9 s",
+      "last_run_status": "passed"
+    },
+    "viewports": [
+      [
+        1440,
+        1000
+      ],
+      [
+        1024,
+        768
+      ],
+      [
+        800,
+        700
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "inputs": [
+      "Keyboard arrows, +/−, Home and Enter placement",
+      "Mouse wheel zoom, drag without accidental placement, click placement",
+      "Touch pinch, drag and tap after coordinate transforms"
+    ],
+    "notice_layout": "Enabled field restriction notice leaves the full map and toolbar visible."
+  },
+  "preview": "http://127.0.0.1:5273",
+  "screenshots": [
+    "tablet-map-1024-Explore.png",
+    "tablet-map-1024-Field-data.png",
+    "tablet-map-1440-Explore.png",
+    "tablet-map-1440-Field-data.png",
+    "tablet-map-390-Explore.png",
+    "tablet-map-390-Field-data.png",
+    "tablet-map-800-Explore.png",
+    "tablet-map-800-Field-data.png"
+  ]
+}

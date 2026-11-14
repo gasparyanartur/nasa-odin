@@ -9,6 +9,7 @@ import { LayerSlot } from '../datasets/layer-slot';
 import { attachWmts } from './wmts';
 import { geoToLocal, sample, type TerrainData, type Route } from '../mission/data';
 import { SCIENCE, type GeologySelection, type GeologySettings } from '../datasets/geology';
+import { colorAt, layerRange, sampleAt, type ScalarLayer } from '../environment/model';
 import { REGIONS, OVERLAYS, type Region, type RegionId, type OverlaySettings, defaultOverlays } from '../datasets/catalog';
 
 export interface GlobeStatus { loading: boolean; error?: string }
@@ -25,9 +26,13 @@ export class GlobeController {
   private removeMarkers: () => void;
   private picking: ScreenSpaceEventHandler;
   private geologyIds: string[] = [];
+  private environmentLayer?:ScalarLayer;
+  private environmentImage?:ImageryLayer;
+  private environmentGeneration=0;
+  private environmentKey='';
 
   constructor(container: HTMLElement, report: (status: GlobeStatus) => void,
-    onSelect: (id: RegionId) => void, onMarkers: (markers: RegionMarker[]) => void, onGeologySelect: (selection: GeologySelection) => void) {
+    onSelect: (id: RegionId) => void, onMarkers: (markers: RegionMarker[]) => void, onGeologySelect: (selection: GeologySelection) => void, onEnvironmentSelect?:(id?:string)=>void) {
     Ellipsoid.default = Ellipsoid.MARS;
     this.viewer = new Viewer(container, {
       baseLayer: false, terrainProvider: new EllipsoidTerrainProvider({ ellipsoid: Ellipsoid.MARS }),
@@ -70,6 +75,7 @@ export class GlobeController {
       const id=picked?.id?.id;
       if(typeof id==='string'&&id.startsWith('geology-unit-'))onGeologySelect({kind:'unit',id:id.split('-')[2]});
       if(typeof id==='string'&&id.startsWith('geology-contact-'))onGeologySelect({kind:'contact',id:id.split('-')[2]});
+      if(this.environmentLayer&&onEnvironmentSelect){const point=this.viewer.camera.pickEllipsoid(event.position,Ellipsoid.MARS);if(point){const c=Ellipsoid.MARS.cartesianToCartographic(point);onEnvironmentSelect(sampleAt(this.environmentLayer,c.longitude*180/Math.PI,c.latitude*180/Math.PI)?.id);}}
     }, ScreenSpaceEventType.LEFT_CLICK);
   }
 
@@ -111,6 +117,7 @@ export class GlobeController {
       }
       throw error;
     }
+    if(this.environmentImage)this.viewer.imageryLayers.raiseToTop(this.environmentImage);
     this.viewer.scene.requestRender();
   }
   setOverlays(settings: OverlaySettings) {
@@ -141,11 +148,25 @@ export class GlobeController {
     this.viewer.entities.resumeEvents();this.viewer.scene.requestRender();
   }
   focusGeology(regionId:RegionId) {this.viewer.camera.flyTo({destination:Rectangle.fromDegrees(...SCIENCE.regions[regionId].bounds),duration:1.2});}
+  async setEnvironment(layer:ScalarLayer|undefined,opacity:number){
+    const key=layer?`${layer.id}:${layer.period}:${layer.kind}`:'';
+    if(key===this.environmentKey&&this.environmentImage){this.environmentImage.alpha=opacity;this.viewer.scene.requestRender();return;}
+    this.environmentKey=key;
+    this.environmentLayer=layer;const generation=++this.environmentGeneration;
+    this.viewer.canvas.dataset.environmentLayer='';
+    if(this.environmentImage){this.viewer.imageryLayers.remove(this.environmentImage,true);this.environmentImage=undefined;}
+    if(!layer){this.viewer.scene.requestRender();return;}
+    const canvas=document.createElement('canvas');canvas.width=1440;canvas.height=720;const ctx=canvas.getContext('2d')!,range=layerRange(layer);
+    for(const s of layer.samples){if(s.value===null)continue;ctx.fillStyle=colorAt(s.value,range);if(s.bounds){const[w,south,e,n]=s.bounds;ctx.fillRect((w+180)/360*1440,(90-n)/180*720,(e-w)/360*1440,(n-south)/180*720);}else{ctx.beginPath();ctx.arc((s.lon+180)/360*1440,(90-s.lat)/180*720,3,0,Math.PI*2);ctx.fill();}}
+    const provider=await SingleTileImageryProvider.fromUrl(canvas.toDataURL(),{rectangle:Rectangle.fromDegrees(-180,-90,180,90),credit:layer.instrument});
+    if(this.viewer.isDestroyed()||generation!==this.environmentGeneration)return;
+    this.environmentImage=this.viewer.imageryLayers.addImageryProvider(provider);this.environmentImage.alpha=opacity;this.viewer.canvas.dataset.environmentLayer=layer.id;this.viewer.scene.requestRender();
+  }
   focusRegion(region: Region) { this.viewer.camera.flyTo({ destination: Cartesian3.fromDegrees(region.center.longitude, region.center.latitude, region.cameraHeightM, Ellipsoid.MARS), duration: 1.2 }); }
   home() {
     this.viewer.camera.cancelFlight();
     this.viewer.camera.setView({ destination: Cartesian3.fromDegrees(107, 8, 10_500_000, Ellipsoid.MARS) });
     this.viewer.scene.requestRender();
   }
-  dispose() { this.localGeneration++; this.removeProgress(); this.removeMarkers(); this.picking.destroy(); this.slot.dispose(); this.viewer.destroy(); }
+  dispose() { this.localGeneration++; this.environmentGeneration++; this.removeProgress(); this.removeMarkers(); this.picking.destroy(); this.slot.dispose(); this.viewer.destroy(); }
 }

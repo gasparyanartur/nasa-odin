@@ -6,16 +6,25 @@ Explore Mars through selectable real datasets, inspect geological evidence, choo
 
 Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
 
+Version **0.6** adds **Station → Data & history → Environmental explorer**: inspect global Odyssey GRS potassium/thorium composition and water-equivalent hydrogen, dated MCS surface-temperature soundings, and 19 sols of Curiosity temperature/radiation records. Compare observed values with an explicitly simulated Sol 29 daily-profile outlook and its held-out errors. Select layers on the atlas or Tablet; inspect source, scale, timestamps and uncertainty. **Use snapshot as fixed mission assumptions** explicitly applies an available Gale reading/forecast without changing the mission clock. Composition is separate from radiation dose, and sparse observations remain unknown. See [environmental data, model and validation](docs/environment-data.md).
+
+Version **0.5** adds a personal field layer on **Tablet → Field data** in the prepared Gale area:
+
+- Create geological notes, draw unit polygons/contact lines, declare circular obstacles, or record point temperature (K) and detector dose-rate (µGy/h) readings. Pick/draw on the map, enter local coordinates, or use **Log here** on the HUD to capture the astronaut's simulated position and mission time.
+- Save, inspect, edit, hide, delete and undo records. The map and HUD share markers and terrain-following boundaries; press Esc, then select a projected field marker to inspect its source, observation UTC, uncertainty, geometry and simulated context.
+- Enable **Restrict routes and walking** on an obstacle to use its 5–500 m radius in outbound/return planning and swept movement checks. Restrictions clear stale routes while retaining position/time; **Compare routes** computes updated alternatives from the configured endpoints. Hiding an annotation leaves an enabled restriction enforced and its boundary visible. Disable or move a restriction surrounding the astronaut to move again.
+- Saved records persist in this browser and survive view/region switches. Export **Mars GeoJSON v1** for a backup or transfer; import merges matching IDs and is undoable. Ordinary Earth GeoJSON is rejected. Undo retains the last 20 layer edits for the session; unfinished drafts are not persisted on reload. If browser storage fails, records remain in memory with an export warning. Malformed saved files are preserved until you explicitly replace them.
+
+Geology and readings are user interpretations/point observations, separate from published source layers. Readings do not change the historical scenario or surrounding cells; no terrain, radiation field or forecast is inferred. Only enabled circular obstacles affect planning/movement. Up to 100 records, 100 vertices per geometry and 30 combined manual/field restrictions are supported. Field data is currently unavailable at Jezero. See [field-data effects, recovery and transfer format](docs/field-data.md).
+
 Version **0.4** separates three functional contexts:
 
 - **Station:** use the **Planetary atlas** for global Viking/MOLA/CTX datasets, region selection and published regional geology. **Data & history** compares source, resolution, acquisition and interpretation, and provides the Sol 10 REMS timeline for Gale. Historical edits change departure and clear incompatible routes; switching views preserves them.
-- **Tablet:** **Explore** provides the local map, layers, touch inspection, science targets, endpoints, assumptions, route alternatives and linked profiles. Drag to pan, pinch or scroll to zoom, and tap to inspect/place. Zoom and **Full area** buttons and keyboard controls are also available (arrows to pan, +/− to zoom, Home to reset, Enter to inspect the center). **Plan & targets** jumps to planning controls on a small screen. Jezero explains its missing local numeric terrain and links back to the Station atlas.
+- **Tablet:** **Explore** provides the local map, layers, touch inspection, science targets, endpoints, assumptions, route alternatives and linked profiles. Maps fit the available display without cropping their full extent. Drag to pan, use the mouse wheel or pinch to zoom, and click or tap to inspect/place. Desktop mouse controls use a compact layout. Zoom and **Full area** buttons and keyboard controls are also available (arrows to pan, +/− to zoom, Home to reset, Enter to inspect the center). **Plan & targets** jumps to planning controls on a small screen. Jezero explains its missing local numeric terrain and links back to the Station atlas.
 - **Tablet → HUD setup:** independently configure visor/compass, minimap, waypoint display and selections (next route point, habitat, destination, Rocknest and Yellowknife Bay), Mars LMST and live Earth UTC. Choose graphics quality and simulation pace here. The Tablet shows both clocks with their meaning: simulated Gale LMST has a Sol 10 historical anchor; **Live Earth UTC** is the current real-world date/time and does not represent the historical scenario. Each clock can be hidden on the HUD without changing time.
 - **HUD:** follow translucent navigation over the measured terrain. Selected waypoint labels project through the actual camera, including pitch and field of view; labels outside the field of view are hidden. These are navigation coordinates, not confirmed visible outcrops or terrain-occlusion indicators. The next-waypoint bearing cue remains available with the visor. Click terrain, use WASD/mouse, and press Esc to pause. Open the Tablet to inspect or configure, then resume at the same position, heading, view pitch and elapsed time. Switching to Station also pauses walking.
 
 Choose Gale at Station to load the prepared 2 × 2 km terrain. On the Tablet, place endpoints or select a science target and **Compare routes**. Alternatives include a separately calculated return, destination stop and conditions. **Walk selected route** starts or resumes the selected excursion. Editing endpoints, assumptions or departure explicitly clears an incompatible plan; changing view, layer visibility or HUD displays preserves the mission. Selecting another region starts a separate setup.
-
-Location-linked inspection is available; personal observation logging/editing remains future work (FR-016). No collected observations are generated or discarded by display switches.
 
 Version **0.3** adds a geological science workflow:
 
@@ -34,7 +43,7 @@ Use **Conditions → Historical Sol 10** to evaluate temperature along the outbo
 
 **Graphics** controls drawing pixels: Low uses 65% of native resolution (density capped at 1), Medium native resolution (cap 1), and High the device density (cap 2). All retain the same measured terrain, texture, routing and collision data. The visor provides navigation cues from simulated position; it does not add physiological measurements.
 
-The optional exclusion tool marks user-declared 40 m restricted areas. These are not measurements of actual hazards. The habitat is a demonstration location, not a real structure on Mars.
+The optional Explore exclusion tool marks user-declared 40 m restricted areas; **Clear exclusions** removes these manual circles. Edit or disable field-layer restrictions in Field data. These are not measurements of actual hazards. The habitat is a demonstration location, not a real structure on Mars.
 
 ## Run locally
 
@@ -101,6 +110,8 @@ Prepared files are included, so the normal demo does not download multi-gigabyte
 npm run prepare:data
 # Optional: regenerate the bounded USGS geology and NASA visit-area package
 npm run prepare:science
+# Optional: regenerate numeric environmental maps, multi-sol history and forecasts
+npm run prepare:environment
 ```
 
 This uses HTTP range requests against USGS rasters and downloads PDS environmental products. It can take several minutes and needs network access. Source records are cached under the repository's `tmp/`. It fails if usable data or verified radiation units are unavailable; it does not generate replacement terrain.

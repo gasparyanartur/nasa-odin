@@ -7,8 +7,12 @@ import GeologyPanel from './GeologyPanel';
 import { type GeologySettings, type GeologySelection } from './datasets/geology';
 import { historicalAt, lmstLabel } from './mission/conditions';
 import type { TerrainData, Route } from './mission/data';
+import EnvironmentControls from './environment/Controls';
+import type { EnvironmentCatalog, EnvironmentSelection } from './environment/model';
+import { availableLayers } from './environment/model';
 
 interface Props {
+  environmentCatalog?:EnvironmentCatalog; environmentSelection?:EnvironmentSelection; onEnvironmentChange?:(s:EnvironmentSelection)=>void;
   geology:GeologySettings; geologySelection?:GeologySelection; onGeologySettings:(s:GeologySettings)=>void; onGeologySelect:(s:GeologySelection)=>void; onDemo:()=>void;
   data?:TerrainData; dataError?:string; route?:Route; selectedRegionId?:RegionId;
   onRegionChange:(id?:RegionId)=>void; onExplore:()=>void;
@@ -22,6 +26,8 @@ export default function GlobeExplorer(p:Props) {
   const container=useRef<HTMLDivElement>(null),controller=useRef<GlobeController|null>(null);
   const onSelect=useRef(p.onRegionChange);onSelect.current=p.onRegionChange;
   const onGeology=useRef(p.onGeologySelect);onGeology.current=p.onGeologySelect;
+  const onEnvironment=useRef(p.onEnvironmentChange);onEnvironment.current=p.onEnvironmentChange;
+  const environmentSelection=useRef(p.environmentSelection);environmentSelection.current=p.environmentSelection;
   const sequence=useRef(0),importSequence=useRef(0);
   const [dataset,setDataset]=useState<DatasetDefinition|null>(null);
   const [pending,setPending]=useState(false),[tilesLoading,setTilesLoading]=useState(false),[fatal,setFatal]=useState(false);
@@ -40,7 +46,7 @@ export default function GlobeExplorer(p:Props) {
   }
   useEffect(()=>{
     try {
-      controller.current=new GlobeController(container.current!,status=>{setTilesLoading(status.loading);if(status.error)setError(status.error);},id=>onSelect.current(id),setMarkers,selection=>onGeology.current(selection));
+      controller.current=new GlobeController(container.current!,status=>{setTilesLoading(status.loading);if(status.error)setError(status.error);},id=>onSelect.current(id),setMarkers,selection=>onGeology.current(selection),sample=>{if(environmentSelection.current)onEnvironment.current?.({...environmentSelection.current,sampleId:sample});});
     } catch {setFatal(true);setError('The globe could not start. Use a browser with WebGL enabled and reload this page.');}
     return()=>{sequence.current++;importSequence.current++;controller.current?.dispose();controller.current=null;};
   },[]);
@@ -56,6 +62,7 @@ export default function GlobeExplorer(p:Props) {
   useEffect(()=>{controller.current?.setOverlays(p.overlays);},[p.overlays]);
   useEffect(()=>{controller.current?.setRoute(p.route);},[p.route,p.data]);
   useEffect(()=>{controller.current?.setGeology(p.selectedRegionId,p.geology,p.geologySelection);},[p.selectedRegionId,p.geology,p.geologySelection]);
+  useEffect(()=>{const layer=p.environmentCatalog&&p.environmentSelection?availableLayers(p.environmentCatalog,p.environmentSelection).find(l=>l.id===p.environmentSelection!.layerId):undefined;void controller.current?.setEnvironment(layer,p.environmentSelection?.opacity??.65).catch(()=>setError('Environmental overlay could not render. Choose another layer and retry.'));},[p.environmentCatalog,p.environmentSelection]);
   const loading=pending||tilesLoading;
   const weather=p.data&&historicalAt(p.data.environment,p.conditionsHour);
   const selectRegion=(id:RegionId)=>{if(id===p.selectedRegionId)controller.current?.focusRegion(getRegion(id)!);else p.onRegionChange(id);};
@@ -76,6 +83,7 @@ export default function GlobeExplorer(p:Props) {
         <details className="region-source"><summary>Location and coverage</summary><p>{region.locationNote}</p><a href={region.sourceUrl} target="_blank" rel="noreferrer">Location source ↗</a></details>
       </section>}
       {region&&<GeologyPanel regionId={region.id} settings={p.geology} selection={p.geologySelection} onSettings={p.onGeologySettings} onSelect={p.onGeologySelect} onContext={()=>controller.current?.focusGeology(region.id)}/>}
+      {p.environmentCatalog&&p.environmentSelection&&p.onEnvironmentChange&&<EnvironmentControls catalog={p.environmentCatalog} selection={p.environmentSelection} onChange={p.onEnvironmentChange} prefix="Atlas "/>}
       <section className="dataset-section">
         <div className="section-label">02 / GLOBAL BASEMAP</div>
         <label className="basemap-label">Dataset<select aria-label="Global basemap" disabled={fatal} value={p.basemap.id} onChange={e=>{importSequence.current++;p.onBasemapChange(BASEMAPS.find(b=>b.id===e.target.value)!);}}>{BASEMAPS.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}{!BASEMAPS.some(b=>b.id===p.basemap.id)&&<option value={p.basemap.id}>{p.basemap.name} (imported)</option>}</select></label>

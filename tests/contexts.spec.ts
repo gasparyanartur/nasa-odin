@@ -34,10 +34,11 @@ test('functional contexts, projected waypoints and clock visibility retain one m
   await expect(page.locator('.hud-clock-panel')).toContainText('SOL 10');
   const earth=await page.locator('.hud-clock-panel time').getAttribute('datetime');
   expect(Math.abs(Date.parse(earth!)-Date.now())).toBeLessThan(10_000);
-  const before=(await waypoint.boundingBox())!;
   await canvas.click({position:{x:450,y:350}});
   await expect(page.locator('.walk-instructions')).toHaveCount(0);
   await page.screenshot({path:info.outputPath('v04-projected-hud.png')});
+  // Measure after the first painted camera frame and pointer-lock recentering.
+  const before=(await waypoint.boundingBox())!;
   // Headless absolute mouse moves do not reliably emit relative pointer-lock deltas.
   await page.evaluate(()=>{for(let i=0;i<3;i++)document.dispatchEvent(new MouseEvent('mousemove',{movementX:30,movementY:-5,bubbles:true}));});
   await expect.poll(async()=>{const b=await waypoint.boundingBox();return b?Math.abs(b.x-before.x):100;}).toBeGreaterThan(20);

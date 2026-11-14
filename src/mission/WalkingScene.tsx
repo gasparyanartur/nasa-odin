@@ -2,6 +2,8 @@ import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNo
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { BackSide, BufferAttribute, BufferGeometry, Color, Float32BufferAttribute, Line, LineBasicMaterial, SRGBColorSpace, TextureLoader, Vector3 } from 'three';
 import ProjectedWaypoints, { type SceneWaypoint } from './ProjectedWaypoints';
+import FieldGeometry, { RestrictionBoundaries } from '../field/FieldGeometry';
+import { anchor, type FieldRecord } from '../field/model';
 import type { HudSettings } from './HudSettings';
 import { SCIENCE } from '../datasets/geology';
 import type { Alternative, Point, Pose, Settings, TerrainData } from './data';
@@ -93,25 +95,25 @@ class SceneBoundary extends Component<{children:ReactNode},{failed:boolean}> {
   render(){return this.state.failed?<div className="scene-unavailable" role="alert">The 3D scene could not start. Enable WebGL and return to the planner to retry.</div>:this.props.children;}
 }
 
-export default function WalkingScene(p:{hud:HudSettings;start:Point;goal:Point;next:Point;data:TerrainData;route:Alternative;settings:Settings;initialPose:Pose;timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void}) {
+export default function WalkingScene(p:{fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;start:Point;goal:Point;next:Point;data:TerrainData;route:Alternative;settings:Settings;initialPose:Pose;timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void}) {
   const [locked,setLocked]=useState(false);
   const elements=useRef(new Map<string,HTMLDivElement>());
-  const points:SceneWaypoint[]=p.hud.waypoints?[
+  const points:SceneWaypoint[]=[...(p.hud.waypoints?[
     ...(p.hud.next?[{...p.next,id:'next',label:'Next route waypoint'}]:[]),
     ...(p.hud.habitat?[{...p.start,id:'habitat',label:'Habitat'}]:[]),
     ...(p.hud.destination?[{...p.goal,id:'destination',label:'Destination'}]:[]),
     ...SCIENCE.targets.filter(t=>p.hud.science.includes(t.id)).map(t=>({...t.point,id:t.id,label:t.name})),
-  ]:[];
+  ]:[]),...p.fields.filter(r=>r.visible).map(r=>({...anchor(r),id:`field-${r.id}`,label:r.title}))];
   return <div className="walking-scene">
     <SceneBoundary><Canvas dpr={drawingRatio(p.quality,window.devicePixelRatio||1)} camera={CAMERA} gl={{antialias:true}} onCreated={({scene})=>{scene.background=new Color('#d7ac8e');}}>
       <MartianSky/><fog attach="fog" args={['#d7ac8e',450,2600]}/><hemisphereLight args={['#f2d2b4','#664b3d',1.3]}/><directionalLight color="#ffe1c0" position={[500,800,200]} intensity={1.6}/>
       <Suspense fallback={null}><Ground data={p.data}/><Track data={p.data} route={p.route}/></Suspense>
-      <Walker {...p} onLock={setLocked}/><ProjectedWaypoints data={p.data} points={points} elements={elements.current}/>
-      {p.settings.exclusions.map((e,i)=>{const s=sample(p.data,e);return s?<mesh key={i} position={[e.x,s.elevation-p.data.meta.referenceElevationM+.2,-e.y]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[e.radius-1,e.radius,64]}/><meshBasicMaterial color="#fa8064"/></mesh>:null;})}
+      <FieldGeometry records={p.fields} data={p.data}/><Walker {...p} onLock={setLocked}/><ProjectedWaypoints data={p.data} points={points} elements={elements.current}/>
+      <RestrictionBoundaries exclusions={p.settings.exclusions} data={p.data}/>
 
     </Canvas></SceneBoundary>
-    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)elements.current.set(point.id,el);else elements.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption"><b>{point.label}</b><small/></div></div>)}</div>
-    {!locked&&<div className="walk-instructions"><span className="eyebrow">MANUAL SURFACE EXCURSION</span><h2>Take the next step.</h2><p>Click the terrain to begin. WASD to walk, mouse to look.<br/>Esc pauses the simulation and releases the mouse.</p><span>Measured terrain · simulated astronaut · illustrative lighting</span></div>}
+    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)elements.current.set(point.id,el);else elements.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id} ${point.id.startsWith('field-')?'field-waypoint':''}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption">{point.id.startsWith('field-')?<button aria-label={`Inspect field record ${point.label}`} onClick={()=>{if(!locked)p.onFieldSelect(point.id.slice(6));}}>{point.label}</button>:<b>{point.label}</b>}<small/></div></div>)}</div>
+    {!locked&&<div className="walk-instructions"><span className="eyebrow">MANUAL SURFACE EXCURSION</span><h2>Take the next step.</h2><p>Click the terrain to begin. WASD to walk, mouse to look.<br/>Esc pauses the simulation and releases the mouse.<br/>Then select a field marker to inspect its record.</p><span>Measured terrain · simulated astronaut · illustrative lighting</span></div>}
     {locked&&<div className="reticle" aria-hidden="true">＋</div>}
   </div>;
 }
