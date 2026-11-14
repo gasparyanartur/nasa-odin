@@ -19,7 +19,7 @@ Success means:
 
 ## Scope and relationship to the backlog
 
-This is FR-023. It preserves the completed 0.2–0.6 capabilities in the [backlog](../backlog.md), particularly FR-011/014/016–019 and the environmental release. It provides selectable terrain-package groundwork for FR-021, without implementing regional corridors or cross-patch walking.
+This is FR-026. It preserves the completed 0.2–0.6 capabilities in the [backlog](../backlog.md), particularly FR-011/014/016–019 and the environmental release. It provides selectable terrain-package groundwork for FR-021, without implementing regional corridors or cross-patch walking. The newer small-screen UX, design and helmet-presentation requests (FR-023–025) remain separate work; preserving the current system means preserving its capabilities and mission continuity, not freezing its layout forever.
 
 | Work | Treatment in this migration |
 | --- | --- |

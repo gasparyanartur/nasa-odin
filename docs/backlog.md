@@ -32,7 +32,7 @@ The [Fable simulator integration plan](plans/2026-11-14-hypersimulation-integrat
 | FR-020 | SuperCam-style chemical and moisture HUD overlay | Highlight the locations of scientifically interesting chemicals/minerals in the astronaut's field of view, with particular interest in moisture and water-related indicators. Select substances/layers from the tablet, inspect supporting evidence and create science waypoints. Use georeferenced observations or explicitly labeled interpretations/simulations; preserve actual measurement footprints and uncertainty. See the scope below. | Requested |
 | FR-021 | Larger-area and multi-resolution route planning | Expand beyond the current 2 × 2 km Gale patch, starting with a larger verified area of the existing terrain mosaic. Support regional route corridors using coarser numeric elevation and detailed local excursions where suitable terrain exists. Show source resolution, coverage and gaps; keep map, planner and simulator aligned. See the scope below. | Requested |
 | FR-022 | Location-linked voice notes from the HUD | Extend “Note here” with audio recording so astronauts can log observations without typing in the HUD. Attach recordings to mission location and time, show them on the map and support playback from the tablet/station. Keep original audio; transcription is optional. Extends FR-016 rather than replacing its completed text-note workflow. See the scope below. | Requested |
-| FR-023 | Integrate the Fable surface simulator | Keep the current Station, Tablet, HUD and shared mission workflows; integrate the detailed Boxwork terrain, imagery and rendering from `hypersimulation-prototype`. Preserve manual walking, routing, field data and environmental provenance. Boxwork is a separate site from Bradbury. | Draft plan · [Fable handoff](plans/2026-11-14-hypersimulation-integration.md) |
+| FR-026 | Integrate the Fable surface simulator | Keep the current Station, Tablet, HUD and shared mission workflows; integrate the detailed Boxwork terrain, imagery and rendering from `hypersimulation-prototype`. Preserve manual walking, routing, field data and environmental provenance. Boxwork is a separate site from Bradbury. | Draft plan · [Fable handoff](plans/2026-11-14-hypersimulation-integration.md) |
 
 ## Science and demo scope
 
@@ -91,3 +91,21 @@ Preserve original audio and support deletion, persistence across reloads and exp
 Keep observations, derived layers and simulations distinguishable. Historical site observations alone do not establish spatial map coverage or forecast accuracy.
 
 Add new requests with the next `FR-` ID. Keep open questions here; link a plan from `docs/plans/` when a feature is selected for implementation.
+
+
+### FR-023: Better Screen Compatability UX
+
+Currently, the app does not scale well on smaller screens. You need to scroll a lot, and it's not clear what part comes next. Completely unintuitive. Investigate and figure out how to create a better version for smaller screens. 
+
+
+### FR-024: Better Design
+
+* Non-intuitive, need to scroll at lot, but that's not clear
+* It's not obvious how to enter HUD mode (We need to scroll to bottom, plan a route, start out an excursion, and only then can we see HUD mode)
+* Tablet mode is not tablet-friendly at all, too much side-bars, buttons ,etc
+
+### FR-025: Improve HUD Realism
+
+* We need rounded Astronaut-helmet like display, not screen display
+* Information should not have fat non-opaque border, make it more subtle
+* Don't put things too close to edges, too much eyeball movement for astronauts
