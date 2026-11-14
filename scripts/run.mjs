@@ -1,12 +1,13 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
-if(!existsSync('.venv/bin/python')){console.error('Create .venv and install requirements.txt first; see README.');process.exit(1);}
+const venvPython=process.platform==='win32'?'.venv/Scripts/python.exe':'.venv/bin/python';
+if(!existsSync(venvPython)){console.error('Create .venv and install requirements.txt first; see README.');process.exit(1);}
 if(!existsSync('public/gale/manifest.json')){console.error('Prepared Gale assets are missing. Run npm run prepare:data.');process.exit(1);}
 const preview=process.argv.includes('--preview');
 const apiPort=process.env.API_PORT??'8100',webPort=process.env.WEB_PORT??(preview?'4173':'5173');
 const children=[
-  spawn('.venv/bin/python',['-m','uvicorn','server.app:app','--host','127.0.0.1','--port',apiPort],{stdio:'inherit'}),
+  spawn(venvPython,['-m','uvicorn','server.app:app','--host','127.0.0.1','--port',apiPort],{stdio:'inherit'}),
   spawn(process.execPath,['node_modules/vite/bin/vite.js',...(preview?['preview']:[]),'--host','127.0.0.1','--port',webPort,'--strictPort'],{stdio:'inherit'}),
 ];
 let closing=false;

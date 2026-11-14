@@ -2,6 +2,8 @@
 
 Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
+**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the Marswalk hypersimulation prototype.
+
 ## Try the excursion
 
 Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
@@ -47,23 +49,124 @@ The optional Explore exclusion tool marks user-declared 40 m restricted areas; *
 
 ## Run locally
 
-Use Node 22.23.4 (`.nvmrc`) and Python 3.12 or newer. From the repository root:
+The repository holds two separate apps:
+
+- **Martian Map** (repository root): the Station, Tablet and HUD app described above. It needs Git, Node.js and Python.
+- **Marswalk** (`hypersimulation-prototype/`): the hypersimulation prototype, a guided five-step walk at the Gale boxwork ridges. It needs Git and Python only.
+
+These steps assume a computer with none of these tools installed. Skip any step you have already done.
+
+### Step 1: Install Git, Node.js and Python (once per computer)
+
+npm, the command that installs and runs Martian Map, comes with Node.js. It is not a separate download.
+
+**Windows**
+
+1. **Git:** download the installer from [git-scm.com/downloads/win](https://git-scm.com/downloads/win), run it and keep every default option.
+2. **Node.js and npm:** download the **LTS** Windows installer from [nodejs.org](https://nodejs.org/en/download), run it and keep the default options. You don't need the optional "Tools for Native Modules".
+3. **Python:** download the latest Python 3 installer from [python.org/downloads](https://www.python.org/downloads/). On the installer's first screen, tick **Add python.exe to PATH**, then click **Install Now**. If that box is not ticked, the `python` command won't work.
+4. Open PowerShell: press the Windows key, type `PowerShell` and press Enter. If PowerShell was already open, close it and open a new window, because only new windows find newly installed programs.
+5. Check that each of these commands prints a version number:
+
+   ```powershell
+   git --version
+   node --version
+   npm --version
+   python --version
+   ```
+
+   - If `npm` fails with "running scripts is disabled on this system", run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, answer `Y`, and try again.
+   - If `python` opens the Microsoft Store or prints nothing, Python is not on PATH. Uninstall Python, then install it again with **Add python.exe to PATH** ticked.
+
+**macOS**
+
+1. Open Terminal: press Cmd+Space, type `Terminal` and press Enter.
+2. **Git:** run `git --version`. If Git is missing, macOS offers to install the command line developer tools. Click **Install**, wait for it to finish, then run `git --version` again.
+3. **Node.js and npm:** download the **LTS** macOS installer from [nodejs.org](https://nodejs.org/en/download) and run it.
+4. **Python:** download the latest Python 3 macOS installer from [python.org/downloads](https://www.python.org/downloads/) and run it.
+5. Close Terminal, open a new one, and check that each of these commands prints a version number:
+
+   ```bash
+   git --version
+   node --version
+   npm --version
+   python3 --version
+   ```
+
+**Linux:** install Git, Node.js 22.17 or newer (from [nodejs.org](https://nodejs.org/en/download) or your distribution) and Python 3.12 or newer with its `venv` module. On Debian or Ubuntu, `sudo apt install git python3 python3-venv` covers Git and Python.
+
+Martian Map needs Node.js 22.17 or newer and Python 3.12 or newer. The LTS Node.js and latest Python offered on those sites are new enough.
+
+### Step 2: Get access to the repository (once)
+
+1. If you don't have a GitHub account, create a free one at [github.com](https://github.com/signup).
+2. The repository is private. Send your GitHub username to the repository owner, `gasparyanartur`, and ask to be added as a collaborator.
+3. GitHub emails you an invitation. Open it and click **Accept invitation**. The invitation is also at [github.com/gasparyanartur/nasa-martian-map/invitations](https://github.com/gasparyanartur/nasa-martian-map/invitations) once it has been sent.
+
+### Step 3: Download the code (once)
+
+In PowerShell (Windows) or Terminal (macOS/Linux), run:
 
 ```bash
-nvm use
+git clone -c core.autocrlf=input https://github.com/gasparyanartur/nasa-martian-map.git
+cd nasa-martian-map
+```
+
+This creates a `nasa-martian-map` folder inside the folder your terminal is in, which is your user folder unless you `cd` somewhere else first.
+
+The first time, Git asks you to sign in to GitHub:
+
+- **Windows:** a sign-in window opens. Choose **Sign in with your browser** and approve the request on GitHub. Git remembers this.
+- **macOS and Linux:** Git asks for a username and a password. Enter your GitHub username. GitHub does not accept your account password here, so create a token instead: go to [github.com/settings/tokens](https://github.com/settings/tokens), choose **Generate new token (classic)**, tick **repo**, click **Generate token**, and paste the token as the password. Nothing appears while you paste; press Enter.
+
+Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Marswalk rejects any data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
+
+To get your teammates' latest changes later, run `git pull` inside the `nasa-martian-map` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
+
+### Step 4: Set up Martian Map (once)
+
+From inside the `nasa-martian-map` folder:
+
+Windows (PowerShell):
+
+```powershell
+npm ci
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+macOS / Linux:
+
+```bash
 npm ci
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
+```
+
+`npm ci` installs the website's packages into `node_modules/`. The next two lines create a Python environment for this project in `.venv/` and install the route planner's packages into it. Each step can take a few minutes. If you use nvm, run `nvm use` first to switch to the Node.js version in `.nvmrc`.
+
+Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. Marswalk needs no setup.
+
+### Step 5: Run Martian Map
+
+Open a terminal in the folder where you cloned the repository and run:
+
+```bash
+cd nasa-martian-map
 npm run dev:all
 ```
 
-Open [the local application](http://127.0.0.1:5173). To keep another checkout running, start this workspace on separate ports:
+Open [the local application](http://127.0.0.1:5173) in your browser. This one command starts Vite and the local Python planner API on port 8100. Keep the terminal open while you use the application. `npm run dev` alone starts only the frontend, so route comparison fails and the HUD tab stays locked.
+
+To keep another checkout running, start this workspace on separate ports:
 
 ```bash
 API_PORT=8200 WEB_PORT=5273 npm run dev:all
 ```
 
-Then open [the separate workspace](http://127.0.0.1:5273). One command starts Vite and the local Python planner API on port 8100. Keep both running while using the application. `npm run dev` alone starts only the frontend.
+In PowerShell, run `$env:API_PORT=8200; $env:WEB_PORT=5273; npm run dev:all` instead. Then open [the separate workspace](http://127.0.0.1:5273).
+
+On Windows, `npm run test:api` and the `prepare:*` scripts still call `.venv/bin/python`. Run their commands from `package.json` directly, using `.venv\Scripts\python.exe` in its place.
 
 For a production preview:
 
@@ -73,6 +176,21 @@ npm run demo
 ```
 
 Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared Gale imagery, terrain and environmental observations are bundled locally. No Cesium ion account is needed. A static-only deployment cannot compute routes: host the Python API and proxy `/api` to it, as the local setup does.
+
+### Step 6: Run Marswalk (hypersimulation prototype)
+
+Open a terminal in the folder where you cloned the repository and run:
+
+```bash
+cd nasa-martian-map/hypersimulation-prototype
+python3 -I tools/dev_server.py --port 8642
+```
+
+On Windows, type `python` instead of `python3`. Open [Marswalk](http://127.0.0.1:8642/) in your browser. Press Enter four times to go through the five steps, or open a single step with `?step=1` to `?step=5`. The app is plain HTML and JavaScript, so after you edit a file in `hypersimulation-prototype/app/`, refresh the page to see the change. [hypersimulation-prototype/START-HERE.md](hypersimulation-prototype/START-HERE.md) has more detail, including the checks.
+
+### Run both at once, and stop them
+
+Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 and 8642), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
 
 ## Deploy the public demo
 
