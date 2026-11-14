@@ -1,0 +1,10 @@
+# AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project.
+# Install: tools/.venv/bin/pip install --require-hashes --no-deps -r tools/requirements.txt
+# Hashes: PyPI JSON API (https://pypi.org/pypi/<name>/<version>/json), macOS arm64 cp314 wheels plus the sdist.
+numpy==2.5.4 \
+    --hash=sha256:ffa6ce09a1c6a08e9667dd9c97aa0b14184e8d18f2a14b78b2a2328c9147f076 \
+    --hash=sha256:956555e0603a4d38019ae6925711cb9dc43195c076a928accf7ea5d50bddfe53 \
+    --hash=sha256:9a94cf751c9ad8ebaa835bcd3d40dacf8534ad086b88c38029b65123c7999d2a
+pillow==13.0.0 \
+    --hash=sha256:d9b0a2bee3f3e03e9f29057aedb807dbf1e1d96ee1b9d0f422d9db6c8583271d \
+    --hash=sha256:cdcd1ba258178f7356d74170c9a81ba4eab6a5d55748bc402a5a2a6fe6be3510

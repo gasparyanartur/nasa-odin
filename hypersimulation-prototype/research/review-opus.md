@@ -1,0 +1,31 @@
+# Opus premortem review of resource-catalogue.md (2026-11-03)
+
+breaks:
+- Code built on the listed field `elev` gets undefined in every waypoint.
+- A browser app is designed around a CORS (browser cross-site access) pass that no file records.
+- The team picks Jezero for "richest images" or "ongoing weather", and neither is an edge over Gale.
+- The any-site pivot is picked as easy, then hits an 11 GB terrain file and a climate model with no API.
+- Derived layers ship under the wrong licence (ShareAlike, or "PDS open" that no page states).
+Findings, by severity (arithmetic in all 10 score rows adds up; the problems are cells):
+1. HIGH, L3, 10, 70, 86-87, 212: the "header test" has no evidence file. check-a items 3 and 8 still say COG and CORS UNVERIFIED, screen-injection says treat the asc-pds links as unopened, and 1.93 GB and 500 MB appear in no source. Fix: file the command, URLs and headers as a new check. Until then set rows 86-87 to Unconfirmed and L10 to "reported, not filed". State which Trek layers were hit, since `HiRISE_Global` uses a different URL form (check-a:10).
+2. HIGH, L212, 214: no `elev` key exists. Fetched today, head and tail of both files: `elev_geoid` in both, plus `elev_radii` in M20; MSL has no `images`. Fix: replace `elev` with `elev_geoid` and add "MSL has no images". Lane-07:9 had it right; check-b:10 is the error, so check-over-lane failed here.
+3. HIGH, L388: "the richest image feed" is false. MSL 1,515,327 beats M20 594,029 (feed) and 1,070,138 (gallery). Fix: delete it (check-b item 3, lane-07:7).
+4. HIGH, L8, 388: the ongoing weather record is no Jezero edge, because REMS is also listed ongoing (L42, L140, lane-04:12). No file gives MEDA's last sol, so "Current conditions" is unproven. Fix: keep only ground radar as the edge, and add "latest MEDA sol not read" to Weak.
+5. HIGH, L392: Easy lists 200 m terrain and MCD, but L12 and L136 say 11 GB plain file and no HTTP API. THEMIS also stops at 65 deg (L121). Fix: move these to Weak.
+6. HIGH, L154, 345, 386: "measured dose" is Easy while the only opened RAD product is binary telemetry, and the row that matters is undersold. RAD_RDR_SIS.HTM opened today (WebFetch summary): ASCII, one file per sol, about 15-minute observations, total dose in microGray/hour. Fix: L154 to Opened with those facts, "data files not opened"; update L345; cite RDR at L386.
+7. MED, L219-224, 226: Licence "PDS open" breaks the L63 rule, and L332 admits no page says it. Fix: "Not stated". L212-217 "NASA" rests on an images statement only (check-b item 5). Fix: "NASA images policy; data files not stated".
+8. MED, L329, 88, 128: ShareAlike is never flagged. Check-b's "Meets" covers use only. Fix (my inference, not in the files): add to section 4 that BY-SA terms may bind derived layers from the 200 m blend or Montabone, and the Apache 2.0 default (L320) may not fit, so name a licence.
+9. MED, L45: Chryse Terrain point fails "specific to that site". Lane-02:25 only names a DTM somewhere in the plain, and Meridiani and Gusev got 0 unchecked. Fix: "-", score 2, and L7 to "2 or lower".
+10. MED, L50: Melas Optical fails the rule. L73 is Browser access (viewer-only) and the CTX reach is "not stated". Fix: score 0 unless a file shows a downloadable product.
+11. MED, L49: Arcadia's point rests on the pilot page, which is Unconfirmed at L167 (lane-06:8). Fix: mark the cell "pilot page unopened".
+12. MED, L192, 352: "Jezero not located" is wrong. The saved scrape holds the abstract "Jezero Crater Watershed, Isidis Basin, Sulfate Deposits and Syrtis Major", figure axis 76-78 E (tool-results file in the last line). Fix: move Jezero out of "not located"; Deuteronilus, Arcadia and Protonilus had no match.
+13. MED, L349, 387: "no boxwork coordinates" hides the route in check-b item 2 and lane-07:25. Fix: "none published; approximate positions from MSL_waypoints at sols 4534 onward, untested".
+14. MED, L11, 405: "Also easy" covers DONKI and three of four path files, none browser-tested, and L405 omits DONKI. L11's "sol 5045" cannot hold for MSL_traverse, which carries no sol. Fix: say both.
+15. MED, links: 13 opened, 3 failed. murray-lab.caltech.edu/CTX/ gave a TLS error ("unable to verify the first certificate"). The L93 Astropedia page gave 403, like pages in lanes 4 and 8, and L93-94 hold no direct file URL. Fix: add file URLs. https://www.mars.asu.edu/data/irtm_rocks 301s to plain http (L249), which a https page may block.
+16. MED, L397-407: nothing lists lead-time sign-ups: OLTARIS admin approval, MCD registration, Mars-GRAM request, Cesium ion, IEEE Dataport. Fix: add them as a question, including whether sign-up counts as pre-event work.
+17. MED, completeness: from the lanes' best lists only Leaflet is missing (lane-08:34), and that lane gives no URL. Fix: add a row. Also dropped: the TES rock proxy (lane-10:27, snippet), which bears on L13; Acidalia, Onilus, Utopia (lane-06:27); and Viking 2, which has VL2 sols 1-1050 and is in Trek's list (would score 2).
+18. LOW, status: L230 is dead, so Unconfirmed per L63. L220 link unopened (lane-07:14), so Unconfirmed. L261 lacks `?body=mars`, which is what check-a covers, so Opened. L188 scale is "from search" (lane-06:23), so flag it.
+19. LOW, L106: page says 44 ppd but also 14400 x 7200 px, which is 40 ppd, and 1.48 km/px also equals 40 ppd. Fix: restore the dimensions, flag the conflict, read the GeoTIFF header.
+20. LOW, L53, 390: ice-first order and "the resource question" are not in the brief. Fix: mark the ranking PROPOSED and reword.
+21. LOW, L380: lanes 6 and 7 and checks A and B also used WebFetch summaries; add them. L370: form title read v6.2 today, so recheck. L282: "Ellipsoid.default set to MARS" is a how-to; reword as "supports a Mars ellipsoid".
+Not checked: headers or CORS (WebFetch shows none), COG files, either S3 guide, or sources beyond the 13 URLs, all summaries not verbatim. Base: /Users/ardasarikaya/Desktop/Business/Arda-AI-OS/.claude/worktrees/nice-vaughan-48d3f0/hackathons/nasa-space-apps-2026/ ; scrape: /Users/ardasarikaya/.claude/projects/-Users-ardasarikaya-Desktop-Business-Arda-AI-OS--claude-worktrees-nice-vaughan-48d3f0/37ee352c-5a12-469a-870d-5f5d3a6063ee/tool-results/mcp-12333db2-6471-4b0e-9131-7b0f7f6134aa-firecrawl_scrape-1793743428690.txt

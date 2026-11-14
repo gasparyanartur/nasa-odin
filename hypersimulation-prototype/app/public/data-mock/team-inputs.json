@@ -1,0 +1,22 @@
+{
+  "placeholder": true,
+  "signed_off_by": null,
+  "base": {"x": 0, "y": 0, "label": "PLACEHOLDER base (crew rover)", "assumption": true, "placeholder": true},
+  "walking_speed_m_s": {"value": 1.0, "placeholder": true},
+  "work_time_min_per_station": {"value": 20, "placeholder": true},
+  "partner_trail_m": {"value": 20, "placeholder": true},
+  "hazard_start_min": {"value": 90, "placeholder": true},
+  "start_lmst_hour": {"value": 10, "placeholder": true},
+  "stations": [
+    {"id": 1, "x": 60, "y": 40, "kind": "ridge", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}},
+    {"id": 2, "x": 110, "y": -30, "kind": "hollow", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}},
+    {"id": 3, "x": 150, "y": 90, "kind": "ridge", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}},
+    {"id": 4, "x": -70, "y": 120, "kind": "hollow", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}},
+    {"id": 5, "x": -120, "y": -60, "kind": "ridge", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}},
+    {"id": 6, "x": 30, "y": -140, "kind": "hollow", "on_path": false, "task": "PLACEHOLDER - the team writes this task", "photo": null, "placeholder": {"position": true, "kind": true, "task": true}}
+  ],
+  "no_go": [
+    {"id": "nogo-1", "label": "PLACEHOLDER no-go zone", "polygon": [[250, -250], [300, -250], [300, -200], [250, -200]], "placeholder": true}
+  ],
+  "drill_sites": []
+}

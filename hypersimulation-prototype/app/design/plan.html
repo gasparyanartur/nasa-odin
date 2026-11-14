@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Mock-up: plan view, first viewport. -->
+<title>Plan view - Marswalk design</title>
+<link rel="stylesheet" href="../src/styles/tokens.css">
+<link rel="stylesheet" href="../src/styles/base.css">
+<link rel="stylesheet" href="../src/styles/components.css">
+<link rel="stylesheet" href="../src/styles/hud.css">
+</head>
+<body>
+<!-- THESIS: The walk is a flight procedure on one chart: plan view, profile, minimums. It refuses the dark map with floating rounded panels. OWN-WORLD: chart-paper panels, ink, one-pixel ruled boxes, no radius, no shadow; a cased aeronautical-magenta route over the Mars photobase; blue for rover data; hatches for classes; red and amber only for hazard states; the B612 cockpit face. STORY: the planner sees the place, reads limits as margins and trusts the labels; the astronaut follows bearing and margins and returns on red. FIRST VIEWPORT: Mars scene full-bleed; briefing strip on top; limits table docked right with layers and legend below; profile and timeline score along the bottom; the primary action "Walk the route" at the right end of the strip. FORM: instrument approach plate, 3 of 7, seed 698f0d0d. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<div class="app" data-view="plan">
+
+  <!-- Scene: photobase and chart linework. One user unit = one metre; x east, y south (y = minus north). -->
+  <div class="scene" style="--ce: -6; --cn: 13; --view-w: 520; --view-h: 820; --view-w-sm: 760; --view-h-sm: 820;" role="img" aria-label="Plan view of the boxwork ridges with the planned route through eight stations">
+    <svg class="scene__map" viewBox="-1024 -1024 2048 2048" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <pattern id="hatch-caution" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#14161a" stroke-width="1.4"/>
+        </pattern>
+        <pattern id="hatch-blocked" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#14161a" stroke-width="2"/>
+          <line x1="0" y1="0" x2="8" y2="0" stroke="#14161a" stroke-width="2"/>
+        </pattern>
+        <pattern id="hatch-nogo" patternUnits="userSpaceOnUse" width="7" height="7">
+          <rect width="7" height="7" fill="#14161a" fill-opacity="0.35"/>
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#14161a" stroke-width="2.6"/>
+          <line x1="0" y1="0" x2="7" y2="0" stroke="#14161a" stroke-width="2.6"/>
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#f4f1ea" stroke-width="1"/>
+          <line x1="0" y1="0" x2="7" y2="0" stroke="#f4f1ea" stroke-width="1"/>
+        </pattern>
+        <mask id="mask-blocked" maskUnits="userSpaceOnUse" x="-512" y="-512" width="1024" height="1024">
+          <image class="scene__mask-image" href="assets/slope-blocked-mask.png" x="-512" y="-512" width="1024" height="1024"/>
+        </mask>
+        <polyline id="route-line" vector-effect="non-scaling-stroke" points="203.7,-318.9 202.5,-317.5 191.5,-306.5 187.5,-306.5 185.5,-304.5 180.5,-304.5 38.5,-162.5 38.5,-161.5 -68.5,-54.5 -81.5,-54.5 -92.5,-43.5 -94.0,-44.0 -94.5,-43.5 -128.5,-43.5 -131.5,-40.5 -133.0,-40.0 -132.5,-38.5 -132.5,7.5 -131.5,8.5 -131.5,9.5 -129.5,11.5 -129.5,61.5 -125.5,65.5 -125.5,68.5 -124.5,69.5 -124.5,70.5 -120.5,74.5 -120.5,97.5 -135.5,112.5 -135.5,115.5 -139.5,119.5 -139.5,120.5 -144.5,125.5 -144.5,160.5 -145.5,161.5 -145.5,165.5 -159.5,179.5 -164.5,179.5 -165.5,180.5 -166.5,180.5 -170.5,184.5 -171.5,184.5 -201.5,214.5 -215.5,214.5 -217.0,214.0 -215.5,215.5 -203.5,215.5 -201.5,217.5 -201.0,218.0 -199.5,218.5 -191.5,218.5 -184.5,225.5 -184.5,236.5 -154.5,266.5 -145.5,266.5 -142.5,269.5 -140.5,269.5 -135.5,274.5 -117.5,274.5 -115.5,276.5 -115.0,277.0 -113.5,278.5 -102.5,289.5 -95.5,289.5 -94.5,290.5 -93.5,290.5 -92.5,291.5 -92.0,292.0 -90.5,291.5 -65.5,266.5 -65.5,249.5 -49.5,233.5 -49.5,221.5 -54.5,216.5 -56.0,215.0 -55.5,214.5 -55.5,204.5 -66.5,193.5 -68.0,192.0 -66.5,191.5 -44.5,169.5 -44.5,158.5 -37.5,151.5 -37.5,130.5 -35.5,128.5 -35.5,122.5 -10.5,97.5 -10.5,84.5 -9.5,83.5 -9.5,82.5 -4.5,77.5 -4.5,76.5 4.5,67.5 4.5,63.5 25.5,42.5 25.5,30.5 32.5,23.5 32.5,22.5 35.5,19.5 35.5,11.5 90.5,-43.5 90.5,-68.5 93.5,-71.5 93.5,-72.5 94.5,-73.5 94.5,-116.5 109.5,-131.5 109.5,-134.5 110.5,-135.5 110.5,-140.5 115.5,-145.5 115.5,-175.5 129.5,-189.5 129.5,-190.5 140.5,-201.5 140.5,-202.5 144.5,-206.5 144.5,-212.5 145.5,-213.5 145.5,-214.5 165.5,-234.5 165.5,-250.5 166.5,-251.5 166.5,-254.5 174.5,-262.5 174.5,-263.5 182.5,-271.5 182.5,-272.5 184.5,-274.5 184.5,-299.5 202.5,-317.5 203.7,-318.9"/>
+        <polyline id="rover-line" vector-effect="non-scaling-stroke" points="203.7,-318.9 189.7,-308.9 173.1,-307.2 173.4,-307.2 157.9,-298.6 119.1,-280.5 62.0,-249.3 34.0,-221.0 25.9,-194.6 29.6,-188.9 32.1,-186.8 -0.8,-153.6 -28.6,-108.7 -52.5,-64.6 -76.7,-63.3 -103.6,-39.8 -103.6,-38.6 -115.4,-25.5 -131.0,-15.5 -142.5,-33.7 -151.1,-28.9 -152.2,-2.1 -173.4,36.0 -192.3,60.3 -196.4,70.6 -200.1,81.1 -204.1,85.1 -218.1,103.3 -219.5,115.4 -210.5,130.9 -206.0,145.5 -205.3,148.0 -206.7,143.2 -182.7,147.4 -192.1,169.6 -209.8,177.4 -194.2,187.8 -197.1,205.1 -230.2,199.1 -217.0,209.8 -218.3,210.7 -216.1,218.9 -212.7,225.2 -188.9,230.7 -187.2,230.9 -184.0,242.0 -184.0,247.2 -174.2,264.0 -166.6,274.4 -163.1,292.1 -147.7,297.9 -125.5,299.6 -102.6,312.6 -84.8,338.9 -77.6,338.7 -103.9,312.6 -117.5,297.1 -116.4,287.0 -115.6,296.5 -118.3,296.9 -117.7,282.4 -111.5,291.0 -119.0,298.4 -119.0,296.8 -93.6,286.8"/>
+      </defs>
+      <image href="../public/data/ortho/grey_surround.webp" x="-1024" y="-1024" width="2048" height="2048"/>
+      <image href="../public/data/ortho/grey_core_half.webp" x="-512" y="-512" width="1024" height="1024"/>
+      <rect class="area--blocked" x="-512" y="-512" width="1024" height="1024" mask="url(#mask-blocked)"/>
+      <g>
+        <polygon class="area--nogo" points="-345,170 -300,180 -285,300 -290,420 -350,420"/>
+        <polygon class="area-edge--casing" points="-345,170 -300,180 -285,300 -290,420 -350,420"/>
+        <polygon class="area-edge--core" points="-345,170 -300,180 -285,300 -290,420 -350,420"/>
+        <polygon class="area--nogo" points="0,150 40,150 55,250 20,260"/>
+        <polygon class="area-edge--casing" points="0,150 40,150 55,250 20,260"/>
+        <polygon class="area-edge--core" points="0,150 40,150 55,250 20,260"/>
+      </g>
+      <g>
+        <use href="#rover-line" class="line line--rover-casing"/>
+        <use href="#rover-line" class="line line--rover-gap"/>
+        <use href="#rover-line" class="line line--rover"/>
+      </g>
+      <g>
+        <use href="#route-line" class="line line--casing"/>
+        <use href="#route-line" class="line line--gap"/>
+        <use href="#route-line" class="line line--route"/>
+      </g>
+    </svg>
+
+    <div class="scene__labels" id="labels">
+      <div class="mark mark--base" style="--e: 203.7; --n: 318.9;">
+        <span class="mark__symbol"></span>
+        <span class="map-tag"><span class="map-tag__id">BASE</span><span class="map-tag__kind">crew rover - assumption</span></span>
+      </div>
+      <div class="mark" style="--e: -94; --n: 44;"><span class="mark__symbol"></span><span class="map-tag" data-nonmetric><span class="map-tag__id">S1</span><span class="map-tag__kind">ridge</span></span></div>
+      <div class="mark" style="--e: -133; --n: 40;"><span class="mark__symbol"></span><span class="map-tag map-tag--left" data-nonmetric><span class="map-tag__id">S2</span><span class="map-tag__kind">hollow</span></span></div>
+      <div class="mark" style="--e: -217; --n: -214;"><span class="mark__symbol"></span><span class="map-tag map-tag--left" data-nonmetric><span class="map-tag__id">S3</span><span class="map-tag__kind">ridge</span></span></div>
+      <div class="mark" style="--e: -201; --n: -218;"><span class="mark__symbol"></span><span class="map-tag map-tag--below" data-nonmetric><span class="map-tag__id">S4</span><span class="map-tag__kind">hollow</span></span></div>
+      <div class="mark" style="--e: -115; --n: -277;"><span class="mark__symbol"></span><span class="map-tag map-tag--left map-tag--below" data-nonmetric><span class="map-tag__id">S5</span><span class="map-tag__kind">hollow</span></span></div>
+      <div class="mark" style="--e: -92; --n: -292;"><span class="mark__symbol"></span><span class="map-tag map-tag--below" data-nonmetric><span class="map-tag__id">S6</span><span class="map-tag__kind">ridge</span></span></div>
+      <div class="mark" style="--e: -56; --n: -215;"><span class="mark__symbol"></span><span class="map-tag map-tag--below" data-nonmetric><span class="map-tag__id">S7</span><span class="map-tag__kind">hollow</span></span></div>
+      <div class="mark" style="--e: -68; --n: -192;"><span class="mark__symbol"></span><span class="map-tag" data-nonmetric><span class="map-tag__id">S8</span><span class="map-tag__kind">ridge</span></span></div>
+
+      <span class="mark" style="--e: 150; --n: 205;"><span class="leg-tag"><span class="num" data-prov="mock"><span class="num__value">227°</span><span class="num__value">412 m</span><span class="num__prov">mock</span></span></span></span>
+      <span class="mark" style="--e: -60; --n: -95;"><span class="leg-tag"><span class="num" data-prov="mock"><span class="num__value">198°</span><span class="num__value">313 m</span><span class="num__prov">mock</span></span></span></span>
+      <span class="mark" style="--e: 145; --n: 20;"><span class="leg-tag"><span class="num" data-prov="mock"><span class="num__value">028°</span><span class="num__value">623 m</span><span class="num__prov">mock</span></span></span></span>
+    </div>
+
+    <div class="north" aria-label="North is up">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="icon__fill" d="M12 2 18 21 12 17 6 21z"/></svg>
+      <span>N</span>
+    </div>
+    <div class="scalebar" style="--len: 100;">
+      <span class="num" data-prov="derived"><span class="num__value">100</span><span class="num__unit">m</span><span class="num__prov">scale</span></span>
+      <span class="scalebar__bar"></span>
+    </div>
+    <p class="scene-credit" data-nonmetric>Image: USGS, Calef III and Parker 2016; ESA/DLR/FU Berlin. Greyscale.</p>
+
+    <div class="banner banner--mock banner--float" role="note">
+      <span class="banner__word">Mock data</span>
+      <span class="banner__text">Route numbers: draft planner run on the team stations, tagged <span class="num" data-prov="mock"><span class="num__prov">mock</span></span></span>
+    </div>
+  </div>
+
+  <!-- Briefing strip -->
+  <header class="brief" id="brief">
+    <div class="brief__cell brief__cell--title">
+      <span class="brief__name">MARSWALK</span>
+      <span class="caps">Gale crater - boxwork ridges</span>
+    </div>
+    <div class="brief__cell brief__cell--low" data-nonmetric>
+      <span class="caps">Procedure</span>
+      <span class="brief__value">Walk 1 - 8 stations</span>
+    </div>
+    <div class="brief__cell brief__cell--mid" data-nonmetric>
+      <span class="caps">Base</span>
+      <span class="brief__value">Crew rover <em>(assumption)</em></span>
+    </div>
+    <div class="brief__cell brief__cell--low" data-nonmetric>
+      <span class="caps">Chosen sol</span>
+      <span class="brief__value">Sol 4600 - 2025-07-15</span>
+    </div>
+    <div class="brief__cell brief__cell--low">
+      <span class="caps">Start</span>
+      <span class="num brief__value" data-prov="assumption"><span class="num__value">09:00</span><span class="num__unit">LMST</span><span class="num__prov">assumption</span></span>
+    </div>
+    <div class="brief__cell brief__cell--wide">
+      <span class="caps">Speed</span>
+      <span class="num brief__value" data-prov="assumption"><span class="num__value">0.7</span><span class="num__unit">m/s</span><span class="num__prov">assumption</span></span>
+    </div>
+    <div class="brief__cell brief__cell--wide">
+      <span class="caps">Work per station</span>
+      <span class="num brief__value" data-prov="assumption"><span class="num__value">25</span><span class="num__unit">min</span><span class="num__prov">assumption</span></span>
+    </div>
+    <div class="brief__cell brief__cell--controls brief__cell--end">
+      <div class="segmented" role="radiogroup" aria-label="Vertical scale">
+        <span class="segmented__label">Vertical</span>
+        <button class="segmented__opt" role="radio" aria-checked="true">True</button>
+        <button class="segmented__opt" role="radio" aria-checked="false" data-nonmetric>2x</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dock: minimums, layers, legend (bottom sheet with tabs at 390 px) -->
+  <aside class="dock" id="dock" aria-label="Limits, layers and legend">
+    <div class="tabs" role="tablist" aria-label="Dock">
+      <button class="tabs__tab" role="tab" aria-selected="true" aria-controls="p-limits" id="t-limits">Limits</button>
+      <button class="tabs__tab" role="tab" aria-selected="false" aria-controls="p-layers" id="t-layers">Layers</button>
+      <button class="tabs__tab" role="tab" aria-selected="false" aria-controls="p-legend" id="t-legend">Legend</button>
+    </div>
+
+    <section class="dock__panel" id="p-limits" role="tabpanel" aria-labelledby="t-limits" data-active>
+      <div class="plate plate--flush">
+        <h2 class="plate__label">Minimums</h2>
+        <span class="plate__aside">margin = limit - value</span>
+        <table class="minimums">
+          <thead>
+            <tr><th scope="col">Limit</th><th scope="col">Margin</th><th scope="col">State</th></tr>
+          </thead>
+          <tbody>
+            <tr data-state="caution">
+              <th scope="row" class="minimums__limit" data-prov="source"><span class="minimums__name">Slope cap</span><span class="num" data-prov="source"><span class="num__value">15°</span></span><span class="minimums__body">Moon - Pena-Asensio 2024</span></th>
+              <td class="minimums__margin">
+                <span class="num" data-prov="mock"><span class="num__value">0.0°</span><span class="num__prov">mock</span></span>
+                <span class="margin-bar" data-state="caution" style="--left: 0;"></span>
+                <span class="minimums__of">steepest <span class="num" data-prov="mock"><span class="num__value">15.0°</span><span class="num__prov">mock</span></span></span>
+              </td>
+              <td class="minimums__state"><span class="state state--caution state--held"><svg class="icon icon--triangle" viewBox="0 0 24 24" aria-hidden="true"><path class="icon__shape" d="M12 2.5 22.5 21h-21z"/><path class="icon__bar" d="M12 9v6M12 17v2"/></svg>Caution</span></td>
+            </tr>
+            <tr>
+              <th scope="row" class="minimums__limit" data-prov="source"><span class="minimums__name">From crew rover</span><span class="num" data-prov="source"><span class="num__value">2,000 m</span></span><span class="minimums__body">Earth analog - D-RATS 2022</span></th>
+              <td class="minimums__margin">
+                <span class="num" data-prov="mock"><span class="num__value">1,314 m</span><span class="num__prov">mock</span></span>
+                <span class="margin-bar" style="--left: 0.657;"></span>
+                <span class="minimums__of">farthest <span class="num" data-prov="mock"><span class="num__value">686 m</span><span class="num__prov">mock</span></span></span>
+              </td>
+              <td class="minimums__state"><span class="state state--pass"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Pass</span></td>
+            </tr>
+            <tr>
+              <th scope="row" class="minimums__limit" data-prov="source"><span class="minimums__name">Partner spacing</span><span class="num" data-prov="source"><span class="num__value">100 m</span></span><span class="minimums__body">Earth analog - D-RATS 2022</span></th>
+              <td class="minimums__margin">
+                <span class="num" data-prov="assumption"><span class="num__value">80 m</span><span class="num__prov">assumption</span></span>
+                <span class="margin-bar" style="--left: 0.8;"></span>
+                <span class="minimums__of">trail <span class="num" data-prov="assumption"><span class="num__value">20 m</span><span class="num__prov">assumption</span></span></span>
+              </td>
+              <td class="minimums__state"><span class="state state--pass"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Pass</span></td>
+            </tr>
+            <tr>
+              <th scope="row" class="minimums__limit" data-prov="source"><span class="minimums__name">Time in suit</span><span class="num" data-prov="source"><span class="num__value">14 h</span></span><span class="minimums__body">NASA-STD-3001 Vol 2 Rev C</span></th>
+              <td class="minimums__margin">
+                <span class="num" data-prov="mock"><span class="num__value">10 h 00 min</span><span class="num__prov">mock</span></span>
+                <span class="margin-bar" style="--left: 0.714;"></span>
+                <span class="minimums__of">walk <span class="num" data-prov="mock"><span class="num__value">4 h 00 min</span><span class="num__prov">mock</span></span></span>
+              </td>
+              <td class="minimums__state"><span class="state state--pass"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Pass</span></td>
+            </tr>
+            <tr>
+              <th scope="row" class="minimums__limit" data-prov="source"><span class="minimums__name">Dose, career</span><span class="num" data-prov="source"><span class="num__value">600 mSv</span></span><span class="minimums__body">NASA-STD-3001 Vol 1 via OCHMO; rate Hassler 2014</span></th>
+              <td class="minimums__margin">
+                <span class="num" data-prov="mock"><span class="num__value">599.9 mSv</span><span class="num__prov">mock</span></span>
+                <span class="margin-bar" style="--left: 0.9998;"></span>
+                <span class="minimums__of">walk <span class="num" data-prov="mock"><span class="num__value">0.107 mSv</span><span class="num__prov">mock</span></span></span>
+              </td>
+              <td class="minimums__state"><span class="state state--pass"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Pass</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="plate__note" style="padding: 0 var(--sp-3) var(--sp-3);">Caution lights under a 20 % margin (design choice) and stays lit until acknowledged. Time and dose use the assumed speed and work time.</p>
+      </div>
+    </section>
+
+    <section class="dock__panel" id="p-layers" role="tabpanel" aria-labelledby="t-layers">
+      <div class="plate plate--flush">
+        <h2 class="plate__label">Layers</h2>
+        <span class="plate__aside" data-nonmetric>11 layers</span>
+        <div class="layer-list">
+          <button class="layer-switch" role="switch" aria-checked="true"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Image</span><span class="layer-switch__unit">greyscale</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Height</span><span class="layer-switch__unit">m</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="true"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Slope</span><span class="layer-switch__unit">deg - blocked class shown</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Thermal</span><span class="layer-switch__unit">degC - ground brightness</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Atmosphere</span><span class="layer-switch__unit">degC, Pa, W/m2</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Radiation</span><span class="layer-switch__unit">microGy/hour</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Space weather</span><span class="layer-switch__unit">scenario - UTC</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="true"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Curiosity path</span><span class="layer-switch__unit">m - rover-measured</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="true"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Stations</span><span class="layer-switch__unit">m</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="true"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">No-go zones</span><span class="layer-switch__unit">deg</span></span><span class="layer-switch__state"></span></button>
+          <button class="layer-switch" role="switch" aria-checked="false"><span class="layer-switch__track"></span><span class="layer-switch__text"><span class="layer-switch__name">Drill sites</span><span class="layer-switch__unit">m - approximate</span></span><span class="layer-switch__state"></span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="dock__panel" id="p-legend" role="tabpanel" aria-labelledby="t-legend">
+      <div class="plate">
+        <h2 class="plate__label">Legend</h2>
+        <div class="legend">
+          <div class="legend__row"><span class="swatch swatch--route"></span><span><span class="legend__label">Planned route</span><span class="legend__unit">magenta, cased</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--rover"></span><span><span class="legend__label">Curiosity path</span><span class="legend__unit">sols 4534 to 4805, rover-measured</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--base"></span><span><span class="legend__label">Base - crew rover</span><span class="legend__unit">assumption</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--station"></span><span><span class="legend__label">Station</span><span class="legend__unit">ridge or hollow</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--blocked"></span><span><span class="legend__label">Slope above 15°</span><span class="legend__unit">blocked for the planner</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--caution"></span><span><span class="legend__label">Slope 10° to 15°</span><span class="legend__unit">walkable, steep (layer off)</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--clear"></span><span><span class="legend__label">Slope under 10°</span><span class="legend__unit">clear</span></span></div>
+          <div class="legend__row"><span class="swatch swatch--nogo"></span><span><span class="legend__label">No-go zone</span><span class="legend__unit">team input</span></span></div>
+        </div>
+        <div class="credits" style="margin-top: var(--sp-3);" data-nonmetric>
+          <span><strong>Slope</strong> from the USGS 1 m terrain (Parker and Calef III; HRSC, CC BY-SA 3.0 IGO). Cap: Pena-Asensio et al. 2024. <strong>Path</strong>: NASA/JPL-Caltech MMGIS waypoints.</span>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- Bottom strip: profile and timeline score; the primary action at the right end -->
+  <footer class="strip" id="strip">
+    <div class="strip__profile">
+      <div class="gutter">
+        <h2 class="gutter__title">Profile</h2>
+        <span>relief <span class="num" data-prov="mock"><span class="num__value">53.3</span><span class="num__unit">m</span><span class="num__prov">mock</span></span></span>
+      </div>
+      <div class="profile">
+        <span class="profile__scale">vertical exaggerated, not to scale - USGS 1 m terrain</span>
+        <div class="profile__plot">
+          <svg class="profile__svg" viewBox="0 -58 1679 58" preserveAspectRatio="none" aria-label="Height along the route">
+            <defs>
+              <polyline id="profile-line" vector-effect="non-scaling-stroke" points="0,-2.20 17,-4.38 29,-5.07 230,-15.09 382,-16.24 395,-16.58 411,-17.21 447,-14.09 501,-18.50 556,-22.95 565,-23.39 573,-24.03 596,-25.23 617,-30.79 625,-31.25 634,-32.24 669,-36.40 694,-40.58 707,-42.80 750,-49.65 764,-54.22 780,-50.27 793,-49.54 803,-48.61 814,-50.69 856,-53.22 865,-51.44 879,-50.67 897,-47.25 918,-49.79 926,-50.17 966,-44.17 983,-42.12 1006,-37.83 1018,-35.80 1027,-35.44 1038,-34.93 1053,-34.50 1088,-32.53 1099,-31.45 1109,-30.42 1130,-27.37 1139,-27.10 1174,-23.19 1187,-22.04 1197,-22.37 1211,-21.11 1244,-17.90 1256,-17.23 1266,-17.67 1279,-18.15 1357,-16.55 1382,-16.13 1432,-12.98 1453,-12.75 1462,-12.19 1500,-12.07 1519,-11.04 1536,-10.55 1549,-10.34 1579,-9.01 1595,-8.32 1611,-7.54 1623,-7.21 1652,-5.43 1678,-2.33 1679,-2.20"/>
+            </defs>
+            <polygon class="profile__ground" points="0,-2.20 17,-4.38 29,-5.07 230,-15.09 382,-16.24 395,-16.58 411,-17.21 447,-14.09 501,-18.50 556,-22.95 565,-23.39 573,-24.03 596,-25.23 617,-30.79 625,-31.25 634,-32.24 669,-36.40 694,-40.58 707,-42.80 750,-49.65 764,-54.22 780,-50.27 793,-49.54 803,-48.61 814,-50.69 856,-53.22 865,-51.44 879,-50.67 897,-47.25 918,-49.79 926,-50.17 966,-44.17 983,-42.12 1006,-37.83 1018,-35.80 1027,-35.44 1038,-34.93 1053,-34.50 1088,-32.53 1099,-31.45 1109,-30.42 1130,-27.37 1139,-27.10 1174,-23.19 1187,-22.04 1197,-22.37 1211,-21.11 1244,-17.90 1256,-17.23 1266,-17.67 1279,-18.15 1357,-16.55 1382,-16.13 1432,-12.98 1453,-12.75 1462,-12.19 1500,-12.07 1519,-11.04 1536,-10.55 1549,-10.34 1579,-9.01 1595,-8.32 1611,-7.54 1623,-7.21 1652,-5.43 1678,-2.33 1679,-2.20 1679,0 0,0"/>
+            <line class="profile__drop" x1="413" y1="0" x2="413" y2="-58"/>
+            <line class="profile__drop" x1="453" y1="0" x2="453" y2="-58"/>
+            <line class="profile__drop" x1="766" y1="0" x2="766" y2="-58"/>
+            <line class="profile__drop" x1="783" y1="0" x2="783" y2="-58"/>
+            <line class="profile__drop" x1="900" y1="0" x2="900" y2="-58"/>
+            <line class="profile__drop" x1="929" y1="0" x2="929" y2="-58"/>
+            <line class="profile__drop" x1="1027" y1="0" x2="1027" y2="-58"/>
+            <line class="profile__drop" x1="1056" y1="0" x2="1056" y2="-58"/>
+            <use href="#profile-line" class="profile__line-casing"/>
+            <use href="#profile-line" class="profile__line"/>
+            <line class="profile__base" x1="0" y1="0" x2="1679" y2="0"/>
+          </svg>
+          <span class="profile__tick" style="--at: 0.2579;" data-nonmetric>S1 S2</span>
+          <span class="profile__tick" style="--at: 0.4613;" data-nonmetric>S3 S4</span>
+          <span class="profile__tick" style="--at: 0.5447;" data-nonmetric>S5 S6</span>
+          <span class="profile__tick" style="--at: 0.6203;" data-nonmetric>S7 S8</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip__score">
+      <div class="gutter">
+        <h2 class="gutter__title">Timeline</h2>
+        <span class="num" data-prov="mock"><span class="num__value">4 h 00 min</span><span class="num__prov">mock</span></span>
+      </div>
+      <div class="score" style="--total: 14396;">
+        <div class="score__track" role="img" aria-label="Walk timeline: nine legs and eight work stops, the hazard scenario starts at 150 minutes">
+          <span class="score__block score__block--walk" style="--d: 588;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S1</span>
+          <span class="score__block score__block--walk" style="--d: 58;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S2</span>
+          <span class="score__block score__block--walk" style="--d: 446;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S3</span>
+          <span class="score__block score__block--walk" style="--d: 25;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S4</span>
+          <span class="score__block score__block--walk" style="--d: 166;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S5</span>
+          <span class="score__block score__block--walk" style="--d: 42;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S6</span>
+          <span class="score__block score__block--walk" style="--d: 139;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S7</span>
+          <span class="score__block score__block--walk" style="--d: 41;"></span>
+          <span class="score__block score__block--work" style="--d: 1500;" data-nonmetric>S8</span>
+          <span class="score__block score__block--walk" style="--d: 890;"></span>
+          <span class="score__playhead" style="--t: 0;"></span>
+          <span class="score__hazard" style="--t: 9000;"><span class="score__hazard-label"><svg class="icon icon--octagon" viewBox="0 0 24 24" aria-hidden="true"><path class="icon__shape" d="M8 2h8l6 6v8l-6 6H8l-6-6V8z"/><path class="icon__bar" d="M7 12h10"/></svg>Return now <span class="num" data-prov="assumption"><span class="num__value">150 min</span><span class="num__prov">assumption</span></span></span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip__action">
+      <div class="strip__totals">
+        <div><span class="caps">Route</span><br><span class="num" data-prov="mock"><span class="num__value">1,677</span><span class="num__unit">m</span><span class="num__prov">mock</span></span></div>
+        <div><span class="caps">Climb</span><br><span class="num" data-prov="mock"><span class="num__value">94.9</span><span class="num__unit">m</span><span class="num__prov">mock</span></span></div>
+      </div>
+      <div class="strip__go">
+        <button class="btn btn--primary">Walk the route <svg class="icon icon--lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h16M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </footer>
+</div>
+<script>
+  // Mock-up only: dock tabs on the bottom sheet (390 px)
+  document.querySelectorAll('.tabs__tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tabs__tab').forEach(function (t) { t.setAttribute('aria-selected', String(t === tab)); });
+      document.querySelectorAll('.dock__panel').forEach(function (p) { p.toggleAttribute('data-active', p.id === tab.getAttribute('aria-controls')); });
+    });
+  });
+</script>
+</body>
+</html>
