@@ -6,7 +6,7 @@ See the [feasibility assessment](research/2026-11-13-backlog-feasibility.md) for
 
 The [0.6 environmental release](plans/2026-11-14-environment-release.md) adds numeric maps, multi-sol records and evaluated simulated outlooks for FR-003/004/008. See [data coverage and model limits](environment-data.md).
 
-The [Fable simulator integration plan](plans/2026-11-14-hypersimulation-integration.md) proposes bringing `hypersimulation-prototype` terrain and rendering into the existing Station/Tablet/HUD system. This is a planning handoff for Fable; migration has not started.
+The [Fable simulator integration plan](plans/2026-11-14-hypersimulation-integration.md) proposes bringing `hypersimulation-prototype` terrain and rendering into the existing Station/Tablet/HUD system. Implementation is now underway in this workspace; see the plan for local verification and remaining performance gates.
 
 | ID | Feature request | Notes | Status |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ The [Fable simulator integration plan](plans/2026-11-14-hypersimulation-integrat
 | FR-020 | SuperCam-style chemical and moisture HUD overlay | Highlight the locations of scientifically interesting chemicals/minerals in the astronaut's field of view, with particular interest in moisture and water-related indicators. Select substances/layers from the tablet, inspect supporting evidence and create science waypoints. Use georeferenced observations or explicitly labeled interpretations/simulations; preserve actual measurement footprints and uncertainty. See the scope below. | Requested |
 | FR-021 | Larger-area and multi-resolution route planning | Expand beyond the current 2 × 2 km Gale patch, starting with a larger verified area of the existing terrain mosaic. Support regional route corridors using coarser numeric elevation and detailed local excursions where suitable terrain exists. Show source resolution, coverage and gaps; keep map, planner and simulator aligned. See the scope below. | Requested |
 | FR-022 | Location-linked voice notes from the HUD | Extend “Note here” with audio recording so astronauts can log observations without typing in the HUD. Attach recordings to mission location and time, show them on the map and support playback from the tablet/station. Keep original audio; transcription is optional. Extends FR-016 rather than replacing its completed text-note workflow. See the scope below. | Requested |
-| FR-026 | Integrate the Fable surface simulator | Keep the current Station, Tablet, HUD and shared mission workflows; integrate the detailed Boxwork terrain, imagery and rendering from `hypersimulation-prototype`. Preserve manual walking, routing, field data and environmental provenance. Boxwork is a separate site from Bradbury. | Draft plan · [Fable handoff](plans/2026-11-14-hypersimulation-integration.md) |
+| FR-026 | Integrate the Fable surface simulator | Keep the current Station, Tablet, HUD and shared mission workflows; integrate the detailed Boxwork terrain, imagery and rendering from `hypersimulation-prototype`. Preserve manual walking, routing, field data and environmental provenance. Boxwork is a separate site from Bradbury. | Integrated locally · [0.7 review](plans/2026-11-14-hypersimulation-integration.md) · final acceptance in progress |
 
 ## Science and demo scope
 
