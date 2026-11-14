@@ -1,12 +1,12 @@
 # Integrate the Fable simulator into Martian Map
 
-Date: 2026-11-14. Status: Draft — planning only. Implementation owner: Fable.
+Date: 2026-11-14. Status: In progress — functional integration verified locally; startup and target-laptop performance gates remain open. Implementation owner: Codex in the current workspace.
 
 ## Goal and success criteria
 
 Bring the detailed terrain, imagery and rendering from `hypersimulation-prototype` into the existing Martian Map application. Keep Martian Map's Station, Tablet and HUD organization, shared mission, scientific inspection, route comparison and field-data workflows. The result should feel like the current application with a substantially better surface simulator.
 
-The user has confirmed this product direction and requested a plan only. The architecture and sequencing below are recommendations for Fable's migration; no migration is started by this document.
+The user approved implementation in this workspace after the planning handoff. The original migration scope remains below; optional donor story features and the separate backlog requests remain follow-up work.
 
 Success means:
 
@@ -35,9 +35,9 @@ This is FR-026. It preserves the completed 0.2–0.6 capabilities in the [backlo
 
 ## Current state and consequential differences
 
-The inspected integration baseline is commit `c49170b`, which includes the imported prototype. The working tree also contains newer FR-021/022 backlog additions and rover-reconstruction research; preserve those. Code and bundled metadata were inspected for this plan. Test counts and performance figures in earlier release documents and the donor quality gate are prior evidence, not checks rerun during planning.
+The inspected integration baseline is commit `c49170b`, which includes the imported prototype. The working tree also contains newer FR-021/022 backlog additions and rover-reconstruction research; preserve those. The comparison below records the original 0.6 application and donor at planning time. The implementation baseline is `7858115`; current verification is recorded in the completion review. Code and bundled metadata were inspected for this plan. Test counts and performance figures in earlier release documents and the donor quality gate are prior evidence, not checks rerun during planning.
 
-| Area | Current Martian Map | Fable prototype | Integration implication |
+| Area | Original Martian Map (0.6) | Fable prototype | Integration implication |
 | --- | --- | --- | --- |
 | Application | React/TypeScript/Vite; Cesium atlas; Station/Tablet/HUD; state in `App.tsx` | Standalone JavaScript app with a five-step story and its own store/controller | Keep the current application shell. Extract capabilities from the donor rather than mounting a second application. |
 | Site | Bradbury terrain centred near Curiosity's landing area; 2 × 2 km, 401 × 401 terrain posts at 5 m | Mount Sharp Boxwork centred at 137.3829997° E, −4.8029979°; 1,024 m projected core, 1,025 × 1,025 height samples; 2,048 m surround at 4 m posts | These are different locations. Add a distinct `gale-boxwork` site; never relabel the existing dataset or transplant its local coordinates. |
@@ -80,7 +80,7 @@ Recommended default: wrap the donor's native Three.js renderer in a React-owned 
 
 The adapter must support retained pose/camera updates, route and field overlays, picking, projection, quality changes, resize, load/error status and disposal. Use the current npm Three.js dependency and compatible controls imports; production must not need the donor HTML import map or a second bundled Three.js runtime. Keep the donor app intact as a comparison reference during migration. No iframe, duplicate app navigation or second mission store is part of the finished integration.
 
-Current `FieldGeometry` and `ProjectedWaypoints` depend on the R3F canvas. Adapt their behavior to the new renderer boundary before replacing `WalkingScene`; React still owns the HUD labels, inspection actions and settings. Preserve marker anchors separately from caption placement. The donor's `project()` also tests terrain occlusion, while current navigation labels describe coordinates without a line-of-sight claim: expose in-frustum projection separately and retain that navigation meaning. Any later occlusion feature needs its own label and checks.
+At the planning baseline, `FieldGeometry` and `ProjectedWaypoints` depended on the R3F canvas. Adapt their behavior to the new renderer boundary before replacing `WalkingScene`; React still owns the HUD labels, inspection actions and settings. Preserve marker anchors separately from caption placement. The donor's `project()` also tests terrain occlusion, while current navigation labels describe coordinates without a line-of-sight claim: expose in-frustum projection separately and retain that navigation meaning. Any later occlusion feature needs its own label and checks.
 
 Keep the current 2D Tablet map as the primary planning/inspection surface. Add the donor imagery through its existing map transform and retain pan, zoom, keyboard, touch and full-extent fitting. An optional tilted Tablet preview can follow once this works. Do not replace the Tablet with the donor story, drawer layout or replay controls.
 
@@ -136,16 +136,16 @@ Keep Vite, the Python API, Cesium worker assets and the Docker same-origin deplo
 
 ## Phases and milestones
 
-All milestones are **Not started**. Fable should update status and evidence in this document during migration. Phases are ordered; optional donor story features do not block the core integration.
+Phases 0–3 are implemented locally; the acceptance review below tracks verification and remaining performance gates. Phases are ordered; optional donor story features do not block the core integration.
 
-| Phase | Deliverable | Dependencies | Completion evidence |
-| --- | --- | --- | --- |
-| 0. Establish the baseline | Inventory both packages, current local changes, persisted field format, donor assets/licenses and representative real-data viewpoints. Confirm the renderer adapter choice and the analytical grid policy. | This plan and current checkout. | Fresh baseline test/build results; saved Station/Tablet/HUD screenshots and real Boxwork viewpoints; file/hash inventory; recorded tolerances and target-device measurements. Prior quality-gate claims remain labeled as prior evidence. |
-| 1. Shared package and coordinate boundary | Bradbury and Boxwork packages load through a common catalog, transform and sampling boundary; mission epoch and field references are site-aware. | Phase 0. | Round-trip geographic/local/projected checks at corners and landmarks; north/UV orientation checks; byte lengths, decode extrema and masks; preserved legacy package behavior; lossless v1 field migration/export round-trip and failed-migration recovery. |
-| 2. Surface adapter and visual integration | Donor terrain/imagery renders inside the current HUD shell, driven by retained mission pose; both sites supported. Tablet uses the same imagery/coverage. | Phase 1. | Real-data screenshots at matching coordinates, true vertical scale, core/surround joins and both imagery modes; manual camera/input and quality controls; projected labels, route/field overlays; resize, disposal, load failure/retry and context-loss behavior. The prototype story/store is not mounted. |
-| 3. Complete the mission loop | Boxwork planning, route explanations, manual walking, directed return, field edits and site-specific conditions work through the existing views. | Phases 1–2 and the prepared analytical grid. | Station → Boxwork → Tablet → compare → HUD → log here → Tablet → resume; same flow at Bradbury; consistent slope/restriction blocking, return refresh and clock/epoch handling. A restriction edit clears stale routes while retaining position/time. |
-| 4. Validate parity and operational limits | Functional, numerical, persistence, visual and performance acceptance completed for both sites. | Phase 3. | Relevant frontend/API suites and complete existing browser suite; new Boxwork/site-switch and data-migration cases; desktop/tablet/phone screenshots; target-device frame times and startup measurement; memory/resource lifecycle checks; documented limitations and remaining failures. |
-| 5. Finish the Fable handoff | One production build and documented integrated workflow; current docs/credits updated; temporary migration paths retired after parity. | Phase 4. | Production build/container smoke with datasets, API, health, Cesium workers and missing-asset/API behavior; real integrated walkthrough; review-feature completion review; plan/backlog updated only to the evidenced scope. Public URL validation remains FR-015. |
+| Phase | Status | Deliverable | Dependencies | Completion evidence |
+| --- | --- | --- | --- | --- |
+| 0. Establish the baseline | Complete locally | Inventory both packages, current local changes, persisted field format, donor assets/licenses and representative real-data viewpoints. Confirm the renderer adapter choice and the analytical grid policy. | This plan and current checkout. | Fresh baseline test/build results; saved Station/Tablet/HUD screenshots and real Boxwork viewpoints; file/hash inventory; recorded tolerances and target-device measurements. Prior quality-gate claims remain labeled as prior evidence. |
+| 1. Shared package and coordinate boundary | Complete locally | Bradbury and Boxwork packages load through a common catalog, transform and sampling boundary; mission epoch and field references are site-aware. | Phase 0. | Round-trip geographic/local/projected checks at corners and landmarks; north/UV orientation checks; byte lengths, decode extrema and masks; preserved legacy package behavior; lossless v1 field migration/export round-trip and failed-migration recovery. |
+| 2. Surface adapter and visual integration | Complete locally | Donor terrain/imagery renders inside the current HUD shell, driven by retained mission pose; both sites supported. Tablet uses the same imagery/coverage. | Phase 1. | Real-data screenshots at matching coordinates, true vertical scale, core/surround joins and both imagery modes; manual camera/input and quality controls; projected labels, route/field overlays; resize, disposal, load failure/retry and context-loss behavior. The prototype story/store is not mounted. |
+| 3. Complete the mission loop | Complete locally | Boxwork planning, route explanations, manual walking, directed return, field edits and site-specific conditions work through the existing views. | Phases 1–2 and the prepared analytical grid. | Station → Boxwork → Tablet → compare → HUD → log here → Tablet → resume; same flow at Bradbury; consistent slope/restriction blocking, return refresh and clock/epoch handling. A restriction edit clears stale routes while retaining position/time. |
+| 4. Validate parity and operational limits | In progress | Functional, numerical, persistence, visual and performance acceptance completed for both sites. | Phase 3. | Relevant frontend/API suites and complete existing browser suite; new Boxwork/site-switch and data-migration cases; desktop/tablet/phone screenshots; target-device frame times and startup measurement; memory/resource lifecycle checks; documented limitations and remaining failures. |
+| 5. Finish the Fable handoff | In progress | One production build and documented integrated workflow; current docs/credits updated; temporary migration paths retired after parity. | Phase 4. | Production build/container smoke with datasets, API, health, Cesium workers and missing-asset/API behavior; real integrated walkthrough; review-feature completion review; plan/backlog updated only to the evidenced scope. Public URL validation remains FR-015. |
 
 ## Acceptance checks that must survive the migration
 
@@ -162,7 +162,7 @@ Use the current [context](../../tests/contexts.spec.ts), [Tablet map](../../test
 | Async and recovery | Rapid site/layer switches, late route/return replies, failed core/tile loads, retry and WebGL context loss preserve valid mission data and never enable walking before analytical terrain is ready. |
 | Performance and build | Record first usable view, full-detail load, frame-time/FPS and peak memory on named hardware/browser at a fixed real route/viewpoint. Adopt the donor's 3-second/10-Mbit first-view and 30-FPS laptop targets as provisional targets to measure, not established performance. Failure to meet them stays visible. |
 
-Run the current repository build/frontend/API/browser commands and the selected donor checks during implementation. Use repository-local `tmp/` for scratch files. Save durable visual/numeric acceptance evidence under `docs/evidence/` and link it from the completion review. No runtime or browser acceptance was executed for this planning document.
+Run the current repository build/frontend/API/browser commands and the selected donor checks during implementation. Use repository-local `tmp/` for scratch files. Save durable visual/numeric acceptance evidence under `docs/evidence/` and link it from the completion review. The original planning pass did not execute runtime acceptance; implementation verification is recorded below.
 
 ## Risks and open decisions
 
@@ -177,8 +177,36 @@ Run the current repository build/frontend/API/browser commands and the selected 
 | Donor tour/limits broaden the product | Keep itinerary, partner/suit telemetry and hazard replay optional. Team-chosen stations and the unsigned donor science goal remain proposals; sample handling/scoring/debrief workflows remain outside current scope. |
 | Missing repeatable data preparation | Donor scripts refer to another machine's raw-data paths. Document configurable inputs, bundled hashes and exact processing; never make those paths or fresh multi-gigabyte downloads runtime requirements. |
 
-## Next milestone and Fable handoff
+## Next milestone and implementation handoff
 
-Fable should start with Phase 0, then deliver the common package/coordinate boundary and an embedded real Boxwork surface as the first reviewable slice. Keep the existing application runnable throughout. That slice must demonstrate correct location, orientation, retained pose, source labels and loading behavior inside the existing HUD shell before broad mission cutover.
+Finish local acceptance for the integrated application, retain the evidence below, then measure startup and frame rate on the intended laptop. Public deployment remains FR-015. The original standalone donor application remains available as a reference; the integrated app uses the native renderer adapter for both prepared sites.
 
 The handoff consists of this plan, the current [backlog](../backlog.md), the [Station/Tablet/HUD contract](2026-11-14-station-tablet-hud.md), [field-data behavior](../field-data.md), [environmental model limits](../environment-data.md), and the donor's [app documentation](../../hypersimulation-prototype/app/README.md), [data cuts](../../hypersimulation-prototype/data-checks/cuts.md) and [alignment evidence](../../hypersimulation-prototype/data-checks/alignment.md). The donor's original build plan describes its own standalone product; this integration plan governs the proposed migration into Martian Map.
+
+
+## Implementation review — 2026-11-14
+
+Implementation was authorized in the current chat and completed in the existing checkout. The native Three.js adapter now serves both Bradbury and Boxwork; the R3F scene dependency and its obsolete geometry/projection components were retired after behavioral verification. Station/Tablet/HUD remain one application with manual movement, route comparison, return evaluation and persistent field data.
+
+Boxwork has a separate versioned package, a reproducible 5 m ground-coordinate analytical grid, progressive colour/greyscale display assets, bounded Sol 4600 conditions, rover evidence and source notices. The original Bradbury package and donor source remain unchanged; [source inventory](../evidence/hyper-integration/source-inventory.json) records hashes. Preparation was repeated and produced byte-identical output. The field-data store validates and backs up legacy records before migration; malformed payloads and quota failures retain recovery paths. Display geometry adapts on software graphics, while High keeps the supplied core detail and analytical terrain remains fixed.
+
+Review fixes addressed pointer-lock recentering and pause timing, site-specific field-detail coordinates, globe labels overlapping at global scale, explicit site selectors in browser tests, WebGL resource release on teardown, and preservation of empty malformed saved payloads. The selected field inspector intentionally hides the walking prompt; acceptance now closes that inspector before expecting the prompt. Pointer-lock checks wait for the browser's unlock state before recording the pause.
+
+Local build and frontend/API checks pass. **55 frontend tests**, **26 API tests** and **all 20 distinct browser cases** pass across full and focused runs; see the [verification record](../evidence/hyper-integration/verification.json). Earlier full runs were not clean: the record retains failed runs and the affected passing reruns. Real High-detail desktop, Medium tablet/phone, field-data and atlas screenshots were inspected. The production container serves both datasets, route APIs and Cesium workers and returns proper missing-path 404s; [container smoke](../evidence/hyper-integration/container.json). The [data and runtime contract](../boxwork-data.md) describes resolution, provenance, storage migration and limits.
+
+The intended 2020 laptop with integrated graphics is not available here. Software-rendered Chromium is useful for functional checks and identifying slow paths, but does not establish that target's 30 FPS performance. The original standalone performance claims have not been transferred to this application. Public deployment remains FR-015, and regional routes, chemical overlays, voice notes and broader interface redesign remain separate backlog work.
+
+
+### Performance gates still open
+
+A cold-cache, 10 Mbit/s / 40 ms latency run on the available i5-10400F / RTX 3090 desktop measured Tablet data/imagery readiness at **4.62 s**, HUD controls at **4.14 s** after entry, and Medium imagery at **6.43 s**. The provisional 3 s startup target is not met. After 2.5 s warm-up, a five-second sample averaged **36.7 RAF/s** (median 16.7 ms, p95 83.3 ms). This is a bounded animation-frame measurement, not a target-laptop or calibrated GPU benchmark. [Hardware measurements](../evidence/hyper-integration/performance.json).
+
+The corresponding forced-SwiftShader run was much slower (**0.71 RAF/s** in its bounded sample), despite coarser display geometry. It establishes functional fallback coverage, not acceptable interactive performance. [Software measurements](../evidence/hyper-integration/performance-software.json). The Tablet remains available with the retained mission when 3D cannot run or is too slow. JS heap samples exclude GPU/texture memory. Phases 4–5 remain **In progress** until startup and intended-laptop acceptance are resolved; the functional migration itself is available for local review.
+
+### Routing failure follow-up — 2026-11-15
+
+The reported blocked-route behavior was reproduced after lowering the slope limit and resetting the example: reset previously retained the edited limit. The Boxwork preset's walking footprints reach 18.4° at the start and 15.9° at the destination, so a retained 15° limit blocks both. Fresh Bradbury, Yellowknife and Boxwork presets return routes at the default 20° limit in the working tree and local preview. This identifies a reproducible cause; the user's exact earlier browser settings were not captured.
+
+Reset now restores example endpoints and mission settings. Saved field restrictions intentionally persist and are counted visibly. Routing errors identify each endpoint, checked slope/limit, missing terrain or coverage, and matching exclusion areas. Saved exclusions are named and link to their field records, including hidden annotations. For disconnected endpoints, counterfactual connectivity checks distinguish slope, exclusion, missing-data and combined barriers without modifying constraints. Return-route failures use the same endpoint diagnostics. Existing API clients retain the explanatory `detail` string.
+
+This follow-up is verified with **57 frontend tests**, **33 API tests**, a production build and **2 focused browser cases** covering reset recovery, both sites, hidden restrictions and navigation to the saved record. The failure screens were visually inspected; [evidence and screenshots](../evidence/routing-diagnostics/README.md). The earlier startup and intended-laptop performance gates remain open, so the overall integration status remains **In progress**.

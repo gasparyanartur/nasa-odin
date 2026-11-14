@@ -4,6 +4,8 @@ Explore Mars through selectable real datasets, inspect geological evidence, choo
 
 **Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the Marswalk hypersimulation prototype.
 
+Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5173/?demo=boxwork). Compare routes, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
+
 ## Try the excursion
 
 Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.

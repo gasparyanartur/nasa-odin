@@ -6,22 +6,24 @@ import math
 import os
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from .planner import Terrain, NoRoute
 from .conditions import evaluate
 
 DATA = Path(__file__).resolve().parents[1] / 'public' / 'gale'
-app = FastAPI(title='Martian Map local planner', version='0.6.0')
+DATASETS = {'gale-bradbury-v1': DATA, 'gale-boxwork-v1': DATA.parent / 'boxwork'}
+app = FastAPI(title='Martian Map local planner', version='0.7.0')
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 class Point(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False, extra='forbid')
-    x: float = Field(ge=-1000, le=1000)
-    y: float = Field(ge=-1000, le=1000)
+    x: float = Field(ge=-1000000, le=1000000)
+    y: float = Field(ge=-1000000, le=1000000)
 
 
 class Exclusion(Point):
@@ -47,7 +49,7 @@ class Settings(BaseModel):
 
 class RouteRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    datasetId: Literal['gale-bradbury-v1']
+    datasetId: Literal['gale-bradbury-v1', 'gale-boxwork-v1']
     start: Point
     goal: Point
     settings: Settings = Field(default_factory=Settings)
@@ -60,12 +62,13 @@ class ReturnRequest(RouteRequest):
 
 
 @lru_cache
-def load_data():
-    meta = json.loads((DATA/'manifest.json').read_text())
+def load_data(dataset_id='gale-bradbury-v1'):
+    directory = DATASETS[dataset_id]
+    meta = json.loads((directory/'manifest.json').read_text())
     shape = meta['size'],meta['size']
-    return meta, Terrain(np.fromfile(DATA/'height.f32',dtype='<f4').reshape(shape),
-                         np.fromfile(DATA/'slope.f32',dtype='<f4').reshape(shape),
-                         np.fromfile(DATA/'valid.u8',dtype='uint8').reshape(shape),meta['stepM'])
+    return meta, Terrain(np.fromfile(directory/'height.f32',dtype='<f4').reshape(shape),
+                         np.fromfile(directory/'slope.f32',dtype='<f4').reshape(shape),
+                         np.fromfile(directory/'valid.u8',dtype='uint8').reshape(shape),meta['stepM'])
 
 
 def referenced(route, meta):
@@ -80,12 +83,12 @@ def referenced(route, meta):
 @app.get('/api/health')
 def health():
     meta,_=load_data()
-    return {'status':'ok','datasetId':meta['id'],'version':meta['version']}
+    return {'status':'ok','datasetId':meta['id'],'version':meta['version'],'datasets':[{'id':load_data(k)[0]['id'],'version':load_data(k)[0]['version']} for k in DATASETS]}
 
 
 @app.post('/api/routes')
 def routes(req: RouteRequest):
-    meta, terrain = load_data()
+    meta, terrain = load_data(req.datasetId)
     settings=req.settings.model_dump()
     try:
         result=[]
@@ -93,36 +96,33 @@ def routes(req: RouteRequest):
             route=referenced(terrain.search((req.start.x,req.start.y),(req.goal.x,req.goal.y),settings,mode),meta)
             back=referenced(terrain.search((req.goal.x,req.goal.y),(req.start.x,req.start.y),settings,mode),meta)
             total=route['metrics']['durationS']+req.settings.dwellMin*60+back['metrics']['durationS']
-            evaluation=evaluate(req.settings,total)
+            evaluation=evaluate(req.settings,total,dataset_id=req.datasetId)
             dose=evaluation['doseMicroGy']
             route.update(returnRoute=back, roundTripS=total, roundTripDoseMicroGy=dose,
                          warnings=evaluation['warnings'], conditions=evaluation,
-                         departures=[evaluate(req.settings,total,h) for h in range(24)] if req.settings.conditionsMode=='historical' else [])
+                         departures=[evaluate(req.settings,total,h,dataset_id=req.datasetId) for h in range(24)] if req.settings.conditionsMode=='historical' else [])
             result.append(route)
         return {'datasetId':meta['id'],'version':meta['version'],'reference':meta['horizontalReference'],
                 'settings':settings,'routes':result,
                 'recommendedIndex':min(range(len(result)),key=lambda i:(len(result[i]['warnings']),result[i]['roundTripS'])),
                 'assumptions':'Terrain candidates evaluated over outbound travel, destination dwell and return. Historical REMS hourly medians are held within their LMST bins, without extrapolation; manual mode holds the configured temperature. Wind is an assumption. RAD is a uniform fixed detector-rate proxy, not astronaut dosimetry. Recommendation compares these candidates only; no environmental path optimization or guarantee of feasibility.'}
     except NoRoute as exc:
-        raise HTTPException(422,str(exc)) from exc
+        return JSONResponse(status_code=422, content={'detail': str(exc), 'diagnostics': exc.diagnostics})
 
 
 @app.post('/api/return')
 def return_route(req: ReturnRequest):
-    meta, terrain=load_data()
+    meta, terrain=load_data(req.datasetId)
     try:
-        start_cell=terrain.cell(req.start.x,req.start.y)
-        goal_cell=terrain.cell(req.goal.x,req.goal.y)
-        mask=terrain.permitted(req.settings.maxSlopeDeg,[e.model_dump() for e in req.settings.exclusions])
-        if not mask[start_cell] or not mask[goal_cell]:
-            raise NoRoute('Current position or habitat is blocked by the configured terrain/exclusion constraints.')
+        start_cell,goal_cell,_,_=terrain.endpoints((req.start.x,req.start.y),(req.goal.x,req.goal.y),
+                                                 req.settings.model_dump(),('Current position','Habitat'))
         if start_cell==goal_cell:
-            return {'route':None,'warnings':evaluate(req.settings,req.elapsedS)['warnings'],'atHabitat':True}
+            return {'datasetId':meta['id'],'version':meta['version'],'route':None,'warnings':evaluate(req.settings,req.elapsedS,dataset_id=req.datasetId)['warnings'],'atHabitat':True}
         back=referenced(terrain.search((req.start.x,req.start.y),(req.goal.x,req.goal.y),req.settings.model_dump(),req.mode),meta)
         total=back['metrics']['durationS']+req.elapsedS
-        return {'route':back,'warnings':evaluate(req.settings,total)['warnings'], 'conditions':evaluate(req.settings,total)}
+        return {'datasetId':meta['id'],'version':meta['version'],'route':back,'warnings':evaluate(req.settings,total,dataset_id=req.datasetId)['warnings'], 'conditions':evaluate(req.settings,total,dataset_id=req.datasetId)}
     except NoRoute as exc:
-        raise HTTPException(422,str(exc)) from exc
+        return JSONResponse(status_code=422, content={'detail': str(exc), 'diagnostics': exc.diagnostics})
 
 
 # Mount after API routes so unknown APIs/assets remain proper 404s.

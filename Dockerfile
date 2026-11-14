@@ -14,6 +14,7 @@ COPY requirements-runtime.txt ./
 RUN python -m pip install --no-cache-dir -r requirements-runtime.txt && useradd --create-home appuser
 COPY --from=frontend /app/dist ./dist
 COPY public/gale ./public/gale
+COPY public/boxwork ./public/boxwork
 COPY server ./server
 USER appuser
 EXPOSE 10000

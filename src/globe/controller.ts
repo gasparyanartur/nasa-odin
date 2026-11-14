@@ -134,6 +134,7 @@ export class GlobeController {
     this.geologyIds.forEach(id=>this.viewer.entities.removeById(id));this.geologyIds=[];
     if(!regionId||!settings.visible){this.viewer.scene.requestRender();return;}
     const region=SCIENCE.regions[regionId];
+    if(!region)return;
     const positions=(ring:[number,number][])=>Cartesian3.fromDegreesArray(ring.flat(),Ellipsoid.MARS);
     this.viewer.entities.suspendEvents();
     for(const unit of region.units)unit.polygons.forEach((rings,index)=>{
@@ -147,7 +148,7 @@ export class GlobeController {
     });
     this.viewer.entities.resumeEvents();this.viewer.scene.requestRender();
   }
-  focusGeology(regionId:RegionId) {this.viewer.camera.flyTo({destination:Rectangle.fromDegrees(...SCIENCE.regions[regionId].bounds),duration:1.2});}
+  focusGeology(regionId:RegionId) {const region=SCIENCE.regions[regionId];if(region)this.viewer.camera.flyTo({destination:Rectangle.fromDegrees(...region.bounds),duration:1.2});}
   async setEnvironment(layer:ScalarLayer|undefined,opacity:number){
     const key=layer?`${layer.id}:${layer.period}:${layer.kind}`:'';
     if(key===this.environmentKey&&this.environmentImage){this.environmentImage.alpha=opacity;this.viewer.scene.requestRender();return;}

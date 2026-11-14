@@ -49,7 +49,7 @@ The shipped CTX definition is `public/datasets/ctx.json`; the older `tests/fixtu
 
 ## Local route API
 
-`POST /api/routes` accepts `datasetId: "gale-bradbury-v1"`, local-meter `start` and `goal` objects (`x` east, `y` north), and `settings`. It returns shortest/gentler geometries, geographic copies, metrics, directed return routes, warnings, settings and dataset version. Geographic geometry is planetary, not Earth GeoJSON: source sphere/vertical metadata accompanies it.
+`POST /api/routes` accepts `datasetId: "gale-bradbury-v1"` or `"gale-boxwork-v1"`, local-meter `start` and `goal` objects (`x` east, `y` north), and `settings`. It returns shortest/gentler geometries, geographic copies, metrics, directed return routes, warnings, settings and dataset version. Geographic geometry is planetary, not Earth GeoJSON: source sphere/vertical metadata accompanies it.
 
 Settings expose speed, maximum slope, excursion duration, fixed dose-rate proxy and budget, temperature/wind with departure limits, and up to 30 local circular exclusions (`x`, `y`, `radius`). Invalid values, blocked/disconnected points and unsupported dataset IDs return HTTP 422. Reference details are in the dataset manifest. No-data is never assigned a low-cost default.
 
@@ -70,3 +70,7 @@ The default Viking MDIM 2.1 color layer uses the [NASA Mars Trek capabilities](h
 Version 0.3 adds a separate vector path for the bounded [USGS geological context package](../public/science/geology.json). These polygons and contacts are not WMTS basemaps and do not change the numeric terrain. Gale/Jezero have explicit regional bounds, legend/inspection and shared visibility/opacity. The planner displays only the intersection with its actual footprint; source clipping boundaries are not contacts. [Science data](science-data.md) documents CRS, source scale, processing, waypoints and uncertainty. Target selection updates the shared excursion destination; switching regions clears incompatible target/profile state.
 
 Definitions may optionally include `dataKind` (`observation`, `derived`, or `unknown`) and `acquisitionNote`. Bundled definitions classify processed imagery separately from derived MOLA relief and explicitly identify the lack of per-pixel acquisition times in the tile service. Older imported definitions retain unknown classification/time rather than being silently promoted to observations.
+
+## Boxwork package
+
+The catalog also includes Mount Sharp Boxwork as a separate prepared site. Its renderer uses the supplied finer DEM and tiled colour/grey imagery, while routing/movement use the declared 1 km ground-metre analytical footprint. The API loads terrain and historical conditions by dataset ID; health reports both dataset versions. See [Boxwork data and reference contracts](boxwork-data.md).

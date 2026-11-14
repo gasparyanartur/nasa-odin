@@ -47,7 +47,7 @@ test('field notes, HUD inspection, pose capture, undo, export/import and reload 
   await expect(library(page)).toContainText('Layered outcrop');
   await nav(page).getByRole('button',{name:/Station/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Jezero/}).click();
   await nav(page).getByRole('button',{name:/Tablet/}).click();await expect(page.getByRole('button',{name:'Field data',exact:true})).toBeDisabled();
-  await nav(page).getByRole('button',{name:/Station/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale/}).click();await nav(page).getByRole('button',{name:/Tablet/}).click();await fields(page);await expect(library(page).locator('article')).toHaveCount(2);
+  await nav(page).getByRole('button',{name:/Station/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale · Bradbury/}).click();await nav(page).getByRole('button',{name:/Tablet/}).click();await fields(page);await expect(library(page).locator('article')).toHaveCount(2);
   await page.screenshot({path:info.outputPath('v05-field-tablet.png')});
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:info.outputPath('v05-field-mobile.png'),fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
@@ -91,11 +91,12 @@ test('unread storage is preserved, imports fail atomically and quota errors reta
   await create(page,'Recovery note');await page.getByRole('button',{name:'Save field record',exact:true}).click();
   expect(await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v1'))).toBe('invalid saved text');
   await page.getByRole('button',{name:'Replace unread file with current layer',exact:true}).click();await expect(page.getByRole('alert')).toHaveCount(0);
-  const persisted=await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v1'));expect(JSON.parse(persisted!).features).toHaveLength(1);
+  expect(await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v1'))).toBe('invalid saved text');
+  const persisted=await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v2'));expect(JSON.parse(persisted!).features).toHaveLength(1);
   await page.getByLabel('Import field GeoJSON',{exact:true}).setInputFiles({name:'earth.geojson',mimeType:'application/geo+json',buffer:Buffer.from(JSON.stringify({type:'FeatureCollection',features:[]}))});await expect(page.getByRole('alert')).toContainText('not Earth');await expect(library(page).locator('article')).toHaveCount(1);
   await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};});
   await create(page,'In-memory reading','temperature');await page.getByRole('button',{name:'Save field record',exact:true}).click();await expect(library(page).locator('article')).toHaveCount(2);await expect(page.getByRole('alert')).toContainText('memory only');
-  expect(await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v1'))).toBe(persisted);
+  expect(await page.evaluate(()=>localStorage.getItem('martian-map.field-data.v2'))).toBe(persisted);
   const downloaded=page.waitForEvent('download');await page.getByRole('button',{name:'Export field GeoJSON',exact:true}).click();await downloaded;
 });
 

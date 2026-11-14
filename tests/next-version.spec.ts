@@ -4,7 +4,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&/THREE|shader/i.test(m.text()))errors.push(m.text());});
   await page.goto('/');
-  await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale/}).click();
+  await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale · Bradbury/}).click();
   await page.getByRole('button',{name:'Data & history',exact:true}).click();
   await expect(page.getByLabel('Historical timeline')).toBeVisible();
   await page.getByRole('button',{name:'Play timelapse',exact:true}).click();
@@ -70,6 +70,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await refreshed;
   await page.screenshot({path:info.outputPath('v02-visor-active.png')});
   await page.keyboard.press('Escape');
+  await expect(page.locator('.walk-instructions')).toBeVisible();
   const elapsed=await page.getByTestId('elapsed').textContent();
   const audit=await page.evaluate(()=>(window as any).missionAudit as {start:number;end:number});
   const expectedSeconds=(audit.end-audit.start)/1000*20;

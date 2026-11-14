@@ -1,16 +1,19 @@
 import manifest from '../../public/gale/manifest.json';
+import boxwork from '../../public/boxwork/manifest.json';
 import { geoToLocal, localToGeo, type Exclusion, type Meta, type Point } from '../mission/data';
-export const FIELD_KEY='martian-map.field-data.v1';
+export const LEGACY_FIELD_KEY='martian-map.field-data.v1';
+export const FIELD_KEY='martian-map.field-data.v2';
 export const KINDS={note:'Geological note',unit:'Geological unit interpretation',contact:'Geological contact interpretation',obstacle:'Circular obstacle',temperature:'Temperature reading',radiation:'Radiation detector reading'} as const;
 export type FieldKind=keyof typeof KINDS;
 export interface FieldRecord {
-  id:string; regionId:'gale-bradbury'; kind:FieldKind; title:string; description:string; source:string; uncertainty:string;
+  id:string; regionId:'gale-bradbury'|'gale-boxwork'; datasetId?:string; kind:FieldKind; title:string; description:string; source:string; uncertainty:string;
   points:Point[]; visible:boolean; restrictTravel:boolean; radiusM?:number; value?:number;
   createdAt:string; updatedAt:string; observedAt:string;
   context:{sol:number;lmstHour:number;elapsedS:number;positionSource:'simulated-pose'|'map-selection'|'manual-coordinates'};
   importedFrom?:string; importedAt?:string;
 }
 export const fieldMeta:Meta={...manifest,id:'gale-bradbury-v1',bounds:manifest.bounds as [number,number,number,number]};
+export const metaFor=(regionId:FieldRecord['regionId']):Meta=>regionId==='gale-boxwork'?{...boxwork,regionId:'gale-boxwork',bounds:boxwork.bounds as [number,number,number,number]}:fieldMeta;
 export const unitFor=(kind:FieldKind)=>kind==='temperature'?'K':kind==='radiation'?'µGy/h':undefined;
 export const colorFor=(kind:FieldKind)=>kind==='obstacle'?'#ffaf85':kind==='temperature'?'#ffcf83':kind==='radiation'?'#dcb2ff':'#a7e6e4';
 const object=(v:unknown):Record<string,unknown>=>{if(!v||typeof v!=='object'||Array.isArray(v))throw new Error('Expected an object.');return v as Record<string,unknown>;};
@@ -27,9 +30,10 @@ function intersects(a:Point,b:Point,c:Point,d:Point){
 export function validateRecord(value:unknown):FieldRecord {
   const r=object(value),kind=r.kind as FieldKind;if(!Object.hasOwn(KINDS,kind))throw new Error('Unsupported field record type.');
   const id=string(r.id,80,'a record ID');if(!/^[a-zA-Z0-9_-]+$/.test(id))throw new Error('Record IDs use letters, digits, underscores or hyphens.');
-  if(r.regionId!=='gale-bradbury')throw new Error('Field data currently supports the prepared Gale region only.');
+  if(r.regionId!=='gale-bradbury'&&r.regionId!=='gale-boxwork')throw new Error('Unknown field-data site.');
+  const metadata=metaFor(r.regionId);if(r.datasetId!==undefined&&r.datasetId!==metadata.id)throw new Error('Incompatible field-data terrain reference.');
   if(!Array.isArray(r.points)||r.points.length>100)throw new Error('Geometry requires at most 100 vertices.');
-  const half=fieldMeta.extentM/2,points=r.points.map(p=>{const q=object(p);return{x:finite(q.x,-half,half,'Easting'),y:finite(q.y,-half,half,'Northing')};});
+  const half=metadata.extentM/2,points=r.points.map(p=>{const q=object(p);return{x:finite(q.x,-half,half,'Easting'),y:finite(q.y,-half,half,'Northing')};});
   const min=kind==='unit'?3:kind==='contact'?2:1;
   if(points.length<min||(!['unit','contact'].includes(kind)&&points.length!==1))throw new Error(`${KINDS[kind]} requires ${min}${min>1?' or more':''} point${min>1?'s':''}.`);
   for(let i=1;i<points.length;i++)if(Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y)<.01)throw new Error('Consecutive vertices must be distinct.');
@@ -43,7 +47,7 @@ export function validateRecord(value:unknown):FieldRecord {
   const context=object(r.context),positionSource=context.positionSource as FieldRecord['context']['positionSource'];
   if(!['simulated-pose','map-selection','manual-coordinates'].includes(positionSource))throw new Error('Provide coordinate provenance.');
   if(!Number.isInteger(context.sol))throw new Error('Scenario sol must be an integer.');
-  const record:FieldRecord={id,regionId:'gale-bradbury',kind,title:string(r.title,100,'a title'),description:string(r.description,4000,'a description',true),source:string(r.source,300,'a source / attribution'),uncertainty:string(r.uncertainty,1000,'uncertainty / limitations'),points,visible:flag(r.visible),restrictTravel,createdAt:date(r.createdAt),updatedAt:date(r.updatedAt),observedAt:date(r.observedAt),context:{sol:finite(context.sol,0,100000,'Scenario sol'),lmstHour:finite(context.lmstHour,0,23.999999,'Scenario LMST hour'),elapsedS:finite(context.elapsedS,0,1000000,'Simulated elapsed seconds'),positionSource}};
+  const record:FieldRecord={id,regionId:r.regionId,...(r.datasetId!==undefined?{datasetId:metadata.id}:{}),kind,title:string(r.title,100,'a title'),description:string(r.description,4000,'a description',true),source:string(r.source,300,'a source / attribution'),uncertainty:string(r.uncertainty,1000,'uncertainty / limitations'),points,visible:flag(r.visible),restrictTravel,createdAt:date(r.createdAt),updatedAt:date(r.updatedAt),observedAt:date(r.observedAt),context:{sol:finite(context.sol,0,100000,'Scenario sol'),lmstHour:finite(context.lmstHour,0,23.999999,'Scenario LMST hour'),elapsedS:finite(context.elapsedS,0,1000000,'Simulated elapsed seconds'),positionSource}};
   if(kind==='obstacle')record.radiusM=finite(r.radiusM,5,500,'Obstacle radius (m)');
   if(kind==='temperature'||kind==='radiation')record.value=finite(r.value,0,kind==='temperature'?1000:1000000,`Reading (${unitFor(kind)})`);
   if(r.importedFrom!==undefined)record.importedFrom=string(r.importedFrom,200,'an import filename');
@@ -52,25 +56,29 @@ export function validateRecord(value:unknown):FieldRecord {
 }
 export function validateRecords(value:unknown):FieldRecord[]{
   if(!Array.isArray(value)||value.length>100)throw new Error('A field layer supports at most 100 records.');
-  const records=value.map(validateRecord);if(new Set(records.map(r=>r.id)).size!==records.length)throw new Error('Duplicate field record IDs.');
-  if(fieldExclusions(records).length>30)throw new Error('At most 30 field restrictions can be active.');return records;
+  const records=value.map(validateRecord);if(new Set(records.map(r=>`${r.regionId}:${r.id}`)).size!==records.length)throw new Error('Duplicate field record IDs.');
+  for(const site of ['gale-bradbury','gale-boxwork'])if(fieldExclusions(records.filter(r=>r.regionId===site)).length>30)throw new Error('At most 30 field restrictions can be active per site.');return records;
 }
 export function fieldExclusions(records:FieldRecord[]):Exclusion[]{return records.filter(r=>r.kind==='obstacle'&&r.restrictTravel).map(r=>({...r.points[0],radius:r.radiusM!}));}
 export function restrictionKey(records:FieldRecord[]){return JSON.stringify(fieldExclusions(records).sort((a,b)=>a.x-b.x||a.y-b.y||a.radius-b.radius));}
 export function anchor(r:FieldRecord):Point {return r.points[0];}
 export function effectLabel(r:FieldRecord){return r.kind==='obstacle'?(r.restrictTravel?'Declared restriction · changes routes and walking':'Obstacle annotation · no travel restriction'):r.kind==='temperature'||r.kind==='radiation'?'Point reading only · does not change scenario or exposure':'User geological interpretation · visual annotation only';}
 export function exportFields(records:FieldRecord[]){
-  return {type:'FeatureCollection',schema:'martian-map-field-data',version:1,planet:'Mars',reference:'EPSG:104905',features:records.map(r=>{
-    const {points,...properties}=r,coordinates=points.map(p=>localToGeo(fieldMeta,p));
+  return {type:'FeatureCollection',schema:'martian-map-field-data',version:records.every(r=>r.regionId==='gale-bradbury')?1:2,sites:records.some(r=>r.regionId==='gale-boxwork')?{ 'gale-bradbury':fieldMeta.id, 'gale-boxwork':metaFor('gale-boxwork').id }:undefined,planet:'Mars',reference:'EPSG:104905',features:records.map(r=>{
+    const {points,...properties}=r,coordinates=points.map(p=>localToGeo(metaFor(r.regionId),p));
     const geometry=r.kind==='unit'?{type:'Polygon',coordinates:[[...coordinates,coordinates[0]]]}:r.kind==='contact'?{type:'LineString',coordinates}:{type:'Point',coordinates:coordinates[0]};
     return {type:'Feature',id:r.id,geometry,properties:{...properties,units:unitFor(r.kind)}};
   })};
 }
 export function importFields(value:unknown):FieldRecord[]{
-  const c=object(value);if(c.type!=='FeatureCollection'||c.schema!=='martian-map-field-data'||c.version!==1||c.planet!=='Mars'||c.reference!=='EPSG:104905')throw new Error('Choose a Martian Map v1 Mars GeoJSON file (EPSG:104905), not Earth GeoJSON.');
+  const c=object(value);if(c.type!=='FeatureCollection'||c.schema!=='martian-map-field-data'||![1,2].includes(c.version as number)||c.planet!=='Mars'||c.reference!=='EPSG:104905')throw new Error('Choose a Martian Map v1 or v2 Mars GeoJSON file (EPSG:104905), not Earth GeoJSON.');
+  if(c.version===2&&(!c.sites||object(c.sites)['gale-boxwork']!==metaFor('gale-boxwork').id))throw new Error('Choose a valid v1 or v2 Mars field reference.');
   if(!Array.isArray(c.features)||c.features.length>100)throw new Error('Import at most 100 features.');
   return validateRecords(c.features.map(feature=>{
     const f=object(feature),p=object(f.properties),g=object(f.geometry);if(f.type!=='Feature'||f.id!==p.id)throw new Error('Feature and record IDs must agree.');
+    if(c.version===1&&p.regionId!=='gale-bradbury')throw new Error('Version 1 fields require Bradbury coordinates.');
+    if(p.regionId!=='gale-bradbury'&&p.regionId!=='gale-boxwork')throw new Error('Unknown field-data site.');
+    const metadata=metaFor(p.regionId);if(c.version===2&&object(c.sites)[p.regionId]!==metadata.id)throw new Error('Incompatible field-data reference.');
     const kind=p.kind,expected=kind==='unit'?'Polygon':kind==='contact'?'LineString':'Point';if(g.type!==expected)throw new Error('Geometry does not match the field record type.');
     let raw:unknown=g.coordinates;
     if(g.type==='Point')raw=[raw];
@@ -79,10 +87,10 @@ export function importFields(value:unknown):FieldRecord[]{
       const ring=raw[0];if(ring.length<4||JSON.stringify(ring[0])!==JSON.stringify(ring[ring.length-1]))throw new Error('Polygon rings must be closed.');raw=ring.slice(0,-1);
     }
     if(!Array.isArray(raw)||raw.length>100)throw new Error('Invalid geometry coordinates.');
-    const points=raw.map(q=>{if(!Array.isArray(q)||q.length!==2)throw new Error('Coordinates must be east-positive longitude / latitude pairs.');const lon=finite(q[0],-180,180,'Longitude'),lat=finite(q[1],-90,90,'Latitude');const local=geoToLocal(fieldMeta,lon,lat);return{x:Math.round(local.x*1e6)/1e6,y:Math.round(local.y*1e6)/1e6};});
+    const points=raw.map(q=>{if(!Array.isArray(q)||q.length!==2)throw new Error('Coordinates must be east-positive longitude / latitude pairs.');const lon=finite(q[0],-180,180,'Longitude'),lat=finite(q[1],-90,90,'Latitude');const local=geoToLocal(metadata,lon,lat);return{x:Math.round(local.x*1e6)/1e6,y:Math.round(local.y*1e6)/1e6};});
     if(p.units!==unitFor(kind as FieldKind))throw new Error('Reading units do not match their record type.');
     return {...p,points};
   }));
 }
-export function mergeFields(current:FieldRecord[],incoming:FieldRecord[]){const records=new Map(current.map(r=>[r.id,r]));incoming.forEach(r=>records.set(r.id,r));return validateRecords([...records.values()]);}
+export function mergeFields(current:FieldRecord[],incoming:FieldRecord[]){const records=new Map(current.map(r=>[`${r.regionId}:${r.id}`,r]));incoming.forEach(r=>records.set(`${r.regionId}:${r.id}`,r));return validateRecords([...records.values()]);}
 export function download(name:string,value:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/geo+json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);}

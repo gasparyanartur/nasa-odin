@@ -1,0 +1,79 @@
+{
+  "id": "gale-boxwork-v1",
+  "regionId": "gale-boxwork",
+  "horizontalReference": "Mars planetocentric latitude, east-positive longitude; radius 3396190 m; local ground metres east/north.",
+  "version": 1,
+  "name": "Gale \u00b7 Mount Sharp Boxwork",
+  "size": 201,
+  "stepM": 5.0,
+  "extentM": 1000.0,
+  "origin": {
+    "longitude": 137.38299966521333,
+    "latitude": -4.802997938337184
+  },
+  "radiusM": 3396190.0,
+  "bounds": [
+    137.3745346376668,
+    -4.811433240766242,
+    137.39146469275985,
+    -4.794562635908127
+  ],
+  "referenceElevationM": -3713.292389469359,
+  "minElevationM": -3713.292389469359,
+  "maxElevationM": -3470.117123693942,
+  "validFraction": 1.0,
+  "verticalReference": "Source areoid elevations. Source accuracy and registration are not established by encoding precision; see DATA-LICENSE.md and donor alignment report.",
+  "resolutionNote": "1 m core height posts; 0.25 m/pixel colour/grey imagery. 5 ground-metre analytical grid over a 1 km square. Source detail/accuracy vary. Surround is display only.",
+  "slopeDefinition": "Maximum native DEM gradient in an 8 by 8 sample neighborhood of each 5 m analytical node; browser/planner reserve the interpolation footprint. Donor smoothed 5 m-baseline slopes are a separate product.",
+  "attribution": "Calef III & Parker (2016), Parker & Calef III (2025); NASA/JPL-Caltech/University of Arizona; ESA/DLR/FU Berlin. Derived data CC BY-SA 3.0 IGO.",
+  "sources": [
+    {
+      "name": "USGS MSL Gale DEM mosaic v3",
+      "url": "https://astrogeology.usgs.gov/search/map/mars_msl_gale_merged_dem_1m",
+      "catalog": "https://astrogeology.usgs.gov/search/map/mars_msl_gale_merged_dem_1m"
+    },
+    {
+      "name": "USGS Gale HiRISE colour mosaic 2025 and orthophoto v3",
+      "url": "https://astrogeology.usgs.gov/",
+      "catalog": "https://astrogeology.usgs.gov/"
+    }
+  ],
+  "detail": {
+    "baseUrl": "/boxwork/detail",
+    "scene": "scene.json"
+  },
+  "defaultStart": {
+    "x": 195,
+    "y": 315
+  },
+  "defaultGoal": {
+    "x": 5,
+    "y": 225
+  },
+  "inputHashes": {
+    "public/data/conditions.json": "1882638048cd4c7bfff180c448bd7be9f136e222bd7ae615b2ccc210624fcd96",
+    "public/data/dem_core.bin": "bd858d632b95835d50e7bea7ff3bf3e676c4a69ff3465d08e0592f0f6176e1d7",
+    "public/data/dem_surround.bin": "c815033d18a6c444c15eeff4ed707c2fadc81ad18415cfa37348f2e5fc673be8",
+    "public/data/dose.json": "007c53793d09cbf3b65065937a2d6d1921688e8a469ec412d9b9c7e0e3abc0b0",
+    "public/data/ortho/colour_core_0_0.webp": "bb4b1ebba8adfa2a7569ec8618169517363644e8760257d4b1f387ab1300a619",
+    "public/data/ortho/colour_core_0_1.webp": "13b501558f4a6c32083a5815f701d781bf28548bbb72a714cab4e1a95c0f1b0b",
+    "public/data/ortho/colour_core_1_0.webp": "ea538add844f3f8cafe642952b8b81a494833d139aeec004b9b37ad4cefc1a5e",
+    "public/data/ortho/colour_core_1_1.webp": "00ff44f2a052bcb3df22d2f5e52d2415017c94ce2b7a6b8498950ec21ee8a46b",
+    "public/data/ortho/colour_core_half.webp": "23c763711e15e687c0651cf4b395759417406c136c6e7d79d36400ae7d614b32",
+    "public/data/ortho/colour_overview.webp": "d3830f187031f77d446479515dece0ec9900eeec28225c3cc5308b866080dfa1",
+    "public/data/ortho/colour_surround.webp": "fccadb00c942e180b450bed513a62806ba71b12d642c5e10b4b9e1a4de9f7428",
+    "public/data/ortho/grey_core_0_0.webp": "55fd762842e4714276bf9b4d309f3a445cda5f9bc2a26723e273be10fe026ae7",
+    "public/data/ortho/grey_core_0_1.webp": "b789e689f9c4c7bfe27542d918eb06dcc765e24b5c4a98317194e1a8c0c2255c",
+    "public/data/ortho/grey_core_1_0.webp": "5b389e65d7a0cb06c820e3120a5347a9c1b2ac85f2de2db7bb1b3be4c308b9ec",
+    "public/data/ortho/grey_core_1_1.webp": "ab00d6c525fb482ee0e9c25531603d903298ae77dbca0c4d40a8914dc900081e",
+    "public/data/ortho/grey_core_half.webp": "9677a1d094aab649f88bda4e076e82dfeef2b4234bc9d6b4d98f270315fca2b9",
+    "public/data/ortho/grey_overview.webp": "73743cabaafe048d2ecfc35e8dac6c16e70ee10005660a4593f166df1bcc92f0",
+    "public/data/ortho/grey_surround.webp": "5040a98e0eaaeb478579f7031b45812f2ebd8abedae7dec47ca180d999669b52",
+    "public/data/scene.json": "159096ff4664d7fef84d36650b39fd674df7950e426e1815f61b84b382a95a4d",
+    "public/data/sep-event.json": "5240c2c34c7423b5ff464ca7d448ee75a4be88c357b34f638c10c0c0fdd80954",
+    "public/data/slope_core.bin": "6985dfcfc45fd6311a65c7ab0e26c1db6bd7643ffa1486a604ae53b8256a732c",
+    "public/data/team-inputs.default.json": "68e9ec2e21693e0de0e703702f487e5a14a29a548c921bca9642c652f9a1312b",
+    "public/data/team-inputs.json": "68e9ec2e21693e0de0e703702f487e5a14a29a548c921bca9642c652f9a1312b",
+    "public/data/waypoints.json": "eca53cae0756b549534576cf5d34316c57af156b813f1714e0ad4f9546a27a5b"
+  }
+}

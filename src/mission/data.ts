@@ -2,7 +2,7 @@ export interface Point { x: number; y: number }
 export interface Pose extends Point { heading: number; pitch?: number; elapsed: number }
 export interface Exclusion extends Point { radius: number }
 export interface Meta {
-  id: 'gale-bradbury-v1'; version: number; name: string; size: number; stepM: number; extentM: number;
+  id: string; regionId?: 'gale-bradbury' | 'gale-boxwork'; defaultStart?: Point; defaultGoal?: Point; detail?: {baseUrl:string;scene:string}; version: number; name: string; size: number; stepM: number; extentM: number;
   origin: { longitude: number; latitude: number }; radiusM: number; bounds: [number, number, number, number];
   referenceElevationM: number; minElevationM: number; maxElevationM: number; validFraction: number;
   verticalReference: string; resolutionNote: string; slopeDefinition: string; attribution: string;
@@ -10,10 +10,11 @@ export interface Meta {
 }
 export interface Observation { timeLabel: string; hour: number; temperatureK: number | null; pressurePa: number | null; windMps: number | null }
 export interface Environment {
-  sol: number; weather: Observation[]; weatherSource: string; weatherProduct: string; weatherNote: string;
-  radiation: { rateMicroGyH: number; source: string; product: string; note: string; observations: number };
+  sol: number; earthDate?:string; aggregation?:string; weather: Observation[]; weatherSource: string; weatherProduct: string; weatherNote: string;
+  radiation: { rateMicroGyH: number; detector?:string; source: string; product: string; note: string; observations: number };
 }
-export interface TerrainData { baseUrl: string; meta: Meta; heights: Float32Array; slopes: Float32Array; valid: Uint8Array; environment: Environment }
+export interface SiteEvidence { sourceUrl:string; path:(Point & {sol:number})[]; markers:(Point & {id:string;label:string;note:string})[] }
+export interface TerrainData { evidence?:SiteEvidence; baseUrl: string; meta: Meta; heights: Float32Array; slopes: Float32Array; valid: Uint8Array; environment: Environment }
 export interface Settings {
   speedMps: number; maxSlopeDeg: number; maxDurationMin: number; doseRateMicroGyH: number; maxDoseMicroGy: number;
   conditionsMode?: 'historical' | 'manual'; departureHour?: number; dwellMin?: number;
@@ -27,6 +28,14 @@ export interface ConditionEvaluation { departureHour: number; arrivalHour: numbe
 export interface Alternative extends Route { returnRoute: Route; roundTripS: number; roundTripDoseMicroGy: number; warnings: string[]; conditions: ConditionEvaluation; departures: ConditionEvaluation[] }
 export interface RouteResult { datasetId: string; version: number; settings: Settings; routes: Alternative[]; recommendedIndex: number; assumptions: string }
 export interface ReturnResult { route: Route | null; warnings: string[]; atHabitat?: boolean }
+export interface RouteDiagnostics {
+  code: 'blocked_endpoints' | 'disconnected' | 'same_cell'; slopeLimitDeg: number; stepM: number; activeExclusionCount: number;
+  endpoints: { label: string; x: number; y: number; slopeDeg?: number; reasons: string[]; exclusionIndices: number[] }[];
+  notes: string[];
+}
+export class RoutePlanningError extends Error {
+  constructor(message: string, public diagnostics?: RouteDiagnostics) { super(message); this.name='RoutePlanningError'; }
+}
 
 export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Promise<TerrainData> {
   const get = async (file: string) => {
@@ -42,7 +51,8 @@ export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Prom
     get('environment.json').then(r => r.json()),
   ]);
   if (h.byteLength !== meta.size**2*4 || s.byteLength !== h.byteLength || v.byteLength !== meta.size**2) throw new Error('Gale data arrays do not match their manifest.');
-  return { baseUrl, meta, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
+  const evidence=meta.detail?await get('evidence.json').then(r=>r.json()):undefined;
+  return { baseUrl, meta, evidence, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
 }
 
 export function localToGeo(meta: Meta, p: Point): [number, number] {
@@ -114,9 +124,9 @@ export async function api<T>(path: string, body: unknown, signal?: AbortSignal):
   try { r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal}); }
   catch (error) { if ((error as Error).name==='AbortError') throw error; throw new Error('Route planning is temporarily unavailable. Please try again.'); }
   if (!r.ok) {
-    let detail: unknown;
-    try { detail=(await r.json()).detail; } catch { /* Development proxy may return an empty 502. */ }
-    throw new Error(typeof detail==='string'?detail:r.status===422?'Invalid mission settings or endpoints.':'Route planning is temporarily unavailable. Please try again.');
+    let detail: unknown, diagnostics: RouteDiagnostics | undefined;
+    try { const failure=await r.json(); detail=failure.detail; diagnostics=failure.diagnostics??undefined; } catch { /* Development proxy may return an empty 502. */ }
+    throw new RoutePlanningError(typeof detail==='string'?detail:r.status===422?'Invalid mission settings or endpoints.':'Route planning is temporarily unavailable. Please try again.',diagnostics);
   }
   return r.json();
 }

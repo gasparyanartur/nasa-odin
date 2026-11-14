@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseDataset, type DatasetDefinition } from './datasets/definition';
 import { BASEMAPS, REGIONS, canPlan, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
+import { layoutMarkers } from './globe/marker-layout';
 import { GlobeController, type RegionMarker } from './globe/controller';
 import RegionalLayers from './RegionalLayers';
 import GeologyPanel from './GeologyPanel';
@@ -34,6 +35,7 @@ export default function GlobeExplorer(p:Props) {
   const [error,setError]=useState(''),[localError,setLocalError]=useState(''),[localRetry,setLocalRetry]=useState(0);
   const [markers,setMarkers]=useState<RegionMarker[]>([]);
   const region=getRegion(p.selectedRegionId);
+  const positionedMarkers=layoutMarkers(markers,container.current?.clientWidth??1000,container.current?.clientHeight??800);
 
   async function load(definition:DatasetDefinition) {
     const request=++sequence.current;
@@ -72,14 +74,14 @@ export default function GlobeExplorer(p:Props) {
       <header className="brand"><span className="brand-mark" aria-hidden="true">◉</span><div>MARTIAN MAP<span>STATION COMPUTER</span></div><span className="version">REAL MARS</span></header>
       <section className="intro"><div className="eyebrow">PLANETARY ATLAS</div><h1>See the bigger <br/>picture.</h1><p>Choose a region. Discover its data. Find your way across Mars.</p></section>
       <div className="demo-entry"><span className="data-kind">CURATED SCIENCE EXCURSION</span><h3>Read a landscape. Choose a question.</h3><p>Explore Yellowknife Bay’s geological context, compare routes and enter the surface view.</p><button className="primary full" onClick={p.onDemo}>Start guided Gale example →</button><a href="?demo=yellowknife">Direct example link ↗</a></div><section className="region-section" aria-label="Regions">
-        <div className="section-label">01 / CHOOSE A REGION <span className="tag">2 REGIONS</span></div>
+        <div className="section-label">01 / CHOOSE A REGION <span className="tag">{REGIONS.length} REGIONS</span></div>
         <div className="region-list">{REGIONS.map(r=><button key={r.id} className="region-card" aria-pressed={r.id===p.selectedRegionId} onClick={()=>selectRegion(r.id)}><strong>{r.shortName}<span>↗</span></strong><small>{canPlan(r)?'Explore · Plan · Walk':'Orbital exploration'}</small></button>)}</div>
         {!region&&<p className="caption">Select a marker on the globe or a region above to get started.</p>}
       </section>
       {region&&<section className="region-details" aria-label="Selected region">
         <div className="eyebrow">SELECTED REGION</div><h2>{region.name}</h2><p className="description">{region.description}</p>
         <p className="region-coordinates">{Math.abs(region.center.latitude).toFixed(4)}° {region.center.latitude<0?'S':'N'} · {region.center.longitude.toFixed(4)}° E</p>
-        {canPlan(region)?<><span className="capability">2 × 2 KM PREPARED / 5 M TERRAIN GRID</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open astronaut tablet →':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available in Gale · Bradbury.</p></div>}
+        {canPlan(region)?<><span className="capability">{region?.id==='gale-boxwork'?'1 KM PLANNING / 1 M SOURCE POSTS':'2 × 2 KM PREPARED / 5 M TERRAIN GRID'}</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open astronaut tablet →':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available at the prepared Gale sites.</p></div>}
         <details className="region-source"><summary>Location and coverage</summary><p>{region.locationNote}</p><a href={region.sourceUrl} target="_blank" rel="noreferrer">Location source ↗</a></details>
       </section>}
       {region&&<GeologyPanel regionId={region.id} settings={p.geology} selection={p.geologySelection} onSettings={p.onGeologySettings} onSelect={p.onGeologySelect} onContext={()=>controller.current?.focusGeology(region.id)}/>}
@@ -96,13 +98,13 @@ export default function GlobeExplorer(p:Props) {
       </section>
       {region&&<section className="regional-section" aria-label="Regional data">
         <div className="section-label">03 / REGIONAL DATA</div>
-        {region.terrain?<><p className="caption">Overlays apply only inside the prepared Gale footprint.</p><RegionalLayers prefix="Explore " settings={p.overlays} onChange={p.onOverlayChange}/>{localError&&<p className="error" role="alert">{localError} <button onClick={()=>setLocalRetry(n=>n+1)}>Retry overlays</button></p>}<label className="check"><input type="checkbox" checked={p.conditionsVisible} onChange={e=>p.onConditionsChange(e.target.checked)}/>Historical conditions</label>{p.conditionsVisible&&p.data&&<div className="observation-card"><strong>Curiosity · Sol {p.data.environment.sol}</strong><p>REMS {lmstLabel(p.conditionsHour)} temperature: {weather?.temperatureK?.toFixed(1)??'Unavailable'} K<br/>Pressure: {weather?.pressurePa?.toFixed(1)??'Unavailable'} Pa<br/>Wind: {weather?.windMps==null?'Unavailable':`${weather.windMps} m/s`}<br/>RAD: {p.data.environment.radiation.rateMicroGyH.toFixed(2)} µGy/h detector-dose proxy</p><p>Historical site observations, not a spatial forecast or astronaut dose estimate.</p><a href={p.data.environment.weatherSource} target="_blank" rel="noreferrer">REMS source ↗</a> · <a href={p.data.environment.radiation.source} target="_blank" rel="noreferrer">RAD source ↗</a></div>}</>:<p className="caption">Use Viking for color, MOLA for relief context or CTX for orbital imagery. Local elevation, slope, and environmental observations are not bundled for Jezero.</p>}
+        {region.terrain?<><p className="caption">Overlays apply only inside the prepared Gale footprint.</p><RegionalLayers data={p.data} prefix="Explore " settings={p.overlays} onChange={p.onOverlayChange}/>{localError&&<p className="error" role="alert">{localError} <button onClick={()=>setLocalRetry(n=>n+1)}>Retry overlays</button></p>}<label className="check"><input type="checkbox" checked={p.conditionsVisible} onChange={e=>p.onConditionsChange(e.target.checked)}/>Historical conditions</label>{p.conditionsVisible&&p.data&&<div className="observation-card"><strong>Curiosity · Sol {p.data.environment.sol}</strong><p>REMS {lmstLabel(p.conditionsHour)} temperature: {weather?.temperatureK?.toFixed(1)??'Unavailable'} K<br/>Pressure: {weather?.pressurePa?.toFixed(1)??'Unavailable'} Pa<br/>Wind: {weather?.windMps==null?'Unavailable':`${weather.windMps} m/s`}<br/>RAD: {p.data.environment.radiation.rateMicroGyH.toFixed(2)} µGy/h detector-dose proxy</p><p>Historical site observations, not a spatial forecast or astronaut dose estimate.</p><a href={p.data.environment.weatherSource} target="_blank" rel="noreferrer">REMS source ↗</a> · <a href={p.data.environment.radiation.source} target="_blank" rel="noreferrer">RAD source ↗</a></div>}</>:<p className="caption">Use Viking for color, MOLA for relief context or CTX for orbital imagery. Local elevation, slope, and environmental observations are not bundled for Jezero.</p>}
       </section>}
       <footer className="sidebar-footer">REAL DATA. ROOM TO EXPLORE.</footer>
     </aside>
     <section className="map-panel" aria-label="Interactive Mars globe">
       <div ref={container} className="globe"/>
-      <div className="region-markers">{markers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.x,top:m.y}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
+      <div className="region-markers"><svg aria-hidden="true" className="marker-leaders">{positionedMarkers.filter(m=>m.left!==m.x||m.top!==m.y).map(m=><line key={m.id} x1={m.x} y1={m.y} x2={m.left} y2={m.top}/>)}</svg>{positionedMarkers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.left,top:m.top}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
       <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
       {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<button className="primary" disabled={!p.data} onClick={p.onExplore}>Open astronaut tablet →</button>}</div>}
       <div className="map-guide"><span>DRAG TO ROTATE</span><i/><span>SCROLL TO ZOOM</span><i/><span>SELECT A REGION TO EXPLORE</span></div>

@@ -45,3 +45,7 @@ Export once to obtain a valid template. This is a planetary, application-specifi
 `reference` uses the existing app's Mars geographic reference identifier. Coordinates are `[east-positive longitude, spherical latitude]` degrees, converted through the prepared terrain's origin and 3,396,190 m sphere. This is not WGS84; keep the planetary wrapper when transferring records. Geometry is `Point`, `LineString`, or `Polygon` with one closed outer ring and no holes.
 
 A feature's `id` equals `properties.id`. Properties contain `regionId: "gale-bradbury"`, `kind` (`note`, `unit`, `contact`, `obstacle`, `temperature`, `radiation`), title, description, source, uncertainty, visible, restrictTravel, createdAt, updatedAt and observedAt (UTC ISO strings ending in Z), and context (`sol`, `lmstHour`, `elapsedS`, `positionSource`). Obstacles add `radiusM`; readings add numeric `value` and exact `units` (`K` or `µGy/h`). Other kinds omit units. Imported provenance may add `importedFrom` and `importedAt`. Use export/import rather than editing local-storage text directly.
+
+## Multi-site storage in 0.7
+
+Boxwork integration adds a backed-up migration to browser field storage v2. Existing Bradbury-only Mars GeoJSON v1 remains readable/exportable; v2 exports add site/dataset references for Boxwork. Records remain scoped to their original site and IDs merge within that scope. The selected-site Tablet rejects imports for another site visibly. See [migration and recovery](boxwork-data.md#personal-observations-and-recovery).

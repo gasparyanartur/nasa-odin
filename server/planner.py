@@ -5,7 +5,9 @@ import numpy as np
 
 
 class NoRoute(ValueError):
-    pass
+    def __init__(self, message, diagnostics=None):
+        super().__init__(message)
+        self.diagnostics = diagnostics
 
 
 class Terrain:
@@ -34,6 +36,7 @@ class Terrain:
             xx = xx*self.step-self.half_x
             yy = self.half_y-yy*self.step
             for area in exclusions:
+                self.cell(area['x'],area['y'])
                 # Include cells touching the exclusion, not just cell centers.
                 mask &= (xx-area['x'])**2+(yy-area['y'])**2 > (area['radius']+self.step/math.sqrt(2))**2
         return mask
@@ -49,13 +52,91 @@ class Terrain:
         cost = distance if mode == 'shortest' else distance*(1+4*(slope/slope_limit)**2+8*max(0, grade))
         return cost, distance, seconds, dz, slope
 
-    def search(self, start, goal, settings, mode='shortest', dijkstra=False):
-        start, goal = self.cell(*start), self.cell(*goal)
-        mask = self.permitted(settings['maxSlopeDeg'], settings.get('exclusions', []))
+    def endpoints(self, start, goal, settings, labels=('Habitat / start', 'Destination')):
+        """Explain the exact same footprint and exclusion mask used by search."""
+        limit, exclusions = settings['maxSlopeDeg'], settings.get('exclusions', [])
+        info, cells = [], []
+        for label, point in zip(labels, (start, goal)):
+            reasons, hits = [], []
+            endpoint = {'label': label, 'x': point[0], 'y': point[1], 'reasons': reasons, 'exclusionIndices': hits}
+            info.append(endpoint)
+            try:
+                row, col = self.cell(*point)
+            except NoRoute:
+                reasons.append(f'Outside the prepared footprint (east ±{self.half_x:g} m, north ±{self.half_y:g} m).')
+                cells.append(None)
+                continue
+            cells.append((row, col))
+            endpoint.update(x=col*self.step-self.half_x, y=self.half_y-row*self.step)
+            footprint = np.s_[row:min(row+2,self.rows), col:min(col+2,self.cols)]
+            valid = self.valid[footprint] & np.isfinite(self.heights[footprint]) & np.isfinite(self.slopes[footprint])
+            if not valid.all():
+                reasons.append('Missing or invalid terrain in the walking interpolation footprint.')
+            slopes = self.slopes[footprint][valid]
+            if slopes.size:
+                maximum = float(slopes.max())
+                endpoint['slopeDeg'] = maximum
+                if maximum > limit:
+                    reasons.append(f'Walking-footprint slope {maximum:.1f}° exceeds the {limit:g}° limit.')
+            for i, area in enumerate(exclusions):
+                distance = math.hypot(endpoint['x']-area['x'], endpoint['y']-area['y'])
+                if distance <= area['radius']+self.step/math.sqrt(2):
+                    hits.append(i)
+                    reasons.append(f'Exclusion #{i+1}: center E {area["x"]:g} / N {area["y"]:g} m, radius {area["radius"]:g} m; endpoint is {distance:.1f} m from its center (including the cell margin).')
+        diagnostics = {'code': 'blocked_endpoints', 'endpoints': info, 'slopeLimitDeg': limit,
+                       'stepM': self.step, 'activeExclusionCount': len(exclusions), 'notes': []}
+        if any(e['reasons'] for e in info):
+            message = ' '.join(f'{e["label"]} is blocked: {" ".join(e["reasons"])}' for e in info if e['reasons'])
+            raise NoRoute(message, diagnostics)
+        return cells[0], cells[1], self.permitted(limit, exclusions), diagnostics
+
+    @staticmethod
+    def connected(mask, start, goal):
+        # Four-neighbor connectivity is equivalent to our eight-neighbor policy:
+        # diagonals cannot connect components because corner cutting is forbidden.
         if not mask[start] or not mask[goal]:
-            raise NoRoute('Start or destination is blocked by terrain, missing data, or an exclusion. Select another point or adjust the declared slope limit.')
+            return False
+        seen = np.zeros(mask.shape, dtype=bool)
+        seen[start] = True
+        stack = [start]
+        rows, cols = mask.shape
+        while stack:
+            row, col = stack.pop()
+            if (row, col) == goal:
+                return True
+            for nr, nc in ((row-1,col),(row+1,col),(row,col-1),(row,col+1)):
+                if 0 <= nr < rows and 0 <= nc < cols and mask[nr,nc] and not seen[nr,nc]:
+                    seen[nr,nc] = True
+                    stack.append((nr,nc))
+        return False
+
+    def disconnected(self, start, goal, settings, diagnostics):
+        """Counterfactual checks identify barriers without altering a route's limits."""
+        limit, exclusions = settings['maxSlopeDeg'], settings.get('exclusions', [])
+        diagnostics['code'] = 'disconnected'
+        notes = diagnostics['notes']
+        if not self.connected(self.permitted(float('inf'), []), start, goal):
+            notes.append('Missing or invalid terrain separates these endpoints even with slope and exclusion constraints removed.')
+        else:
+            without_exclusions = self.connected(self.permitted(limit, []), start, goal)
+            without_slope = self.connected(self.permitted(float('inf'), exclusions), start, goal)
+            if not without_exclusions:
+                notes.append(f'Terrain above the {limit:g}° slope limit separates these endpoints even without exclusions.')
+            if not without_slope:
+                notes.append('Active exclusions separate these endpoints even with the slope limit removed.')
+            if without_exclusions:
+                notes.append('A connected path exists at the current slope limit when active exclusions are removed; the exclusions block the connection.')
+            if without_slope:
+                notes.append('Removing the slope limit restores a connected path with current exclusions retained; slopes block the connection.')
+            if without_exclusions and without_slope:
+                notes.append('Slope limits and exclusions together close the available corridors.')
+        raise NoRoute('No connected route satisfies the terrain and exclusion constraints. ' + ' '.join(notes), diagnostics)
+
+    def search(self, start, goal, settings, mode='shortest', dijkstra=False):
+        start, goal, mask, diagnostics = self.endpoints(start, goal, settings)
         if start == goal:
-            raise NoRoute('Select two different terrain cells.')
+            diagnostics['code'] = 'same_cell'
+            raise NoRoute('Select two different terrain cells.', diagnostics)
         best = np.full(mask.shape, np.inf)
         parent = np.full((self.rows, self.cols, 2), -1, dtype='int32')
         best[start] = 0
@@ -81,7 +162,7 @@ class Terrain:
                     h = 0 if dijkstra else math.hypot(goal[0]-nr, goal[1]-nc)*self.step
                     heapq.heappush(queue,(edge[0]+cost+h, edge[0]+cost, neighbor))
         if not math.isfinite(best[goal]):
-            raise NoRoute('No connected route satisfies the terrain and exclusion constraints.')
+            self.disconnected(start, goal, settings, diagnostics)
         cells = [goal]
         while cells[-1] != start:
             cells.append(tuple(parent[cells[-1]]))

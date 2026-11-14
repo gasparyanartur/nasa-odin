@@ -41,7 +41,7 @@ test('discover regions, choose data, preserve layers and isolate missions',async
   await expect(nav(page).getByRole('button',{name:/HUD/})).toBeDisabled();
   await expect(page.getByRole('region',{name:'Regional data'})).not.toContainText('Curiosity');
   await page.waitForTimeout(1500);await page.screenshot({path:info.outputPath('jezero-explore.png')});
-  await card(page,'Gale').click();
+  await card(page,'Gale · Bradbury').click();
   await expect(page.locator('.map-region-context .primary')).toBeEnabled();
   await nav(page).getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
@@ -57,11 +57,11 @@ test('discover regions, choose data, preserve layers and isolate missions',async
 
 test('regional data failure recovers without enabling another region’s planner',async({page})=>{
   await page.route('**/gale/height.f32',route=>route.abort());
-  await page.goto('/');await card(page,'Gale').click();
+  await page.goto('/');await card(page,'Gale · Bradbury').click();
   await expect(page.getByRole('alert')).toContainText('Local Gale data could not load');
   await expect(page.locator('.map-region-context .primary')).toBeDisabled();
   await page.unroute('**/gale/height.f32');await page.getByRole('button',{name:'Retry local data'}).click();
   await expect(page.locator('.map-region-context .primary')).toBeEnabled();
-  for(let i=0;i<3;i++){await card(page,'Jezero').click();await card(page,'Gale').click();await expect(page.locator('.map-region-context .primary')).toBeEnabled();}
+  for(let i=0;i<3;i++){await card(page,'Jezero').click();await card(page,'Gale · Bradbury').click();await expect(page.locator('.map-region-context .primary')).toBeEnabled();}
   await expect(page.locator('.region-marker')).toHaveCount(1);
 });

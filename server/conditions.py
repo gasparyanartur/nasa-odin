@@ -10,12 +10,14 @@ HOUR_SECONDS = SOL_SECONDS / 24
 
 
 @lru_cache
-def weather():
-    path = Path(__file__).resolve().parents[1] / 'public/gale/environment.json'
+def weather(dataset_id='gale-bradbury-v1'):
+    folder = {'gale-bradbury-v1':'gale','gale-boxwork-v1':'boxwork'}[dataset_id]
+    path = Path(__file__).resolve().parents[1] / 'public' / folder / 'environment.json'
     return {row['hour']: row for row in json.loads(path.read_text())['weather']}
 
 
-def evaluate(settings, seconds, departure_hour=None):
+def evaluate(settings, seconds, departure_hour=None, dataset_id="gale-bradbury-v1"):
+    records = {} if settings.conditionsMode == "manual" else (weather() if dataset_id == "gale-bradbury-v1" else weather(dataset_id))
     departure = settings.departureHour if departure_hour is None else departure_hour
     cold = unknown = 0.0
     missing_departure = False
@@ -28,14 +30,14 @@ def evaluate(settings, seconds, departure_hour=None):
         end = start + seconds
         cursor = start
         # Include departure even for zero-duration returns at habitat.
-        row = weather().get(int(start / HOUR_SECONDS + 1e-10))
+        row = records.get(int(start / HOUR_SECONDS + 1e-10))
         missing_departure = not row or row['temperatureK'] is None
         if not missing_departure:
             temperatures.append(row['temperatureK'])
         while cursor < end:
             hour = int(cursor / HOUR_SECONDS + 1e-10)
             edge = min(end, (hour + 1) * HOUR_SECONDS)
-            row = weather().get(hour)
+            row = records.get(hour)
             value = row['temperatureK'] if row else None
             if value is None:
                 unknown += edge - cursor

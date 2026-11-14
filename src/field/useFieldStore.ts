@@ -1,10 +1,7 @@
 import { useRef, useState } from 'react';
-import { FIELD_KEY, exportFields, importFields, validateRecords, type FieldRecord } from './model';
-function initial(){
-  let raw:string|null=null;
-  try{raw=localStorage.getItem(FIELD_KEY);return{records:raw?importFields(JSON.parse(raw)):[],past:[] as FieldRecord[][],error:'',unread:undefined as string|undefined};}
-  catch(e){return{records:[] as FieldRecord[],past:[] as FieldRecord[][],error:`Saved field data could not load: ${(e as Error).message} The saved value has not been overwritten.`,unread:raw??undefined};}
-}
+import { FIELD_KEY, exportFields, validateRecords, type FieldRecord } from './model';
+import { loadFields } from './storage';
+function initial(){return loadFields({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)});}
 export function useFieldStore(){
   const [state,setState]=useState(initial),latest=useRef(state);latest.current=state;
   function update(next:typeof state){latest.current=next;setState(next);}

@@ -11,6 +11,7 @@ import { colorAt, layerRange, type ScalarLayer } from '../environment/model';
 
 export type PickMode = 'inspect' | 'start' | 'goal' | 'exclude' | 'field';
 interface Props {
+  imagery?:'colour'|'grey';
   environmentLayer?:ScalarLayer; environmentOpacity?:number;
   mapLabel?:string; fields?:FieldRecord[]; selectedField?:string; onFieldSelect?:(id:string)=>void; draft?:FieldRecord; active?:boolean; geology?: GeologySettings; targetId?:string; onTargetSelect?:(id:string)=>void; highlightedEdge?:number;
   data: TerrainData; start: Point; goal: Point; routes?: Alternative[]; selected: number;
@@ -50,10 +51,10 @@ export default function SurfaceMap(p: Props) {
   useEffect(() => {
     let active=true;setImages([]);setImageError(false);
     Promise.all(OVERLAYS.map(layer=>layer.file).map(file => new Promise<HTMLImageElement>((resolve,reject) => {
-      const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=`${p.data.baseUrl}/${file}`;
+      const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=`${p.data.baseUrl}/${file==='ortho.jpg'&&p.imagery==='grey'&&p.data.meta.detail?'ortho-grey.jpg':file}`;
     }))).then(imgs => { if(active)setImages(imgs); }).catch(()=>{if(active)setImageError(true);});
     return()=>{active=false;};
-  },[p.data.baseUrl]);
+  },[p.data.baseUrl,p.imagery]);
   useEffect(()=>{
     const el=canvas.current;
     if(!el||p.active===false)return;
@@ -63,8 +64,8 @@ export default function SurfaceMap(p: Props) {
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,size,size);ctx.setTransform(viewport.zoom,0,0,viewport.zoom,viewport.x*size,viewport.y*size);ctx.fillStyle='#4b463d';ctx.fillRect(0,0,size,size);
     OVERLAYS.forEach((layer,index)=>{const state=p.overlays[layer.id];if(state.visible&&images[index]){ctx.globalAlpha=state.opacity;ctx.drawImage(images[index],0,0,size,size);}});ctx.globalAlpha=1;
     if(p.environmentLayer){ctx.save();ctx.beginPath();ctx.rect(0,0,size,size);ctx.clip();ctx.globalAlpha=p.environmentOpacity??.65;const layer=p.environmentLayer,range=layerRange(layer);for(const s of layer.samples){if(s.value===null)continue;ctx.fillStyle=colorAt(s.value,range);if(s.bounds){const[w,south,e,n]=s.bounds;const a=pixel(geoToLocal(p.data.meta,w,n)),b=pixel(geoToLocal(p.data.meta,e,south));ctx.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);}else{const q=pixel(geoToLocal(p.data.meta,s.lon,s.lat));if(q[0]<0||q[0]>size||q[1]<0||q[1]>size)continue;ctx.beginPath();ctx.arc(q[0],q[1],7/viewport.zoom,0,Math.PI*2);ctx.fill();}}ctx.restore();}
-    if(p.geology?.visible&&!p.mini){
-      ctx.save();const region=SCIENCE.regions['gale-bradbury'];ctx.globalAlpha=p.geology.opacity;
+    if(p.geology?.visible&&!p.mini&&SCIENCE.regions[p.data.meta.regionId??'gale-bradbury']){
+      ctx.save();const region=SCIENCE.regions[p.data.meta.regionId??'gale-bradbury']!;ctx.globalAlpha=p.geology.opacity;
       for(const unit of region.units)for(const polygon of unit.polygons){
         ctx.beginPath();for(const ring of polygon){ring.forEach(([lon,lat],i)=>{const q=pixel(geoToLocal(p.data.meta,lon,lat));if(i===0)ctx.moveTo(q[0],q[1]);else ctx.lineTo(q[0],q[1]);});ctx.closePath();}
         ctx.fillStyle=unit.color;ctx.fill('evenodd');
@@ -74,6 +75,11 @@ export default function SurfaceMap(p: Props) {
     }
     ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
     for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(i*100,0);ctx.lineTo(i*100,size);ctx.moveTo(0,i*100);ctx.lineTo(size,i*100);ctx.stroke();}
+    if(p.data.evidence){
+      ctx.save();ctx.strokeStyle='#b9dad7';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();p.data.evidence.path.forEach((q,i)=>{const[x,y]=pixel(q);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();ctx.setLineDash([]);
+      for(const marker of p.data.evidence.markers){const[x,y]=pixel(marker);ctx.fillStyle='#b9dad7';ctx.fillRect(x-4,y-4,8,8);}
+      ctx.restore();
+    }
     p.exclusions.forEach(e=>{const [x,y]=pixel(e);ctx.beginPath();ctx.arc(x,y,e.radius/(2*half)*size,0,Math.PI*2);ctx.fillStyle='#e46e5d70';ctx.fill();ctx.strokeStyle='#ffb49b';ctx.lineWidth=2;ctx.stroke();});
     p.routes?.forEach((route,i)=>{
       ctx.beginPath();route.points.forEach(([x,y],j)=>{const q=pixel({x,y});if(j===0)ctx.moveTo(...q as [number,number]);else ctx.lineTo(...q as [number,number]);});
@@ -84,7 +90,7 @@ export default function SurfaceMap(p: Props) {
       if(a&&b){ctx.beginPath();const pa=pixel({x:a[0],y:a[1]}),pb=pixel({x:b[0],y:b[1]});ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.strokeStyle='#fff7d4';ctx.lineWidth=11;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
     }
     const markerScale=p.mini?1:800/(el.clientWidth||800)/viewport.zoom;
-    if(!p.mini)for(const target of SCIENCE.targets){const[x,y]=pixel(target.point);ctx.beginPath();ctx.arc(x,y,10*markerScale,0,Math.PI*2);ctx.fillStyle=target.id===p.targetId?'#ecd09c':'#26382e';ctx.fill();ctx.strokeStyle='#e4d2a2';ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=target.id===p.targetId?'#1c2922':'#ffe8b9';ctx.font=`bold ${11*markerScale}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(target.id==='rocknest'?'R':'Y',x,y);}
+    if(!p.mini)for(const target of SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury'))){const[x,y]=pixel(target.point);ctx.beginPath();ctx.arc(x,y,10*markerScale,0,Math.PI*2);ctx.fillStyle=target.id===p.targetId?'#ecd09c':'#26382e';ctx.fill();ctx.strokeStyle='#e4d2a2';ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=target.id===p.targetId?'#1c2922':'#ffe8b9';ctx.font=`bold ${11*markerScale}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(target.id==='rocknest'?'R':'Y',x,y);}
     for(const [label,v,color] of [['H',p.start,'#a9debd'],['D',p.goal,'#f4bc81']] as const){
       const[x,y]=pixel(v);ctx.beginPath();ctx.arc(x,y,12*markerScale,0,Math.PI*2);ctx.fillStyle='#14201c';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=color;ctx.font=`bold ${13*markerScale}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,x,y);
     }
@@ -112,7 +118,7 @@ export default function SurfaceMap(p: Props) {
     const tolerance=p.data.meta.extentM/current.current.zoom*24/(canvas.current?.clientWidth||800);
     const record=(!p.mode||p.mode==='inspect')?(p.fields??[]).filter(r=>r.visible).map(r=>({record:r,distance:Math.hypot(anchor(r).x-q.x,anchor(r).y-q.y)})).filter(r=>r.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.record:undefined;
     if(record&&p.onFieldSelect){p.onFieldSelect(record.id);return;}
-    const target=!p.mode||p.mode==='inspect'?SCIENCE.targets.map(t=>({target:t,distance:Math.hypot(t.point.x-q.x,t.point.y-q.y)})).filter(t=>t.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.target:undefined;
+    const target=!p.mode||p.mode==='inspect'?SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury')).map(t=>({target:t,distance:Math.hypot(t.point.x-q.x,t.point.y-q.y)})).filter(t=>t.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.target:undefined;
     if(target&&p.onTargetSelect)p.onTargetSelect(target.id);else p.onPick?.(q);
   }
   return <div ref={frame} className={`surface-map ${p.mini?'mini':''}`}>

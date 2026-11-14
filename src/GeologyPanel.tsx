@@ -3,6 +3,7 @@ import type { RegionId } from './datasets/catalog';
 
 export default function GeologyPanel({regionId,settings,selection,onSettings,onSelect,onContext,compact=false}:{regionId:RegionId;settings:GeologySettings;selection?:GeologySelection;onSettings:(s:GeologySettings)=>void;onSelect:(s:GeologySelection)=>void;onContext?:()=>void;compact?:boolean}) {
   const region=SCIENCE.regions[regionId];
+  if(!region)return <section className="geology-panel"><h3>Geological context</h3><p className="caption">The bundled regional geological extract does not cover this site. Inspect the Boxwork rover evidence and terrain instead; no local unit boundaries are inferred.</p></section>;
   const unit=selection?.kind==='unit'?region.units.find(u=>u.id===selection.id):undefined;
   const contact=selection?.kind==='contact'?region.contacts.find(c=>c.id===selection.id):undefined;
   const legend=region.units.filter((u,i,a)=>a.findIndex(other=>other.code===u.code)===i);
