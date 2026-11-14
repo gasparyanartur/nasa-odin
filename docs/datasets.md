@@ -1,6 +1,6 @@
 # Dataset integration
 
-The global globe has one replaceable WMTS basemap slot, alongside independent regional overlays. MOLA and CTX are selectable in the UI. The region catalog separates geographic discovery from prepared numeric planning coverage. The initial definition is [the MOLA manifest](../public/datasets/mola.json). Download that file under **Advanced: import a dataset**, edit it, and load it with **Load dataset JSON**. A supported replacement needs no rebuild and leaves the camera and controls unchanged. Reloading restores the bundled source. See [Gale data](gale-data.md) for numeric terrain, scientific overlays and environmental products.
+The global globe has one replaceable WMTS basemap slot, alongside independent regional overlays. Viking color, MOLA and CTX are selectable in the UI. The region catalog separates geographic discovery from prepared numeric planning coverage. The initial definition is [the Viking color manifest](../public/datasets/viking.json); [MOLA](../public/datasets/mola.json) remains the downloadable import example. Download that file under **Advanced: import a dataset**, edit it, and load it with **Load dataset JSON**. A supported replacement needs no rebuild and leaves the camera and controls unchanged. Reloading restores the bundled source. See [Gale data](gale-data.md) for numeric terrain, scientific overlays and environmental products.
 
 ## Replacing a WMTS source
 
@@ -43,7 +43,7 @@ Invalid manifests keep the current layer and show the validation error. Valid ma
 
 ## Verified service configuration
 
-The MOLA capabilities describe JPEG, 256-pixel tiles, matrix set `default028mm`, levels 0–7 and Mars reference `EPSG:104905`. The initial product is `Mars_MGS_MOLA_ClrShade_merge_global_463m` from [NASA Mars Trek](https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml).
+The MOLA capabilities describe JPEG, 256-pixel tiles, matrix set `default028mm`, levels 0–7 and Mars reference `EPSG:104905`. The relief product is `Mars_MGS_MOLA_ClrShade_merge_global_463m` from [NASA Mars Trek](https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml).
 
 The shipped CTX definition is `public/datasets/ctx.json`; the older `tests/fixtures/` copy remains an import-test fixture. It uses the actual ArcGIS tile endpoint advertised by [the CTX capabilities](https://trek.nasa.gov/tiles/Mars/EQ/CTX_beta01_uncontrolled_5m_Caltech/1.0.0/WMTSCapabilities.xml) and 512-pixel tiles, demonstrating that source and tile layout are replaceable. The shipped definition is copied into `dist/`. CTX is an uncontrolled display mosaic; it is not the registered local orthoimage or numeric elevation source.
 
@@ -62,3 +62,11 @@ Settings expose speed, maximum slope, excursion duration, fixed dose-rate proxy 
 `App` owns selection, basemap visibility/opacity, overlay visibility/opacity, and the region’s mission. Region changes abort pending requests and clear incompatible mission state. Navigating between Explore, Plan and HUD preserves the selected region and settings. Prepared arrays load only when a plannable region is selected.
 
 Regional imagery, elevation and slope render in that order above the global basemap; route annotations sit above them. Both globe overlays and planner images use the manifest footprint and shared settings. The HUD minimap deliberately keeps its navigation imagery visible independently. REMS/RAD remain dated contextual observations with original sources; Jezero never inherits Gale observations. Layer controls are session-only.
+
+The default Viking MDIM 2.1 color layer uses the [NASA Mars Trek capabilities](https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml): full −180…180°, −90…90° coverage, EPSG:104905, JPEG, 256-pixel tiles and geographic levels 0–7. Capabilities and a real level-zero tile were rechecked on 2026-11-14; browser acceptance verifies successful tile loading. This is processed global display imagery, not numeric terrain.
+
+## Geological context and science targets
+
+Version 0.3 adds a separate vector path for the bounded [USGS geological context package](../public/science/geology.json). These polygons and contacts are not WMTS basemaps and do not change the numeric terrain. Gale/Jezero have explicit regional bounds, legend/inspection and shared visibility/opacity. The planner displays only the intersection with its actual footprint; source clipping boundaries are not contacts. [Science data](science-data.md) documents CRS, source scale, processing, waypoints and uncertainty. Target selection updates the shared excursion destination; switching regions clears incompatible target/profile state.
+
+Definitions may optionally include `dataKind` (`observation`, `derived`, or `unknown`) and `acquisitionNote`. Bundled definitions classify processed imagery separately from derived MOLA relief and explicitly identify the lack of per-pixel acquisition times in the tile service. Older imported definitions retain unknown classification/time rather than being silently promoted to observations.

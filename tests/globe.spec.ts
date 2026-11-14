@@ -7,6 +7,10 @@ test('production globe, controls, invalid import, live real-data swap and recove
   page.on('pageerror', (error) => exceptions.push(error.message));
   page.on('response', (response) => { if (response.ok()) responses.push(response.url()); });
   await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Viking · Mars color' })).toBeVisible();
+  await expect.poll(() => responses.some(url => url.includes('Viking') && url.includes('.jpg')), { timeout: 60_000 }).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('viking-desktop.png') });
+  await page.getByLabel('Global basemap').selectOption('mola-global-relief');
   await expect(page.getByRole('heading', { name: 'MOLA · Global relief' })).toBeVisible();
   await expect.poll(() => responses.some((url) => url.includes('MOLA') && url.includes('.jpg')), { timeout: 60_000 }).toBe(true);
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer active', { timeout: 60_000 });

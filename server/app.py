@@ -11,9 +11,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from .planner import Terrain, NoRoute
+from .conditions import evaluate
 
 DATA = Path(__file__).resolve().parents[1] / 'public' / 'gale'
-app = FastAPI(title='Martian Map local planner', version='1.0')
+app = FastAPI(title='Martian Map local planner', version='0.3.0')
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
@@ -38,6 +39,9 @@ class Settings(BaseModel):
     minTemperatureK: float = Field(default=180, ge=100, le=350)
     windMps: float = Field(default=0, ge=0, le=200)
     maxWindMps: float = Field(default=25, ge=0, le=200)
+    conditionsMode: Literal['manual', 'historical'] = 'manual'
+    departureHour: float = Field(default=12, ge=0, lt=24)
+    dwellMin: float = Field(default=0, ge=0, le=240)
     exclusions: list[Exclusion] = Field(default_factory=list, max_length=30)
 
 
@@ -73,19 +77,6 @@ def referenced(route, meta):
     return route
 
 
-def warnings(settings, seconds, dose):
-    result=[]
-    if settings.temperatureK < settings.minTemperatureK:
-        result.append('Departure temperature is below the configured demonstration limit.')
-    if settings.windMps > settings.maxWindMps:
-        result.append('Departure wind exceeds the configured demonstration limit.')
-    if seconds > settings.maxDurationMin*60:
-        result.append('Excursion including return exceeds the configured time budget.')
-    if dose > settings.maxDoseMicroGy:
-        result.append('Excursion including return exceeds the configured detector-dose proxy budget.')
-    return result
-
-
 @app.get('/api/health')
 def health():
     meta,_=load_data()
@@ -101,14 +92,17 @@ def routes(req: RouteRequest):
         for mode in ['shortest','gentler']:
             route=referenced(terrain.search((req.start.x,req.start.y),(req.goal.x,req.goal.y),settings,mode),meta)
             back=referenced(terrain.search((req.goal.x,req.goal.y),(req.start.x,req.start.y),settings,mode),meta)
-            total=route['metrics']['durationS']+back['metrics']['durationS']
-            dose=route['metrics']['doseMicroGy']+back['metrics']['doseMicroGy']
+            total=route['metrics']['durationS']+req.settings.dwellMin*60+back['metrics']['durationS']
+            evaluation=evaluate(req.settings,total)
+            dose=evaluation['doseMicroGy']
             route.update(returnRoute=back, roundTripS=total, roundTripDoseMicroGy=dose,
-                         warnings=warnings(req.settings,total,dose))
+                         warnings=evaluation['warnings'], conditions=evaluation,
+                         departures=[evaluate(req.settings,total,h) for h in range(24)] if req.settings.conditionsMode=='historical' else [])
             result.append(route)
         return {'datasetId':meta['id'],'version':meta['version'],'reference':meta['horizontalReference'],
                 'settings':settings,'routes':result,
-                'assumptions':'Fixed departure conditions; time = distance/speed × (1 + 3 uphill grade + 1.5 downhill grade). Dose is a uniform detector-rate proxy, not astronaut dosimetry. Budgets checked after search, not resource-constrained optimization.'}
+                'recommendedIndex':min(range(len(result)),key=lambda i:(len(result[i]['warnings']),result[i]['roundTripS'])),
+                'assumptions':'Terrain candidates evaluated over outbound travel, destination dwell and return. Historical REMS hourly medians are held within their LMST bins, without extrapolation; manual mode holds the configured temperature. Wind is an assumption. RAD is a uniform fixed detector-rate proxy, not astronaut dosimetry. Recommendation compares these candidates only; no environmental path optimization or guarantee of feasibility.'}
     except NoRoute as exc:
         raise HTTPException(422,str(exc)) from exc
 
@@ -123,10 +117,10 @@ def return_route(req: ReturnRequest):
         if not mask[start_cell] or not mask[goal_cell]:
             raise NoRoute('Current position or habitat is blocked by the configured terrain/exclusion constraints.')
         if start_cell==goal_cell:
-            return {'route':None,'warnings':warnings(req.settings,req.elapsedS,req.elapsedS/3600*req.settings.doseRateMicroGyH),'atHabitat':True}
+            return {'route':None,'warnings':evaluate(req.settings,req.elapsedS)['warnings'],'atHabitat':True}
         back=referenced(terrain.search((req.start.x,req.start.y),(req.goal.x,req.goal.y),req.settings.model_dump(),req.mode),meta)
         total=back['metrics']['durationS']+req.elapsedS
-        return {'route':back,'warnings':warnings(req.settings,total,total/3600*req.settings.doseRateMicroGyH)}
+        return {'route':back,'warnings':evaluate(req.settings,total)['warnings'], 'conditions':evaluate(req.settings,total)}
     except NoRoute as exc:
         raise HTTPException(422,str(exc)) from exc
 

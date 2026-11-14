@@ -1,12 +1,14 @@
 import {
   Cartesian2, Cartesian3, Color, Ellipsoid, EllipsoidTerrainProvider, Viewer, CustomHeightmapTerrainProvider,
   GeographicTilingScheme, Rectangle, SingleTileImageryProvider, ImageryLayer,
+  PolygonHierarchy, PolylineDashMaterialProperty,
   ScreenSpaceEventHandler, ScreenSpaceEventType, SceneTransforms, EllipsoidalOccluder,
 } from 'cesium';
 import type { DatasetDefinition } from '../datasets/definition';
 import { LayerSlot } from '../datasets/layer-slot';
 import { attachWmts } from './wmts';
 import { geoToLocal, sample, type TerrainData, type Route } from '../mission/data';
+import { SCIENCE, type GeologySelection, type GeologySettings } from '../datasets/geology';
 import { REGIONS, OVERLAYS, type Region, type RegionId, type OverlaySettings, defaultOverlays } from '../datasets/catalog';
 
 export interface GlobeStatus { loading: boolean; error?: string }
@@ -22,9 +24,10 @@ export class GlobeController {
   private overlays = defaultOverlays();
   private removeMarkers: () => void;
   private picking: ScreenSpaceEventHandler;
+  private geologyIds: string[] = [];
 
   constructor(container: HTMLElement, report: (status: GlobeStatus) => void,
-    onSelect: (id: RegionId) => void, onMarkers: (markers: RegionMarker[]) => void) {
+    onSelect: (id: RegionId) => void, onMarkers: (markers: RegionMarker[]) => void, onGeologySelect: (selection: GeologySelection) => void) {
     Ellipsoid.default = Ellipsoid.MARS;
     this.viewer = new Viewer(container, {
       baseLayer: false, terrainProvider: new EllipsoidTerrainProvider({ ellipsoid: Ellipsoid.MARS }),
@@ -64,6 +67,9 @@ export class GlobeController {
       const picked = this.viewer.scene.pick(event.position);
       const region = REGIONS.find(r => picked?.id?.id === `region-${r.id}` || picked?.id?.id === `coverage-${r.id}`);
       if (region) onSelect(region.id);
+      const id=picked?.id?.id;
+      if(typeof id==='string'&&id.startsWith('geology-unit-'))onGeologySelect({kind:'unit',id:id.split('-')[2]});
+      if(typeof id==='string'&&id.startsWith('geology-contact-'))onGeologySelect({kind:'contact',id:id.split('-')[2]});
     }, ScreenSpaceEventType.LEFT_CLICK);
   }
 
@@ -117,6 +123,24 @@ export class GlobeController {
     if(route&&this.localData)this.viewer.entities.add({id:'active-route',polyline:{positions:route.geographic.map(([lon,lat,z])=>Cartesian3.fromDegrees(lon,lat,z-this.localData!.meta.referenceElevationM+3,Ellipsoid.MARS)),width:4,material:Color.fromCssColorString('#ffd29b')}});
     this.viewer.scene.requestRender();
   }
+  setGeology(regionId:RegionId|undefined,settings:GeologySettings,selection?:GeologySelection) {
+    this.geologyIds.forEach(id=>this.viewer.entities.removeById(id));this.geologyIds=[];
+    if(!regionId||!settings.visible){this.viewer.scene.requestRender();return;}
+    const region=SCIENCE.regions[regionId];
+    const positions=(ring:[number,number][])=>Cartesian3.fromDegreesArray(ring.flat(),Ellipsoid.MARS);
+    this.viewer.entities.suspendEvents();
+    for(const unit of region.units)unit.polygons.forEach((rings,index)=>{
+      const id=`geology-unit-${unit.id}-${index}`,active=selection?.kind==='unit'&&selection.id===unit.id;
+      this.geologyIds.push(id);this.viewer.entities.add({id,polygon:{hierarchy:new PolygonHierarchy(positions(rings[0]),rings.slice(1).map(r=>new PolygonHierarchy(positions(r)))),material:Color.fromCssColorString(unit.color).withAlpha(Math.min(1,settings.opacity*(active?1.25:1)))}});
+    });
+    if(settings.contacts)for(const contact of region.contacts)contact.lines.forEach((line,index)=>{
+      const id=`geology-contact-${contact.id}-${index}`,active=selection?.kind==='contact'&&selection.id===contact.id;
+      const color=Color.fromCssColorString(active?'#ffe1a0':'#242c29').withAlpha(settings.opacity);
+      this.geologyIds.push(id);this.viewer.entities.add({id,polyline:{positions:positions(line),width:active?5:2,clampToGround:true,material:contact.type.toLowerCase().includes('approx')?new PolylineDashMaterialProperty({color}):color}});
+    });
+    this.viewer.entities.resumeEvents();this.viewer.scene.requestRender();
+  }
+  focusGeology(regionId:RegionId) {this.viewer.camera.flyTo({destination:Rectangle.fromDegrees(...SCIENCE.regions[regionId].bounds),duration:1.2});}
   focusRegion(region: Region) { this.viewer.camera.flyTo({ destination: Cartesian3.fromDegrees(region.center.longitude, region.center.latitude, region.cameraHeightM, Ellipsoid.MARS), duration: 1.2 }); }
   home() {
     this.viewer.camera.cancelFlight();

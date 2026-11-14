@@ -43,6 +43,21 @@ class PlannerTests(unittest.TestCase):
         route=t.search((-3,0),(3,0),settings)
         self.assertTrue(all(math.hypot(x,y)>1 for x,y,_ in route['points']))
 
+    def test_profile_and_edge_cost_contributions_agree_with_search_totals(self):
+        z=np.tile(np.arange(9)*.2,(9,1));t=self.terrain(z)
+        for mode in ['shortest','gentler']:
+            r=t.search((-3,0),(3,0),SETTINGS,mode)
+            self.assertEqual(len(r['profile']),len(r['points']))
+            self.assertEqual(len(r['segments']),len(r['points'])-1)
+            self.assertAlmostEqual(r['profile'][-1]['distanceM'],r['metrics']['distanceM'])
+            self.assertAlmostEqual(r['profile'][-1]['elapsedS'],r['metrics']['durationS'])
+            self.assertAlmostEqual(sum(s['cost'] for s in r['segments']),r['metrics']['terrainCost'])
+            for i,s in enumerate(r['segments']):
+                self.assertAlmostEqual(s['distanceM']+s['slopePenalty']+s['uphillPenalty'],s['cost'])
+                self.assertAlmostEqual(s['fromDistanceM'],r['profile'][i]['distanceM'])
+                self.assertAlmostEqual(r['profile'][i]['elevationM'],r['points'][i][2])
+                self.assertGreater(s['gradePercent'],0)
+
     def test_slope_limit_hard_exclusion(self):
         t=self.terrain();t.slopes[:,4]=30
         with self.assertRaises(NoRoute):t.search((-3,0),(3,0),SETTINGS)
@@ -64,6 +79,19 @@ class IntegrationTests(unittest.TestCase):
             self.assertAlmostEqual(route['geographic'][0][1],meta['origin']['latitude'])
             self.assertGreater(route['roundTripS'],route['metrics']['durationS'])
             for x,y,_ in route['points']:self.assertTrue(t.permitted(20,[])[t.cell(x,y)])
+
+    def test_both_science_waypoints_have_routes_and_matching_profiles(self):
+        import json
+        from pathlib import Path
+        package=json.loads((Path(__file__).resolve().parents[2]/'public/science/geology.json').read_text())
+        for target in package['targets']:
+            response=self.client.post('/api/routes',json={'datasetId':'gale-bradbury-v1','start':{'x':0,'y':0},'goal':target['point'],'settings':{}})
+            self.assertEqual(response.status_code,200,response.text)
+            for route in response.json()['routes']:
+                self.assertEqual(route['points'][-1][:2],list(target['point'].values()))
+                self.assertAlmostEqual(route['profile'][-1]['distanceM'],route['metrics']['distanceM'])
+                self.assertAlmostEqual(route['profile'][-1]['elapsedS'],route['metrics']['durationS'])
+                self.assertAlmostEqual(sum(s['cost'] for s in route['segments']),route['metrics']['terrainCost'])
 
     def test_validation_and_explicit_resource_warnings(self):
         p={'datasetId':'gale-bradbury-v1','start':{'x':0,'y':0},'goal':{'x':100,'y':100},'settings':{'maxDurationMin':1,'maxDoseMicroGy':.01,'minTemperatureK':250}}

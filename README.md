@@ -1,16 +1,36 @@
 # Martian Map
 
-Explore Mars through selectable real datasets, choose a region, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
+Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
 ## Try the excursion
 
+Choose **Start guided Gale example** on Explore, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). The guide starts with a source-backed geological question, a real rover visit-area destination and explicit demonstration assumptions. Inspect the evidence, compare routes and enter the surface HUD. **Continue free exploration** leaves the guide while keeping your setup; **Reset guided example** restores it.
+
+
 1. On **Explore**, choose **Gale · Bradbury** or **Jezero** using a globe marker or the region list. The camera flies to the region and its details explain what is available.
-2. Choose **MOLA · Global relief** or **CTX · Orbital imagery** in **Global basemap**. Change visibility and opacity without moving the camera. Advanced JSON import remains available.
+2. Choose **Viking · Mars color**, **MOLA · Global relief** or **CTX · Orbital imagery** in **Global basemap**. Change visibility and opacity without moving the camera. Advanced JSON import remains available.
 3. In Gale, select regional imagery, elevation and slope overlays independently. Their legends and opacity controls apply only to the outlined 2 × 2 km prepared footprint. Historical REMS/RAD observations appear as site context.
 4. Select **Plan excursion** in Gale. Place a habitat/start and destination, or use the prepared example. Layer settings carry over from Explore.
-5. Set the mission assumptions and **Compare routes**. Choose the shortest permitted path or a gentler-terrain alternative. Both include a separately calculated return estimate.
-6. Select **Walk selected route**, click the terrain, and use **WASD** and the mouse. **Esc** pauses the mission clock and releases the pointer. **Simulation pace** accelerates movement and mission time together for demonstrations.
+5. Set the mission assumptions and **Compare routes**. Choose the shortest permitted path or a gentler-terrain alternative. Both include a separately calculated return estimate, the destination stop, and conditions across the excursion. The recommended candidate favors fewer limit/coverage warnings, then shorter duration.
+6. Select **Walk selected route**, click the terrain, and use **WASD** and the mouse. **Esc** pauses the mission clock and releases the pointer. **Simulation pace** accelerates movement and mission time together for demonstrations. Toggle the optional **Visor** navigation overlay and choose **Graphics** quality while preserving the excursion.
 7. Return to Explore to inspect the same region and layers. Selecting a different region clears the previous excursion; Jezero clearly indicates that planning and walking are unavailable.
+
+Version **0.3** adds a geological science workflow:
+
+- **Geological context:** selectable USGS units and contacts around Gale and Jezero, with the original unit identifiers, descriptions, palette, legend and contact classification. Use **View geological context** in Explore to frame the regional map. Click a mapped unit/contact or select it from the legend to inspect it. The local planner shows only the map’s actual intersection with its prepared patch.
+- **Science destinations:** compare Rocknest’s windblown material with the Yellowknife Bay entry area’s sedimentary setting. Each target includes NASA geological evidence, a published rover waypoint, visit sol, uncertainties and a destination action. R/Y markers on the local map also select the targets. These locate visit areas, not precise scoop/drill sites.
+- **Route explanations:** elevation and terrain-slope profiles use per-edge planner data. Scrub the profile or distance slider to highlight the corresponding map segment and inspect its grade, elevation, slope and duration. Read computed differences, cost contributions and active constraints; a gentler objective does not guarantee a lower maximum slope.
+- **Data inspection:** choose imagery, terrain, geology, temperature, radiation or assumptions in **What this data can tell you**. Each shows source/product, quantity, time, coverage, scale/resolution, uncertainty and its effect on planning.
+
+The geology is regional context at **1:20,000,000**, with clipped coverage around the two regions; it is too coarse to identify a local outcrop or derive walking hazards. The two targets share the same broad global-map unit. Their distinct scientific questions come from mission observations, not an invented local geological boundary. Rover visits are Sol 56/125; the Sol 10 weather replay is a separate scenario. These products remain useful offline once the app is loaded; global basemap tiles still need internet access.
+
+Version **0.2** added Viking color imagery and a warmer surface/sky, an optional visor compass and waypoint cue, three drawing-resolution presets, a Sol 10 historical replay, and conditions-aware candidate/departure comparisons.
+
+The historical timeline lets you play, pause or scrub 24 hourly REMS medians. Scrubbing clears the previous plan. Planning pauses replay and uses its selected departure time; the HUD advances LMST from that departure as mission seconds pass. Playback stops at the end of the recorded sol. Hourly values are held within each bin; gaps and times after Sol 10 remain unknown. Scene lighting is illustrative and does not follow the timeline.
+
+Use **Conditions → Historical Sol 10** to evaluate temperature along the outbound trip, optional destination stop and return, or choose **Manual fixed scenario**. In **Compare departure hours**, inspect the same excursion at each of 24 departure times, select a time and compare routes again. Green means within your configured demonstration limits; amber means unknown coverage; orange means a limit is exceeded. This evaluates two terrain candidates, rather than searching for an environmental optimum. Missing observations cannot establish feasibility.
+
+**Graphics** controls drawing pixels: Low uses 65% of native resolution (density capped at 1), Medium native resolution (cap 1), and High the device density (cap 2). All retain the same measured terrain, texture, routing and collision data. The visor provides navigation cues from simulated position; it does not add physiological measurements.
 
 The optional exclusion tool marks user-declared 40 m restricted areas. These are not measurements of actual hazards. The habitat is a demonstration location, not a real structure on Mars.
 
@@ -54,7 +74,7 @@ docker run --rm -p 127.0.0.1:8373:10000 martian-map:explore
 
 Open [the container demo](http://127.0.0.1:8373). `GET /api/health` reports the terrain dataset/version. Missing files and unknown API routes return 404s.
 
-For Render, sign in with GitHub, connect this repository and select the `codex/integrated-explore` branch. Create a **Blueprint** from `render.yaml`, or create a **Docker Web Service** on the Free plan with health check `/api/health`. No database, account system, API secret or custom domain is required. Prepared Gale assets are bundled; global MOLA/CTX tiles still require external network access. Free services can take about a minute to start after inactivity. See [deployment and release instructions](docs/release.md).
+For Render, sign in with GitHub, connect this repository and select the `codex/integrated-explore` branch. Create a **Blueprint** from `render.yaml`, or create a **Docker Web Service** on the Free plan with health check `/api/health`. No database, account system, API secret or custom domain is required. Prepared Gale assets are bundled; global Viking/MOLA/CTX tiles still require external network access. Free services can take about a minute to start after inactivity. See [deployment and release instructions](docs/release.md).
 
 ## What the data represents
 
@@ -63,11 +83,13 @@ The local package contains actual USGS Gale DEM/orthoimage crops and historical 
 - **Terrain:** numeric elevations, conservative slopes and validity masks drive planning and walking. Globe relief is relative to the patch minimum, not a planetary areoid-to-ellipsoid conversion. Absolute source elevations are reported separately.
 - **Weather:** hourly Sol 10 REMS medians with selected reliability flags applied. Missing wind remains missing. Mission wind is an editable assumption, initially zero when no observation is available.
 - **Radiation:** the mean observed RAD detector E rate supplies an editable, spatially uniform dose proxy. It is absorbed detector dose, not astronaut dose equivalent. No suit or terrain shielding is inferred.
-- **Resources:** walking speed, slope, time, temperature, wind and dose limits are demonstration settings. Duration uses a slope-dependent speed proxy. Budgets are checked after optimization; the planner does not guarantee a resource-constrained optimum.
+- **Resources:** walking speed, slope, time, temperature, wind and dose limits are demonstration settings. Duration uses a slope-dependent speed proxy. Historical temperatures are evaluated across the complete round trip and optional stop. Dose includes the stop, remains proportional to elapsed time, and does not vary by departure. Limits guide the candidate recommendation after terrain search; the planner does not guarantee a resource-constrained optimum.
 
 Only the prepared area supports routing and walking. There is no live Mars weather, real astronaut localization, physiological oxygen model or operational safety validation. Scene lighting and surface color are illustrative; geometry and overhead texture come from data.
 
-See [Gale data and assumptions](docs/gale-data.md), [dataset integration](docs/datasets.md), and [the prototype plan](docs/plans/2026-11-13-gale-prototype.md).
+See [science data and geological evidence](docs/science-data.md), [Gale data and assumptions](docs/gale-data.md), [dataset integration](docs/datasets.md), and [the prototype plan](docs/plans/2026-11-13-gale-prototype.md).
+
+Preliminary feature ideas and open requests live in the [feature backlog](docs/backlog.md).
 
 ## Reproduce the data package
 
@@ -75,6 +97,8 @@ Prepared files are included, so the normal demo does not download multi-gigabyte
 
 ```bash
 npm run prepare:data
+# Optional: regenerate the bounded USGS geology and NASA visit-area package
+npm run prepare:science
 ```
 
 This uses HTTP range requests against USGS rasters and downloads PDS environmental products. It can take several minutes and needs network access. Source records are cached under the repository's `tmp/`. It fails if usable data or verified radiation units are unavailable; it does not generate replacement terrain.
@@ -95,4 +119,4 @@ TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npx playwright ins
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
 ```
 
-The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
+The browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.

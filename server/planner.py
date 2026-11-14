@@ -87,14 +87,23 @@ class Terrain:
             cells.append(tuple(parent[cells[-1]]))
         cells.reverse()
         distance = seconds = ascent = descent = maximum = 0.
+        profile = [{'distanceM':0., 'elapsedS':0., 'elevationM':float(self.heights[start]), 'slopeDeg':float(self.slopes[start])}]
+        segments = []
         for a, b in zip(cells, cells[1:]):
-            _, d, t, dz, slope = self.edge(a,b,mode,settings['maxSlopeDeg'],settings['speedMps'])
+            cost, d, t, dz, slope = self.edge(a,b,mode,settings['maxSlopeDeg'],settings['speedMps'])
+            flat=math.hypot(b[0]-a[0],b[1]-a[1])*self.step
+            grade=dz/flat
+            segments.append({'fromDistanceM':distance,'distanceM':d,'durationS':t,'slopeDeg':slope,
+                             'gradePercent':grade*100,'cost':cost,
+                             'slopePenalty':d*4*(slope/settings['maxSlopeDeg'])**2 if mode=='gentler' else 0.,
+                             'uphillPenalty':d*8*max(0,grade) if mode=='gentler' else 0.})
             distance += d
             seconds += t
             ascent += max(0,dz)
             descent += max(0,-dz)
             maximum = max(maximum,slope)
+            profile.append({'distanceM':distance,'elapsedS':seconds,'elevationM':float(self.heights[b]),'slopeDeg':slope})
         dose = seconds/3600*settings['doseRateMicroGyH']
-        return {'mode': mode, 'points': [self.point(*c) for c in cells],
+        return {'mode': mode, 'points': [self.point(*c) for c in cells], 'profile':profile,'segments':segments,
                 'metrics': {'distanceM': distance, 'durationS': seconds, 'ascentM': ascent, 'descentM': descent,
                             'maxSlopeDeg': maximum, 'doseMicroGy': dose, 'terrainCost': float(best[goal])}}

@@ -7,7 +7,12 @@
   "attribution": "NASA / JPL-Caltech / USGS · Mars Trek",
   "resolution": "Approximately 463 m/pixel",
   "reference": "EPSG:104905",
-  "bounds": [-180, -89.9991635, 179.9983271, 90],
+  "bounds": [
+    -180,
+    -89.9991635,
+    179.9983271,
+    90
+  ],
   "legend": "Colour shaded relief. Colours represent relative elevation; this image service does not expose numeric elevation values.",
   "provider": {
     "type": "wmts",
@@ -16,8 +21,19 @@
     "style": "default",
     "format": "image/jpeg",
     "tileMatrixSetID": "default028mm",
-    "tileMatrixLabels": ["0", "1", "2", "3", "4", "5", "6", "7"],
+    "tileMatrixLabels": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
     "tileWidth": 256,
     "tileHeight": 256
-  }
+  },
+  "dataKind": "derived",
+  "acquisitionNote": "Composite orbital display product. This tile service does not expose per-pixel acquisition time; it is not a current surface survey."
 }

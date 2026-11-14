@@ -6,9 +6,12 @@ describe('dataset definitions', () => {
   it('accepts the shipped real dataset without renderer-specific objects', () => {
     expect(parseDataset(mola).provider.tileMatrixLabels).toHaveLength(8);
     expect(parseDataset(mola).reference).toBe('EPSG:104905');
+    expect(parseDataset(mola).dataKind).toBe('derived');
+    expect(parseDataset(mola).acquisitionNote).toContain('per-pixel');
   });
   it.each([
     [null, 'JSON object'],
+    [{...mola,dataKind:'forecast'},'dataKind'],
     [{ ...mola, reference: 'EPSG:4326' }, 'Unsupported reference'],
     [{ ...mola, bounds: [170, -10, -170, 10] }, 'Invalid bounds'],
     [{ ...mola, bounds: [-180, -91, 180, 90] }, 'Invalid bounds'],

@@ -9,6 +9,8 @@ export interface DatasetDefinition {
   reference: 'EPSG:104905';
   bounds: [number, number, number, number];
   legend?: string;
+  dataKind?: 'observation' | 'derived' | 'unknown';
+  acquisitionNote?: string;
   provider: {
     type: 'wmts';
     url: string;
@@ -47,6 +49,7 @@ export function parseDataset(input: unknown): DatasetDefinition {
   if (!Array.isArray(bounds) || bounds.length !== 4 || !bounds.every((v) => typeof v === 'number' && Number.isFinite(v))) throw new Error('bounds must contain west, south, east, north in degrees.');
   const [west, south, east, north] = bounds as number[];
   if (west < -180 || east > 180 || south < -90 || north > 90 || west >= east || south >= north) throw new Error('Invalid bounds. Use increasing longitude in −180…180 and latitude in −90…90.');
+  if(data.dataKind!==undefined&&!['observation','derived','unknown'].includes(String(data.dataKind)))throw new Error('dataKind must be observation, derived or unknown.');
   const p = object(data.provider);
   if (p.type !== 'wmts') throw new Error('Unsupported provider. This version supports WMTS imagery.');
   const template = url(p.url, 'provider.url');
@@ -59,6 +62,8 @@ export function parseDataset(input: unknown): DatasetDefinition {
     source: text(data.source, 'source'), sourceUrl: url(data.sourceUrl, 'sourceUrl'), attribution: text(data.attribution, 'attribution'),
     resolution: text(data.resolution, 'resolution'), reference: 'EPSG:104905', bounds: bounds as DatasetDefinition['bounds'],
     legend: data.legend === undefined ? undefined : text(data.legend, 'legend'),
+    dataKind: data.dataKind as DatasetDefinition['dataKind'],
+    acquisitionNote: data.acquisitionNote===undefined?undefined:text(data.acquisitionNote,'acquisitionNote'),
     provider: {
       type: 'wmts', url: template, layer: text(p.layer, 'provider.layer'), style: text(p.style, 'provider.style'),
       format: p.format, tileMatrixSetID: text(p.tileMatrixSetID, 'provider.tileMatrixSetID'),

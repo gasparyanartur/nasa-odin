@@ -16,12 +16,16 @@ export interface Environment {
 export interface TerrainData { baseUrl: string; meta: Meta; heights: Float32Array; slopes: Float32Array; valid: Uint8Array; environment: Environment }
 export interface Settings {
   speedMps: number; maxSlopeDeg: number; maxDurationMin: number; doseRateMicroGyH: number; maxDoseMicroGy: number;
+  conditionsMode?: 'historical' | 'manual'; departureHour?: number; dwellMin?: number;
   temperatureK: number; minTemperatureK: number; windMps: number; maxWindMps: number; exclusions: Exclusion[];
 }
 export interface Metrics { distanceM: number; durationS: number; ascentM: number; descentM: number; maxSlopeDeg: number; doseMicroGy: number; terrainCost: number }
-export interface Route { mode: 'shortest' | 'gentler'; points: [number, number, number][]; geographic: [number, number, number][]; metrics: Metrics }
-export interface Alternative extends Route { returnRoute: Route; roundTripS: number; roundTripDoseMicroGy: number; warnings: string[] }
-export interface RouteResult { datasetId: string; version: number; settings: Settings; routes: Alternative[]; assumptions: string }
+export interface ProfilePoint { distanceM: number; elapsedS: number; elevationM: number; slopeDeg: number }
+export interface RouteSegment { fromDistanceM: number; distanceM: number; durationS: number; slopeDeg: number; gradePercent: number; cost: number; slopePenalty: number; uphillPenalty: number }
+export interface Route { profile?: ProfilePoint[]; segments?: RouteSegment[]; mode: 'shortest' | 'gentler'; points: [number, number, number][]; geographic: [number, number, number][]; metrics: Metrics }
+export interface ConditionEvaluation { departureHour: number; arrivalHour: number; minTemperatureK: number | null; coldSeconds: number; unknownSeconds: number; doseMicroGy: number; warnings: string[]; status: 'within' | 'exceeds' | 'unknown' }
+export interface Alternative extends Route { returnRoute: Route; roundTripS: number; roundTripDoseMicroGy: number; warnings: string[]; conditions: ConditionEvaluation; departures: ConditionEvaluation[] }
+export interface RouteResult { datasetId: string; version: number; settings: Settings; routes: Alternative[]; recommendedIndex: number; assumptions: string }
 export interface ReturnResult { route: Route | null; warnings: string[]; atHabitat?: boolean }
 
 export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Promise<TerrainData> {
@@ -61,7 +65,7 @@ export function sample(data: TerrainData, point: Point) {
   return { elevation: z, slope: Math.max(...ids.map(i => data.slopes[i])) };
 }
 
-export function canMove(data: TerrainData, a: Point, b: Point, settings: Settings): boolean {
+export function canMove(data: TerrainData, a: Point, b: Point, settings: Pick<Settings, 'maxSlopeDeg' | 'exclusions'>): boolean {
   const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(data.meta.stepM/2)));
   for (let i=1;i<=n;i++) {
     const p={x:a.x+(b.x-a.x)*i/n,y:a.y+(b.y-a.y)*i/n};
@@ -69,6 +73,26 @@ export function canMove(data: TerrainData, a: Point, b: Point, settings: Setting
     if (!v || v.slope>settings.maxSlopeDeg || settings.exclusions.some(e => Math.hypot(e.x-p.x,e.y-p.y)<=e.radius)) return false;
   }
   return true;
+}
+
+// Integrate the full mission interval in small physical steps, independent of drawing FPS.
+export function advanceWalk(data: TerrainData, pose: Pose, settings: Pick<Settings, 'speedMps' | 'maxSlopeDeg' | 'exclusions'>, heading: number, forward: number, right: number, seconds: number) {
+  const next={...pose,heading,elapsed:pose.elapsed+seconds};
+  const length=Math.hypot(forward,right)||1;
+  let remaining=seconds, blocked=false;
+  while(remaining>1e-8&&(forward||right)) {
+    const step=Math.min(.1,remaining), amount=settings.speedMps*step/length;
+    let target={x:next.x+(Math.sin(heading)*forward+Math.cos(heading)*right)*amount,y:next.y+(Math.cos(heading)*forward-Math.sin(heading)*right)*amount};
+    const from=sample(data,next),to=sample(data,target),flat=Math.hypot(target.x-next.x,target.y-next.y);
+    if(from&&to&&flat>0) {
+      const grade=(to.elevation-from.elevation)/flat;
+      const penalty=Math.hypot(1,grade)*(1+3*Math.max(0,grade)+1.5*Math.max(0,-grade));
+      target={x:next.x+(target.x-next.x)/penalty,y:next.y+(target.y-next.y)/penalty};
+    }
+    if(!canMove(data,next,target,settings)){blocked=true;break;}
+    next.x=target.x;next.y=target.y;remaining-=step;
+  }
+  return {pose:next,blocked};
 }
 
 export function routeProgress(route: Route, point: Point) {

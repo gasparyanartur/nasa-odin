@@ -1,9 +1,10 @@
+import viking from '../../public/datasets/viking.json';
 import mola from '../../public/datasets/mola.json';
 import ctx from '../../public/datasets/ctx.json';
 import gale from '../../public/gale/manifest.json';
 import { parseDataset, type DatasetDefinition } from './definition';
 
-export const BASEMAPS: DatasetDefinition[] = [parseDataset(mola), parseDataset(ctx)];
+export const BASEMAPS: DatasetDefinition[] = [parseDataset(viking), parseDataset(mola), parseDataset(ctx)];
 export type RegionId = 'gale-bradbury' | 'jezero';
 export interface Region {
   id: RegionId;
