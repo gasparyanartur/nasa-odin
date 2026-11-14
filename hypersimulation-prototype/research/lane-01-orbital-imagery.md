@@ -1,0 +1,38 @@
+# Lane 01-orbital-imagery (raw worker report, 2026-11-03, not yet checked)
+
+CORE: Free Mars orbital imagery is plentiful. The best build base is Caltech's global CTX V01 mosaic (5 m/px, 99.5% coverage) over the USGS Viking 232 m mosaic, with HiRISE only for hand-picked sites. NASA's Mars Trek WMTS is the only keyless tile service I confirmed. Table cells say "Y" if I opened the page, "partial" if only part was confirmed.
+
+| Name | Mission/instrument | Agency | What it shows | Direct URL | Access | Format | Resolution | Coverage | Licence | Size/rate | Confirmed? |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Global CTX Mosaic V01 | MRO CTX (built by MSSS, a private company); mosaic by Caltech Murray Lab | NASA data, non-NASA mosaic (Caltech) | Greyscale global basemap, with per-pixel seam maps back to source orbits | https://murray-lab.caltech.edu/CTX/ | Browser (Esri SceneView), JMARS, Quickmap, KML, bulk tiles at /CTX/V01/tiles/. No documented raw tile URL scheme. | GeoTIFF (uncompressed, zipped), shapefiles | 5.0 m/px, equirectangular | 99.5% of Mars, 88S to 88N | "free use ... for all purposes". Credit NASA/JPL/MSSS/The Murray Lab | 3,960 tiles of 4x4 deg. 5.6 TB zipped, 11.484 TB unzipped. Asks for one tile at a time. | Y |
+| Mars Trek (WMTS) | Multi-mission layers (MOC, HRSC, THEMIS, CTX, HiRISE, Viking) | NASA/JPL | Ready tile layers. Includes CTX Beta01 global uncontrolled 5 m, HiRISE_Global (uncontrolled), Viking VIS colour 232 m, THEMIS day/night IR. | https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars | Tile service (OGC RESTful WMTS), GetCapabilities per layer | PNG or JPG tiles | Per layer | Per layer. THEMIS IR spans only 65S to 65N | Not stated on pages I read (UNCONFIRMED) | No rate limit stated. No key shown. | Y (layer list), Y (API page) |
+| HiRISE RDR | MRO HiRISE | NASA/JPL, operated by Univ. of Arizona | Most detailed images, colour on a central strip | https://hirise-pds.lpl.arizona.edu/PDS/ (also https://www.uahirise.org/) | Bulk (PDS HTTP directory: EDR, RDR, DTM, EXTRAS), per-image browser catalogue | JPEG2000 and PDS IMG (format not opened by me) | 0.3 m/px native. Map-projected at 0.25, 0.5 or 1.0 m/px | A few percent (see Gaps) | Public domain. Credit "NASA/JPL/University of Arizona" | Single images are large. No limit stated. | Y |
+| HiRISE DTMs / anaglyphs | MRO HiRISE | NASA/UA | Terrain models for chosen sites | https://www.uahirise.org/hiwish/maps/dtms.jsp (DTM map) and /PDS/DTM/ | Browser map, bulk | PDS | Not read | Selected sites | Same HiRISE policy | Not stated | partial |
+| MOC Wide Angle Mars Digital Map | MGS MOC (MSSS) | NASA data, MSSS product | Greyscale global map, from 1999 red wide-angle images | https://www.msss.com/mgcwg/mgm/ | Bulk, 30 USGS quadrangles | PDS .IMG, 64-px/deg JPEG | 256 px/deg (~230 m), also 64 px/deg | Global. 60S to 65S band flagged "still needs to be reprocessed" | Not stated on page. Credit "NASA/JPL/Malin Space Science Systems" | Not stated | Y |
+| MOC Atlas browse, and Trek colour mosaic | MGS MOC | NASA/MSSS | Quadrangles at 6 km and 1 km/px. Trek serves it as a global colour mosaic. | https://www.msss.com/mars_images/moc/moc_atlas | Browser | JPEG | ~1 km browse | Global | Not stated | n/a | Y |
+| Viking MDIM 2.1 colourised | Viking Orbiter VIS; colourised by NASA Ames | NASA data, USGS product | Global colour basemap | https://astrogeology.usgs.gov/search/map/mars_viking_colorized_global_mosaic_232m | Bulk direct file https://planetarymaps.usgs.gov/mosaic/Mars_Viking_MDIM21_ClrMosaic_global_232m.tif ; also in Trek | GeoTIFF, 3 bands, 8-bit, 92160x46080 | 231.5 m/px | Global, gap-free | Public domain, Use Constraints "None" | 12 GB | Y |
+| Viking MDIM 2.1 greyscale | Viking Orbiter VIS | NASA data, USGS | Topography-emphasised greyscale (albedo removed) | https://astrogeology.usgs.gov/search/map/viking_mdim2_1_grayscale_global_mosaic_232m | Bulk https://planetarymaps.usgs.gov/mosaic/Mars_Viking_MDIM21_Mosaic_global_232m.tif | GeoTIFF, 1 band | 231.5 m/px, ~200 m positional accuracy | Global, gap-free | Public domain | 4 GB | Y |
+| THEMIS Day IR global mosaic v12 | Mars Odyssey THEMIS (ASU) | NASA/JPL, ASU | Daytime IR, a stretched visual proxy for temperature | https://dc.g-vo.org/rr/q/lp/custom/CDS/P/Mars/THEMIS-color (CDS HiPS copy, not NASA) | Tile service (HiPS) | HiPS tiles | 100 m/px | Global (v12). Trek's v2 2018 layer covers 65S to 65N | HiPS copy ODbL per search result only (UNCONFIRMED on page). Original credit "USGS, Arizona State University" | Not stated | Y (HiPS page), partial (licence) |
+| THEMIS Visible (VIS) | Mars Odyssey THEMIS | NASA/JPL, ASU | Five-band visible, regional | https://themis.asu.edu/factsheet (specs only) | No global mosaic found | n/a | 18 m/px per fact sheet | UNCONFIRMED | n/a | n/a | partial (spec only) |
+| HRSC | Mars Express HRSC (DLR Berlin / FU Berlin team) | ESA mission, German-built (not NASA). Map-projected data also on NASA PDS. | Stereo colour images and terrain models | PSA: http://psa.esa.int/ | Browser/bulk (PSA map or parameter query) | Not opened | 12.5 m/px panchromatic, 50 m/px colour (search result only, UNCONFIRMED); Trek serves a MOLA-HRSC blend at 200 m | 85.6% at better than 20 m/px, 98.9% at any resolution (Jan 2024, per DLR) | Search result says calibrated data is CC BY-NC 3.0 IGO (non-commercial) and image releases CC BY-SA 3.0 IGO. UNCONFIRMED on a current page. | Not stated | Y (coverage, access), partial (rest) |
+| Mars Quickmap | CTX/CRISM etc. (ACT/JHU APL) | Not NASA (contractor viewer) | Viewer that includes the CTX V01 mosaic | https://mars.quickmap.io/ | Browser only | n/a | n/a | n/a | UNCONFIRMED | n/a | partial (Murray page names it) |
+
+Richest locations:
+- Rover and lander sites in Trek's HiRISE layer list: Jezero, Columbia Hills, Opportunity, Spirit, Curiosity/Gale, Viking 1 and 2, Phoenix, InSight, Sojourner, Candor Chasma, Marth Crater. These are the densest sub-metre data.
+- CTX regional mosaics in Trek: Gale, Acheron Fossae, Arabia Terra, Cerberus, Valles Marineris (east and equatorial), Deuteronilus Mensae and others.
+- The 100,000th HiRISE image was Syrtis Major, about 80 km from Jezero (JPL, Dec 2025). This shows how heavily the Jezero region is imaged.
+- HRSC covers 85.6% at better than 20 m/px (DLR), so it is the best near-global medium-resolution source after CTX.
+
+Best for a 2-day build:
+1. Mars Trek WMTS: ready-made tiles, so no download or tiling work. Check GetCapabilities for layer IDs. Licence and limits are unconfirmed. Layers: CTX_beta01_uncontrolled_5m_Caltech, Mars_Viking_MDIM21_ClrMosaic_global_232m, HiRISE_Global, THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018.
+2. USGS Viking MDIM 2.1: one public-domain 4 or 12 GB file, global and gap-free. Right size for a context basemap you tile yourself.
+3. CTX V01 per-tile download (single 4x4 deg tiles) plus HiRISE RDR for one site: this gives the 5 m/px walk-planning layer. Fetch only the 1 to 2 tiles you need, since the full set is 5.6 TB.
+
+Gaps:
+- No HiRISE coverage percentage from the UA team. A search snippet gave ~5% by one calculation and 2-3% unique earlier. Only the 100,000-image count is confirmed.
+- No stated licence or rate limit for Mars Trek.
+- HRSC: current PSA licence, formats and the exact 12.5 m global mosaic location are unconfirmed.
+- THEMIS VIS: no global mosaic or coverage figure found.
+- Not looked up: ASU Mars Image Explorer, JMARS layer details, CTX native 6 m figure, native HiRISE file format and typical size.
+- Trek's global CTX layer is Beta01, not V01.
+- Possible Trek layer typos: Murray page spelling of the V01 KML path was copied as given.

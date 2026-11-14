@@ -1,0 +1,182 @@
+/* AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. */
+/*
+  Route card: one A4 page, black on white, readable when every display has failed.
+  Centre rail: one square detent per station. Leg data (bearing, distance, climb, steepest slope, time)
+  on the left of the rail, the station task on the right. Works on screen as a sheet preview and in print.
+*/
+
+.route-card {
+  --rc-ink: #000000;
+  --rc-paper: #ffffff;
+  --rc-rule: 1px solid #000000;
+  --rc-rail: 2px;
+  width: min(210mm, 100%);
+  margin: 0 auto;
+  padding: 9mm 9mm 8mm;
+  background: var(--rc-paper);
+  color: var(--rc-ink);
+  border: var(--rc-rule);
+  font-family: var(--font);
+  font-size: 8.5pt;
+  line-height: 1.3;
+}
+.route-card .num[data-prov] .num__value,
+.route-card .num[data-prov] .num__unit,
+.route-card .num[data-prov] .num__prov { color: var(--rc-ink); }
+/* Provenance in full words, small and inline (never the screen's letter codes) */
+.route-card .num { column-gap: 0.22em; }
+.route-card .num__prov { border: 0; font-size: 6.5pt; font-style: italic; padding: 0; margin-left: 0.15em; }
+
+.route-card__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2mm 6mm;
+  padding-bottom: 1.8mm;
+  border-bottom: 2px solid var(--rc-ink);
+}
+.route-card__title { font-size: 14pt; font-weight: 700; line-height: 1.1; letter-spacing: 0.01em; }
+.route-card__sub { font-size: 8pt; }
+.route-card__sim {
+  align-self: start;
+  padding: 1mm 2mm;
+  border: 2px solid var(--rc-ink);
+  font-weight: 700;
+  font-size: 8pt;
+  letter-spacing: 0.12em;
+}
+.route-card__brief {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: var(--rc-rule);
+}
+.route-card__brief > div { position: relative; padding: 3.9mm 2mm 1.2mm; min-width: 0; }
+.route-card__brief > div + div { border-left: var(--rc-rule); }
+.route-card__field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.3mm 1.5mm;
+  border-right: var(--rc-rule);
+  border-bottom: var(--rc-rule);
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.route-card__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14mm minmax(0, 1fr);
+  margin-top: 2mm;
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: var(--rc-rule);
+  padding-bottom: 1mm;
+}
+.route-card__cols > :last-child { padding-left: 2mm; }
+.route-card__cols > :first-child { text-align: right; padding-right: 2mm; }
+
+/* The centre rail */
+.rail { position: relative; }
+.rail::before {
+  content: "";
+  position: absolute;
+  top: 3mm;
+  bottom: 3mm;
+  left: 50%;
+  width: var(--rc-rail);
+  transform: translateX(-50%);
+  background: var(--rc-ink);
+}
+.rail__stop,
+.rail__leg {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14mm minmax(0, 1fr);
+  align-items: center;
+}
+.rail__stop { align-items: start; padding: 1.3mm 0; }
+.rail__stop + .rail__stop { border-top: 1px solid #c8c8c8; }
+.rail__stop .rail__detent { margin-top: 0.3mm; }
+.rail__leg { padding: 0.5mm 0; }
+.rail__left { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3mm; text-align: right; padding-right: 2mm; }
+.rail__right { padding-left: 2mm; min-width: 0; }
+.rail__detent {
+  justify-self: center;
+  position: relative;
+  width: 4.2mm;
+  height: 4.2mm;
+  border: 2px solid var(--rc-ink);
+  background: var(--rc-paper);
+  z-index: 1;
+}
+.rail__stop--base .rail__detent { width: 5.6mm; height: 5.6mm; background: var(--rc-ink); outline: 1.2px solid var(--rc-paper); outline-offset: -2.4mm; }
+.rail__stop--hazard .rail__detent { width: 4.2mm; height: 4.2mm; transform: rotate(45deg); }
+.rail__id { font-size: 11pt; font-weight: 700; letter-spacing: 0.02em; }
+.rail__kind { font-size: 7pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-left: 1.5mm; }
+.rail__task { display: inline; margin-left: 1.5mm; font-size: 8pt; line-height: 1.3; }
+.rail__unset { display: block; font-size: 8pt; font-style: italic; }
+.rail__time { font-size: 8.5pt; }
+.leg-data {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.2mm 1.6mm;
+  font-size: 7.5pt;
+}
+.leg-data .num__value { font-weight: 700; }
+.leg-data__course { font-size: 9.5pt; }
+.leg-data__course .num__value { font-size: 9.5pt; }
+
+.route-card__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0 4mm;
+  margin-top: 2mm;
+  border-top: 2px solid var(--rc-ink);
+  padding-top: 1.5mm;
+}
+.route-card__limits { width: 100%; font-size: 7.5pt; }
+.route-card__limits th,
+.route-card__limits td { padding: 0.6mm 1mm; border-bottom: var(--rc-rule); vertical-align: top; text-align: left; }
+.route-card__limits thead th { font-size: 6.5pt; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 2px solid var(--rc-ink); }
+.route-card__limits .num__prov { font-size: 6pt; }
+.route-card__notes { font-size: 7pt; line-height: 1.35; display: grid; gap: 1.5mm; align-content: start; }
+.route-card__notes strong { letter-spacing: 0.08em; text-transform: uppercase; font-size: 6.5pt; display: block; }
+.route-card__warn {
+  display: flex;
+  gap: 1.5mm;
+  align-items: flex-start;
+  padding: 1.2mm 1.5mm;
+  border: 2px solid var(--rc-ink);
+  font-weight: 700;
+}
+.route-card__warn .icon { width: 4mm; height: 4mm; stroke: var(--rc-ink); }
+.route-card__warn .icon__shape { fill: var(--rc-paper); stroke: var(--rc-ink); }
+.route-card__warn .icon__bar { stroke: var(--rc-ink); }
+
+@page {
+  size: A4 portrait;
+  margin: 9mm;
+}
+
+@media print {
+  html, body { background: #ffffff; }
+  body * { visibility: hidden; }
+  .route-card, .route-card * { visibility: visible; }
+  .route-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .rail__stop, .rail__leg { break-inside: avoid; }
+}

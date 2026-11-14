@@ -1,0 +1,34 @@
+{
+  "sol": 4600,
+  "source": {
+    "id": "mock",
+    "title": "MOCK synthetic data, not from NASA or USGS",
+    "url": "",
+    "licence": "MOCK",
+    "credit": "MOCK"
+  },
+  "dose_rate": {
+    "value": 21.5,
+    "unit": "microGy/hour",
+    "detector": "B",
+    "n_obs": 24,
+    "derived_daily": {
+      "value": 0.516,
+      "unit": "mGy/day",
+      "method": "MOCK: mean of the sol's hourly values x 24, derived by us"
+    }
+  },
+  "fallback": {
+    "value": 0.21,
+    "plus_minus": 0.04,
+    "unit": "mGy/day",
+    "source": "Hassler et al. 2014",
+    "period": "Gale, 2012 to 2013"
+  },
+  "dose_equivalent_rate": {
+    "value": 0.64,
+    "plus_minus": 0.12,
+    "unit": "mSv/day",
+    "source": "Hassler et al. 2014"
+  }
+}

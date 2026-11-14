@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Index of the design mock-ups. -->
+<title>Marswalk design - mock-ups</title>
+<link rel="stylesheet" href="../src/styles/tokens.css">
+<link rel="stylesheet" href="../src/styles/base.css">
+<link rel="stylesheet" href="../src/styles/components.css">
+</head>
+<body>
+<!-- THESIS: The walk is a flight procedure on one chart: plan view, profile, minimums. It refuses the dark map with floating rounded panels. OWN-WORLD: chart-paper panels, ink, one-pixel ruled boxes, no radius, no shadow; a cased aeronautical-magenta route over the Mars photobase; blue for rover data; hatches for classes; red and amber only for hazard states; the B612 cockpit face. STORY: the planner sees the place, reads limits as margins and trusts the labels; the astronaut follows bearing and margins and returns on red. FIRST VIEWPORT: Mars scene full-bleed; briefing strip on top; limits table docked right with layers and legend below; profile and timeline score along the bottom; the primary action "Walk the route" at the right end of the strip. FORM: instrument approach plate, 3 of 7, seed 698f0d0d. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<main class="page">
+  <header class="page__head">
+    <h1 class="page__title">Marswalk - Approach Plate</h1>
+    <p class="page__lead">The walk drawn as an instrument approach chart: plan view on top, profile below, limits in a ruled minimums table. Static mock-ups; every class comes from the shipped CSS in src/styles.</p>
+  </header>
+  <nav class="index-list" aria-label="Mock-ups">
+    <a href="plan.html"><span class="index-list__name">Plan view</span><span class="index-list__what">First viewport: briefing strip, scene with the cased route and hatches, minimums, layers, legend, profile and timeline score, Walk the route.</span></a>
+    <a href="helmet.html"><span class="index-list__name">Helmet display</span><span class="index-list__what">Walk, work, caution and return now. Keys N, A and R; caution and return stay lit until acknowledged.</span></a>
+    <a href="station-card.html"><span class="index-list__name">Station card</span><span class="index-list__what">Fixed furniture: station and kind, task, measured conditions, photo or no photo, source.</span></a>
+    <a href="route-card.html"><span class="index-list__name">Route card</span><span class="index-list__what">One A4 page in black on white with the centre rail. Print it to check.</span></a>
+    <a href="layers.html"><span class="index-list__name">Layers and panels</span><span class="index-list__what">The 11 layers with units, legends and credits; thermal, atmosphere, radiation and space weather panels.</span></a>
+    <a href="rover-check.html"><span class="index-list__name">Rover check</span><span class="index-list__what">Scatter frame with axes in the page and an empty canvas; the result with NO DATA until the check runs.</span></a>
+    <a href="editor.html"><span class="index-list__name">Editor</span><span class="index-list__what">Stations with kind and task, no-go zones, steppers for the assumptions, import and export.</span></a>
+    <a href="states.html"><span class="index-list__name">States</span><span class="index-list__what">Loading, error, empty, no route, 2D fallback and bad inputs.</span></a>
+  </nav>
+</main>
+</body>
+</html>

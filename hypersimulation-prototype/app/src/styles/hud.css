@@ -1,0 +1,405 @@
+/* AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. */
+/*
+  Helmet display (spec 5a). Head-up symbology, drawn like chart linework:
+  bright cores with a dark casing, a clear centre, no filled panels over the terrain.
+  Six items in fixed places, in priority order:
+    1 warning  2 bearing and distance to next station  3 time margin
+    4 distance to rover  5 distance to partner  6 science line
+  Three actions, each 64 px or more with its key: Next (N), Acknowledge (A), Return to rover (R).
+  "SIMULATION" is always visible. Items never move between states; only their content changes.
+*/
+
+.hud-view {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ink);
+}
+.hud-view__terrain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: 50% 62%;
+  transform: scale(1.22);
+  transform-origin: 50% 58%;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-hud);
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.5fr) minmax(17rem, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "sim     warn    margins"
+    ".       nav     margins"
+    ".       clear   margins"
+    "science science science"
+    "ret     .       acts";
+  gap: var(--sp-3) var(--sp-5);
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+  color: var(--hud-core);
+  pointer-events: none;
+}
+.hud > * { pointer-events: auto; min-width: 0; }
+
+/* Cased text: light core, dark casing painted under the fill */
+.hud,
+.hud .num__prov {
+  -webkit-text-stroke: var(--hud-text-casing) var(--hud-casing);
+  paint-order: stroke fill;
+}
+@supports not (paint-order: stroke fill) {
+  .hud,
+  .hud .num__prov {
+    -webkit-text-stroke: 0;
+    text-shadow:
+      1px 1px 0 var(--hud-casing), -1px -1px 0 var(--hud-casing),
+      1px -1px 0 var(--hud-casing), -1px 1px 0 var(--hud-casing),
+      2px 0 0 var(--hud-casing), -2px 0 0 var(--hud-casing),
+      0 2px 0 var(--hud-casing), 0 -2px 0 var(--hud-casing);
+  }
+}
+
+/* Cased rule: a light 2 px line between two 2 px ink lines */
+.hud-rule {
+  border: 2px solid var(--hud-core);
+  outline: 2px solid var(--hud-casing);
+  box-sizing: border-box;
+}
+
+/* Item labels and values (visor sizes: labels 19 px, values 28 px and up) */
+.hud__label {
+  display: block;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+.hud .num { color: var(--hud-core); column-gap: 0.25em; }
+.hud .num__value { font-size: var(--fs-3); line-height: 1.05; }
+.hud .num__unit { font-size: var(--fs-1); font-weight: var(--fw-bold); }
+/* Provenance on the visor: the raised letter code in the core colour at regular weight (the key sits by SIMULATION) */
+.hud .num__prov {
+  align-self: flex-start;
+  border: 0;
+  margin-left: 0;
+  padding: 0;
+  color: var(--hud-core);
+  font-size: var(--fs-0);
+  font-weight: var(--fw-regular);
+  font-style: normal;
+  line-height: 1;
+}
+.hud .num__when { color: var(--hud-blue); font-size: var(--fs-0); font-weight: var(--fw-regular); }
+.hud .num[data-prov="measured"] .num__value,
+.hud .num[data-prov="measured"] .num__unit,
+.hud .num[data-prov="measured"] .num__prov { color: var(--hud-blue); }
+/* Large visor text (27 px and up) takes a thinner casing so it never reads as a heavy outline; small text keeps
+   the full 0.16em casing. */
+:is(.hud__nav, .hud-margin__line, .hud__science) .num__value { -webkit-text-stroke-width: var(--hud-text-casing-lg); }
+.hud .nodata { border: 2px solid var(--hud-core); outline: 2px solid var(--hud-casing); color: var(--hud-core); font-size: var(--fs-0); }
+.hud .num[data-nodata] .num__value { color: var(--hud-core); }
+
+/* Slot: SIMULATION, with the provenance key beside it */
+.hud__sim-row {
+  grid-area: sim;
+  align-self: start;
+  justify-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+}
+.hud__sim {
+  padding: 4px 10px 3px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.18em;
+}
+
+/* Slot 1: warning (reserved even when empty, so nothing else moves) */
+.hud__warning {
+  grid-area: warn;
+  justify-self: center;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 3.75rem;
+  padding: var(--sp-1) var(--sp-4);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.hud__warning:empty { visibility: hidden; }
+.hud__warning .icon { width: 2.75rem; height: 2.75rem; stroke-width: 2.5; }
+.hud__warning-detail { display: block; font-size: var(--fs-1); letter-spacing: 0.02em; color: var(--hud-core); font-weight: var(--fw-regular); -webkit-text-stroke-width: var(--hud-text-casing); }
+.hud__warning-word { -webkit-text-stroke-width: var(--hud-text-casing-lg); }
+.hud__warning[data-level="caution"] { color: var(--hud-amber); border: 3px solid var(--hud-amber); outline: 2px solid var(--hud-casing); }
+.hud__warning[data-level="return"] { color: var(--hud-red); border: 4px solid var(--hud-red); outline: 2px solid var(--hud-casing); font-size: var(--fs-6); }
+.hud__warning[data-held="acknowledged"] { border-width: 0; outline: 0; }
+.hud__warning[data-level="caution"][data-held="acknowledged"] { font-size: var(--fs-1); }
+.hud__warning[data-level="caution"][data-held="acknowledged"] .icon { width: 1.75rem; height: 1.75rem; }
+.hud__warning[data-level="caution"][data-held="acknowledged"] .icon__shape { fill: none; stroke: var(--hud-amber); }
+.hud__ack-note { display: block; font-size: var(--fs-0); font-weight: var(--fw-regular); letter-spacing: 0.02em; color: var(--hud-core); -webkit-text-stroke-width: var(--hud-text-casing); }
+.prov-key { display: inline-flex; flex-wrap: wrap; gap: 0 var(--sp-2); font-size: var(--fs--1); font-weight: var(--fw-regular); letter-spacing: 0.02em; line-height: 1.25; }
+.prov-key__item { white-space: nowrap; }
+.prov-key__code { font-weight: var(--fw-bold); }
+.hud__key { -webkit-text-stroke-width: 0.12em; }
+.hud__key .prov-key__code { font-weight: var(--fw-regular); font-size: var(--fs-0); line-height: 1; }
+
+/* Slot 2: bearing and distance to the next station */
+.hud__nav {
+  grid-area: nav;
+  justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.hud__nav .num__value { font-size: var(--fs-5); }
+.hud__nav-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: var(--sp-2) var(--sp-5); }
+.hud__target {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+}
+.hud__target[data-kind="base"] { color: var(--hud-red); }
+.hud__sub { font-size: var(--fs-1); font-weight: var(--fw-bold); }
+.hud .icon--octagon .icon__shape { fill: var(--hud-red); stroke: var(--hud-casing); }
+.hud .icon--octagon .icon__bar { stroke: var(--hud-casing); stroke-width: 3; }
+.hud .icon--triangle .icon__shape { fill: var(--hud-amber); stroke: var(--hud-casing); }
+.hud .icon--triangle .icon__bar { stroke: var(--hud-casing); stroke-width: 2.5; }
+.hud .icon { -webkit-text-stroke: 0; }
+.hud-card__task { font-weight: var(--fw-regular); font-size: var(--fs-1); line-height: 1.3; max-width: 60ch; }
+.hud-card__row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-5); font-size: var(--fs-0); }
+.hud-card__row .num__value { font-size: var(--fs-2); }
+.hud-card__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--sp-4); font-size: var(--fs-2); font-weight: var(--fw-bold); letter-spacing: 0.04em; }
+
+/* Slots 3 to 5: margins, value left of the limit with a ruled bar */
+.hud__margins {
+  grid-area: margins;
+  align-self: start;
+  display: grid;
+  gap: var(--sp-4);
+}
+.hud-margin { display: grid; gap: 3px; }
+.hud-margin__line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.4em; }
+.hud-margin__of { font-size: var(--fs-1); font-weight: var(--fw-bold); }
+.hud-margin__bar {
+  position: relative;
+  height: 14px;
+  margin-top: 4px;
+  border: 2px solid var(--hud-core);
+  outline: 2px solid var(--hud-casing);
+}
+.hud-margin__bar::before {
+  content: "";
+  position: absolute;
+  inset: 2px auto 2px 2px;
+  width: calc((100% - 4px) * var(--left, 1));
+  background: var(--hud-core);
+  outline: 1px solid var(--hud-casing);
+}
+.hud-margin[data-state="caution"] { color: var(--hud-amber); }
+.hud-margin[data-state="caution"] .hud-margin__bar { border-color: var(--hud-amber); }
+.hud-margin[data-state="caution"] .hud-margin__bar::before { background: var(--hud-amber); }
+.hud-margin[data-state="caution"] .num,
+.hud-margin[data-state="caution"] .num__prov { color: var(--hud-amber); }
+.hud-margin__flag { display: inline-flex; align-items: center; gap: 6px; }
+.hud-margin__flag .icon { width: 1.5rem; height: 1.5rem; }
+
+/* Slot 6: science line */
+.hud__science {
+  grid-area: science;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-4);
+  padding-top: var(--sp-2);
+  border-top: 2px solid var(--hud-core);
+  outline: 0;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  max-width: 62rem;
+}
+.hud__science .num__value { font-size: var(--fs-3); }
+.hud__task { flex-basis: 100%; font-weight: var(--fw-regular); font-size: var(--fs-1); }
+
+/* Station card on arrival: a ruled frame, no fill */
+.hud-card {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 2px solid var(--hud-core);
+  outline: 2px solid var(--hud-casing);
+}
+
+/* Actions: three large targets with their keys; Return stands alone */
+.hud__return { grid-area: ret; justify-self: start; align-self: end; }
+.hud__acts { grid-area: acts; justify-self: end; align-self: end; display: flex; gap: var(--sp-3); }
+.hud-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--target-hud);
+  min-width: 9rem;
+  padding: 0 var(--sp-4);
+  border: 3px solid var(--hud-core);
+  border-radius: 0;
+  outline: 2px solid var(--hud-casing);
+  outline-offset: 0;
+  background: transparent;
+  color: var(--hud-core);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: var(--hud-text-casing) var(--hud-casing);
+  paint-order: stroke fill;
+  transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.hud-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--hud-casing);
+  pointer-events: none;
+}
+.hud-btn:hover { border-color: var(--hud-magenta); }
+.hud-btn:active { border-width: 5px; }
+.hud-btn:focus-visible { outline: 3px solid var(--hud-magenta); outline-offset: 4px; box-shadow: none; }
+.hud-btn:disabled { border-style: dashed; cursor: not-allowed; }
+.hud-btn__key {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid currentColor;
+  font-size: var(--fs-1);
+}
+.hud-btn--return { min-width: 15rem; }
+.hud-btn--next { min-width: 8rem; }
+.hud-btn--return .icon { width: 1.75rem; height: 1.75rem; }
+.hud[data-mode="return"] .hud-btn--return { border-color: var(--hud-red); color: var(--hud-red); }
+.hud[data-held="lit"] .hud-btn--ack { border-color: var(--hud-amber); color: var(--hud-amber); border-width: 5px; }
+.hud[data-mode="return"][data-held="lit"] .hud-btn--ack { border-color: var(--hud-red); color: var(--hud-red); }
+
+/* Settle-in: part of the plan-to-walk switch (the chart frame folds away in components.css) */
+.hud > * {
+  transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+  transition-delay: var(--dur-1);
+}
+.app[data-view="plan"] .hud > * { opacity: 0; transform: translateY(6px); pointer-events: none; transition-delay: 0ms; }
+
+/* 1366 x 768 and smaller laptop heights */
+@media (max-height: 800px) and (min-width: 601px) {
+  .hud { gap: var(--sp-2) var(--sp-4); padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+  .hud__margins { gap: var(--sp-3); }
+  .hud__warning[data-level="return"] { font-size: var(--fs-5); }
+}
+
+/* Heights under 820 px (1366 x 768): the right margin block (suit time, rover, partner) must end above one third of the
+   screen height, so the middle stays clear. Each margin is three tight rows: label with "left of" limit, value, bar.
+   Height by arithmetic at 768 px: 12 px top padding; per margin 21.1 (label row, 19.2 px x 1.1) + 29 (value row,
+   27.6 px value x 1.05) + 10 (bar) + 2 x 2 (row gaps) = 64.1; three margins plus two 8 px gaps = 208.3; block ends at
+   about 220 px, under 256 px (768 / 3). The value stays 27.6 px, above the 24 px floor. */
+@media (max-height: 820px) and (min-width: 601px) {
+  .hud__margins { gap: var(--sp-2); }
+  .hud-margin {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "lab of" "val val" "bar bar";
+    gap: 2px var(--sp-2);
+  }
+  .hud-margin .hud__label { grid-area: lab; line-height: 1.1; white-space: nowrap; }
+  .hud-margin__of { grid-area: of; justify-self: end; text-align: right; line-height: 1.1; white-space: nowrap; }
+  .hud-margin__line { grid-area: val; flex-wrap: nowrap; }
+  .hud .hud-margin .num { flex-wrap: nowrap; }
+  .hud .hud-margin .num__value { font-size: var(--fs-3); line-height: 1.05; }
+  .hud .hud-margin .num__unit { line-height: 1.05; }
+  .hud .hud-margin .num__prov { line-height: 1.1; }
+  .hud-margin__bar { grid-area: bar; height: 10px; margin-top: 0; }
+}
+
+/* 390 x 844: one compact block at the top (margins, then bearing and distance), a clear middle where only a lit
+   warning shows, the science line or station card at the bottom, and the three actions in one row under it. */
+@media (max-width: 600px) {
+  .hud {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "sim     sim"
+      "margins margins"
+      "nav     nav"
+      "warn    warn"
+      "science science"
+      "ret     acts";
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .hud__sim { font-size: var(--fs-0); padding: 2px 8px 1px; }
+  .hud__key { font-size: 0.72rem; gap: 0 6px; }
+  .hud__key .prov-key__code { font-size: 0.8125rem; }
+  .hud__warning { align-self: center; font-size: var(--fs-2); padding: var(--sp-1) var(--sp-2); min-height: 3rem; }
+  .hud__warning[data-level="return"] { font-size: var(--fs-4); }
+  .hud__warning .icon { width: 2rem; height: 2rem; }
+  .hud__nav .num__value { font-size: var(--fs-3); }
+  .hud__nav .num__prov,
+  .hud-margin .num__prov,
+  .hud .num__when { font-size: 0.875rem; }
+  .hud__nav-row { column-gap: var(--sp-3); }
+  .hud__target { font-size: var(--fs-1); }
+  .hud__margins { gap: var(--sp-1); }
+  .hud-margin { grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: var(--sp-2); row-gap: 0; align-items: center; }
+  .hud-margin .hud__label { grid-column: 1; grid-row: 1; line-height: 1.1; }
+  .hud-margin__of { grid-column: 1; grid-row: 2; font-size: var(--fs--1); line-height: 1.1; }
+  .hud-margin__line { grid-column: 2; grid-row: 1 / span 2; }
+  .hud-card__extra { display: none; }
+  .hud-card { gap: var(--sp-1); padding: var(--sp-2); }
+  .hud-card__head { font-size: var(--fs-1); }
+  .hud-card__task { font-size: var(--fs-0); }
+  .hud-margin__bar { grid-column: 1 / -1; grid-row: 3; height: 8px; margin-top: 2px; }
+  .hud .hud-margin .num__value { font-size: var(--fs-2); }
+  .hud__label { font-size: var(--fs--1); }
+  .hud__warning-detail--long { display: none; }
+  .hud__warning { gap: var(--sp-2); }
+  .hud__sub .num__value { font-size: var(--fs-2); }
+  .hud__science { font-size: var(--fs-0); }
+  .hud__science .num__value { font-size: var(--fs-2); }
+  .hud__task { font-size: var(--fs-0); }
+  .hud__acts { justify-self: stretch; gap: var(--sp-2); }
+  .hud__return { justify-self: stretch; }
+  .hud__acts .hud-btn { flex: 1 1 0; }
+  .hud__return .hud-btn { width: 100%; }
+  .hud-btn {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    padding: var(--sp-1);
+    font-size: 0.875rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .hud-btn__key { width: 1.5rem; height: 1.5rem; font-size: 0.875rem; }
+  .hud-btn--return .icon + .hud-btn__key { display: none; }
+}
+
+/* App wiring (ui/hud.js): value holders take no box; limit and inline numbers keep the size of their line */
+.hud-slot { display: contents; }
+.hud .hud-margin__of .num__value,
+.hud .hud-margin__of .num__unit,
+.hud .hud__warning-detail .num__value,
+.hud .hud__warning-detail .num__unit { font-size: inherit; }
+.hud .hud-margin__of .num__prov { font-size: 0.875rem; }
+.hud-card:focus,
+.hud-card:focus-visible { outline: 3px solid var(--hud-magenta); outline-offset: 4px; }

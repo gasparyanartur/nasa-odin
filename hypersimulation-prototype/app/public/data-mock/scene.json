@@ -1,0 +1,76 @@
+{
+  "origin": {
+    "lon": 137.383,
+    "lat": -4.803
+  },
+  "metres_per_degree": {
+    "lon": 59061.0,
+    "lat": 59276.6
+  },
+  "ground_scale": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "lat_type": "MOCK",
+  "lon_direction": "MOCK",
+  "core": {
+    "size_m": 1024,
+    "image_m_per_px": 1.0,
+    "dem_m_per_px": 1,
+    "tiles": [
+      [
+        "ortho/core_0_0.png",
+        "ortho/core_0_1.png"
+      ],
+      [
+        "ortho/core_1_0.png",
+        "ortho/core_1_1.png"
+      ]
+    ],
+    "tile_px": 512,
+    "half_res": "ortho/core_half.png",
+    "dem": "dem_core.bin",
+    "dem_samples": 1025,
+    "slope": "slope_core.bin",
+    "slope_cells": 1024
+  },
+  "surround": {
+    "size_m": 2048,
+    "image": "ortho/surround.png",
+    "image_m_per_px": 4,
+    "dem": "dem_surround.bin",
+    "dem_samples": 513,
+    "dem_m_per_px": 4
+  },
+  "overview": "ortho/overview.png",
+  "height": {
+    "offset_m": -3640.0,
+    "scale_m": 0.01,
+    "nodata": 65535
+  },
+  "slope": {
+    "scale_deg": 0.25,
+    "nodata": 255
+  },
+  "sources": [
+    "mock"
+  ],
+  "mock": true,
+  "files": {
+    "conditions.json": 9064,
+    "dem_core.bin": 2101250,
+    "dem_surround.bin": 526338,
+    "dose.json": 726,
+    "ortho/core_0_0.png": 2883,
+    "ortho/core_0_1.png": 1974,
+    "ortho/core_1_0.png": 2288,
+    "ortho/core_1_1.png": 1963,
+    "ortho/core_half.png": 1964,
+    "ortho/overview.png": 874,
+    "ortho/surround.png": 1764,
+    "sep-event.json": 321,
+    "slope_core.bin": 1048576,
+    "team-inputs.json": 1857,
+    "waypoints.json": 25221
+  }
+}

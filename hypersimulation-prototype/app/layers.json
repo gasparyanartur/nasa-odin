@@ -1,0 +1,13 @@
+[
+  {"id": "image", "label": "Image", "unit": "HiRISE colour mosaic or greyscale mosaic, 25 cm per pixel", "kind": "map", "source_ids": ["usgs_gale_colour_2025", "image_25cm", "hrsc"]},
+  {"id": "height", "label": "Height", "unit": "m", "kind": "map", "source_ids": ["dem_1m", "hrsc"]},
+  {"id": "slope", "label": "Slope", "unit": "deg", "kind": "map", "source_ids": ["dem_1m", "hrsc", "pena_asensio_2024"]},
+  {"id": "thermal", "label": "Thermal (ground brightness temperature)", "unit": "degC", "kind": "panel", "source_ids": ["rems"]},
+  {"id": "atmosphere", "label": "Atmosphere (air temperature, pressure, UV)", "unit": "degC, Pa, W/m2", "kind": "panel", "source_ids": ["rems"]},
+  {"id": "radiation", "label": "Radiation (dose rate)", "unit": "microGy/hour", "kind": "panel", "source_ids": ["rad", "hassler_2014"]},
+  {"id": "space_weather", "label": "Space weather (scenario)", "unit": "UTC time of event", "kind": "panel", "source_ids": ["donki"]},
+  {"id": "rover_path", "label": "Curiosity path", "unit": "m", "kind": "map", "source_ids": ["msl_waypoints"]},
+  {"id": "stations", "label": "Stations", "unit": "m", "kind": "map", "source_ids": []},
+  {"id": "no_go", "label": "No-go zones (marked areas and slope cap)", "unit": "deg", "kind": "map", "source_ids": ["pena_asensio_2024"]},
+  {"id": "drill_sites", "label": "Drill sites (rover position, approximate)", "unit": "m", "kind": "map", "source_ids": ["boxwork_blog", "msl_waypoints"]}
+]

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Mock-up: printable route card, one A4 page. -->
+<title>Route card - Marswalk design</title>
+<link rel="stylesheet" href="../src/styles/tokens.css">
+<link rel="stylesheet" href="../src/styles/base.css">
+<link rel="stylesheet" href="../src/styles/components.css">
+<link rel="stylesheet" href="../src/styles/print.css">
+</head>
+<body>
+<!-- THESIS: The walk is a flight procedure on one chart: plan view, profile, minimums. It refuses the dark map with floating rounded panels. OWN-WORLD: chart-paper panels, ink, one-pixel ruled boxes, no radius, no shadow; a cased aeronautical-magenta route over the Mars photobase; blue for rover data; hatches for classes; red and amber only for hazard states; the B612 cockpit face. STORY: the planner sees the place, reads limits as margins and trusts the labels; the astronaut follows bearing and margins and returns on red. FIRST VIEWPORT: Mars scene full-bleed; briefing strip on top; limits table docked right with layers and legend below; profile and timeline score along the bottom; the primary action "Walk the route" at the right end of the strip. FORM: instrument approach plate, 3 of 7, seed 698f0d0d. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<main class="page">
+  <header class="page__head">
+    <h1 class="page__title">Route card</h1>
+    <p class="page__lead">One A4 page, black on white. It works when every display has failed. Print it from the plan view; this preview is the same sheet.</p>
+    <button class="btn" onclick="window.print()">Print the card</button>
+  </header>
+  <div class="banner banner--mock" role="note" style="margin-bottom: var(--sp-5);">
+    <span class="banner__word">Mock data</span>
+    <span class="banner__text">Leg numbers and times come from a draft planner run on the team stations, tagged <span class="num" data-prov="mock"><span class="num__prov">mock</span></span>.</span>
+  </div>
+
+  <article class="route-card" aria-label="Route card, walk 1">
+    <header class="route-card__head">
+      <div>
+        <div class="route-card__title">MARSWALK - WALK 1 - ROUTE CARD</div>
+        <div class="route-card__sub" data-nonmetric>Gale crater, boxwork ridges on Mount Sharp. Conditions from sol 4600 (2025-07-15). 8 stations in 4 ridge and hollow pairs.</div>
+      </div>
+      <div class="route-card__sim">SIMULATION</div>
+    </header>
+
+    <div class="route-card__brief">
+      <div><span class="route-card__field">Base</span><span data-nonmetric>Crew rover at the Curiosity position of sol 4534 <em>(assumption)</em></span></div>
+      <div><span class="route-card__field">Start</span><span class="num" data-prov="assumption"><span class="num__value">09:00</span><span class="num__unit">LMST</span><span class="num__prov">assumption</span></span></div>
+      <div><span class="route-card__field">Speed / work</span><span class="num" data-prov="assumption"><span class="num__value">0.7</span><span class="num__unit">m/s</span></span> / <span class="num" data-prov="assumption"><span class="num__value">25</span><span class="num__unit">min</span><span class="num__prov">assumption</span></span></div>
+      <div><span class="route-card__field">Totals</span><span class="num" data-prov="mock"><span class="num__value">1,677 m</span><span class="num__value">4 h 00 min</span><span class="num__prov">mock</span></span></div>
+    </div>
+
+    <div class="route-card__cols"><span>Leg: bearing, distance, climb, steepest, time</span><span></span><span>Station and task</span></div>
+
+    <div class="rail">
+      <div class="rail__stop rail__stop--base"><span class="rail__left rail__time" data-nonmetric>T+ 0:00 - 09:00 LMST</span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id">BASE</span><span class="rail__kind">crew rover</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">227°</span> <span class="num__value">412 m</span></span><span>+25.2 m</span><span>8.8°</span><span>9 min 48 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 0:10 - 09:09 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S1</span><span class="rail__kind">ridge</span><span class="rail__task">Break a fresh face on the ridge rock with a hammer. Compare the inside with the weathered surface through a hand lens and bag the chip.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">264°</span> <span class="num__value">40 m</span></span><span>+0.2 m</span><span>7.0°</span><span>58 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 0:36 - 09:34 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S2</span><span class="rail__kind">hollow</span><span class="rail__task">Dig a trench 20 cm deep in the hollow floor. Photograph the wall of the trench and bag material from the top and from the bottom.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">198°</span> <span class="num__value">313 m</span></span><span>+43.5 m</span><span>14.8°</span><span>7 min 26 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 1:08 - 10:06 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S3</span><span class="rail__kind">ridge</span><span class="rail__task">Measure the direction and the tilt of the ridge wall at three points with a compass clinometer, and mark each point on the map.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">104°</span> <span class="num__value">18 m</span></span><span>+0.1 m</span><span>14.3°</span><span>25 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 1:34 - 10:31 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S4</span><span class="rail__kind">hollow</span><span class="rail__task">Trace one light vein by hand from the ridge wall into the hollow floor. Sample both ends and record the length walked.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">125°</span> <span class="num__value">117 m</span></span><span>+8.0 m</span><span>15.0°</span><span>2 min 46 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 2:01 - 10:58 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S5</span><span class="rail__kind">hollow</span><span class="rail__task">Pick the three nodules that look most different inside a circle of 5 m, by eye. Bag them and photograph each place before removal.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">123°</span> <span class="num__value">29 m</span></span><span>+4.9 m</span><span>9.5°</span><span>42 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 2:27 - 11:23 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S6</span><span class="rail__kind">ridge</span><span class="rail__task">Chip paired samples from the ridge top and from the hollow edge next to it, in the same light, within one stop.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">025°</span> <span class="num__value">98 m</span></span><span>+1.3 m</span><span>14.8°</span><span>2 min 19 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 2:54 - 11:49 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S7</span><span class="rail__kind">hollow</span><span class="rail__task">Sample a hollow that the rover did not visit: dig a trench 20 cm deep and bag material from the top and from the bottom.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">333°</span> <span class="num__value">28 m</span></span><span>+1.1 m</span><span>10.8°</span><span>41 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 3:20 - 12:14 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id" data-nonmetric>S8</span><span class="rail__kind">ridge</span><span class="rail__task">Sample a ridge that the rover did not visit: break a fresh face, compare it with station 1 by eye, and bag the chip.</span></span></div>
+      <div class="rail__leg"><span class="rail__left"><span class="num leg-data" data-prov="mock"><span class="leg-data__course"><span class="num__value">028°</span> <span class="num__value">623 m</span></span><span>+10.6 m</span><span>9.0°</span><span>14 min 50 s</span><span class="num__prov">mock</span></span></span><span></span><span class="rail__right"></span></div>
+      <div class="rail__stop rail__stop--base"><span class="rail__left rail__time"><span class="num" data-prov="mock"><span class="num__value">T+ 4:00 - 12:53 LMST</span><span class="num__prov">mock</span></span></span><span class="rail__detent"></span><span class="rail__right"><span class="rail__id">BASE</span><span class="rail__kind">end of walk</span></span></div>
+    </div>
+
+    <footer class="route-card__foot">
+      <table class="route-card__limits">
+        <thead><tr><th>Limit</th><th>Value</th><th>Margin</th><th>Body, source</th></tr></thead>
+        <tbody>
+          <tr><td>Slope cap <span class="num" data-prov="source"><span class="num__value">15°</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">15.0°</span><span class="num__prov">mock</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">0.0°</span></span> CAUTION</td><td>Moon, Pena-Asensio 2024</td></tr>
+          <tr><td>From rover <span class="num" data-prov="source"><span class="num__value">2,000 m</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">686 m</span><span class="num__prov">mock</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">1,314 m</span></span></td><td>Earth analog, D-RATS 2022</td></tr>
+          <tr><td>Partner <span class="num" data-prov="source"><span class="num__value">100 m</span></span></td><td><span class="num" data-prov="assumption"><span class="num__value">20 m</span><span class="num__prov">assumption</span></span></td><td><span class="num" data-prov="assumption"><span class="num__value">80 m</span></span></td><td>Earth analog, D-RATS 2022</td></tr>
+          <tr><td>Suit time <span class="num" data-prov="source"><span class="num__value">14 h</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">4 h 00 min</span><span class="num__prov">mock</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">10 h 00 min</span></span></td><td>NASA-STD-3001 Vol 2 Rev C</td></tr>
+          <tr><td>Dose <span class="num" data-prov="source"><span class="num__value">600 mSv</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">0.107 mSv</span><span class="num__prov">mock</span></span></td><td><span class="num" data-prov="mock"><span class="num__value">599.9 mSv</span></span></td><td>NASA-STD-3001 Vol 1 (OCHMO); Hassler 2014</td></tr>
+        </tbody>
+      </table>
+      <div class="route-card__notes">
+        <div class="route-card__warn">
+          <svg class="icon icon--octagon" viewBox="0 0 24 24" aria-hidden="true"><path class="icon__shape" d="M8 2h8l6 6v8l-6 6H8l-6-6V8z"/><path class="icon__bar" d="M7 12h10"/></svg>
+          <span>RETURN NOW scenario at <span class="num" data-prov="assumption"><span class="num__value">T+ 2:30</span><span class="num__prov">assumption</span></span>: from S6, bearing <span class="num" data-prov="mock"><span class="num__value">026°</span></span>, <span class="num" data-prov="mock"><span class="num__value">733 m</span></span>, <span class="num" data-prov="mock"><span class="num__value">17 min 27 s</span><span class="num__prov">mock</span></span>.</span>
+        </div>
+        <div data-nonmetric><strong>Read me</strong>Bearings true north. Times at the assumed speed. Climb is the sum of rises on the leg; steepest is the highest 1 m cell slope on the path.</div>
+        <div data-nonmetric><strong>Sources</strong>USGS MSL Gale 25 cm image and 1 m terrain (Calef III and Parker 2016; ESA/DLR/FU Berlin HRSC, CC BY-SA 3.0 IGO). MSL REMS and RAD RDR, NASA PDS. NASA CCMC DONKI (scenario). Designed against named NASA human-systems rules.</div>
+      </div>
+    </footer>
+  </article>
+</main>
+</body>
+</html>

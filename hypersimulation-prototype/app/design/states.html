@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Mock-up: loading, error, empty, no route, 2D fallback, bad inputs. -->
+<title>States - Marswalk design</title>
+<link rel="stylesheet" href="../src/styles/tokens.css">
+<link rel="stylesheet" href="../src/styles/base.css">
+<link rel="stylesheet" href="../src/styles/components.css">
+</head>
+<body>
+<!-- THESIS: The walk is a flight procedure on one chart: plan view, profile, minimums. It refuses the dark map with floating rounded panels. OWN-WORLD: chart-paper panels, ink, one-pixel ruled boxes, no radius, no shadow; a cased aeronautical-magenta route over the Mars photobase; blue for rover data; hatches for classes; red and amber only for hazard states; the B612 cockpit face. STORY: the planner sees the place, reads limits as margins and trusts the labels; the astronaut follows bearing and margins and returns on red. FIRST VIEWPORT: Mars scene full-bleed; briefing strip on top; limits table docked right with layers and legend below; profile and timeline score along the bottom; the primary action "Walk the route" at the right end of the strip. FORM: instrument approach plate, 3 of 7, seed 698f0d0d. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<main class="page">
+  <header class="page__head">
+    <h1 class="page__title">States</h1>
+    <p class="page__lead">What the app shows when something is missing or fails. Never a blank canvas: each state names the file, the limit or the field, and offers the next step.</p>
+  </header>
+
+  <div class="page__grid">
+
+    <!-- Loading: determinate progress by bytes -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen">
+          <div class="plate progress" role="status" aria-live="polite">
+            <h2 class="plate__label">Loading</h2>
+            <p class="progress__lead">Loading the Gale boxwork scene</p>
+            <div class="progress__bar" style="--p: 0.58;" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="58" aria-label="Bytes loaded"></div>
+            <p class="plate__note" data-nonmetric>2.3 of 3.9 MB - first view</p>
+            <div class="progress__files" data-nonmetric>
+              <div class="progress__file" data-state="done"><span>scene.json</span><span>3 kB</span><span>Done</span></div>
+              <div class="progress__file" data-state="done"><span>ortho/grey_overview.webp</span><span>69 kB</span><span>Done</span></div>
+              <div class="progress__file" data-state="done"><span>dem_surround.bin</span><span>0.53 MB</span><span>Done</span></div>
+              <div class="progress__file" data-state="loading"><span>ortho/grey_core_half.webp</span><span>0.62 of 1.09 MB</span><span>Loading</span></div>
+              <div class="progress__file" data-state="waiting"><span>slope_core.bin</span><span>1.05 MB</span><span>Waiting</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">Loading: bytes over bytes, file by file. The scene paints as soon as the overview arrives.</figcaption>
+    </figure>
+
+    <!-- Error: a file that failed, with its name, status and a retry -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen">
+          <div class="plate error-screen" role="alert">
+            <h2 class="plate__label">Error</h2>
+            <p class="plate__title">The slope grid did not load</p>
+            <p>Without it the planner cannot check the slope cap, so no route is drawn.</p>
+            <dl class="error-screen__facts" data-nonmetric>
+              <dt>File</dt><dd>public/data/slope_core.bin</dd>
+              <dt>Status</dt><dd>HTTP 404 - not found on this host</dd>
+              <dt>Got</dt><dd>0 of 1,048,576 bytes</dd>
+            </dl>
+            <div class="btn-row"><button class="btn btn--primary">Retry the download</button><button class="btn">Open the 2D view</button></div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">Error: names the file and the HTTP status; retry is the main action.</figcaption>
+    </figure>
+
+    <!-- Empty: no stations yet -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen">
+          <div class="plate empty">
+            <h2 class="plate__label">No stations</h2>
+            <p class="plate__title">No stations yet</p>
+            <p>A walk needs at least one station. The planner then finds a path from the crew rover through each one and back.</p>
+            <ol class="empty__steps">
+              <li>Open the editor and press Add a station.</li>
+              <li>Click a ridge or a hollow on the image.</li>
+              <li>Mark it ridge or hollow and write its task.</li>
+            </ol>
+            <button class="btn btn--primary">Open the editor</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">Empty: teaches the first three steps instead of saying nothing is here.</figcaption>
+    </figure>
+
+    <!-- No route: names the limit and the station -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen">
+          <div class="plate no-route" role="alert">
+            <h2 class="plate__label">Planner</h2>
+            <div class="no-route__head"><svg class="icon icon--lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M8 8l8 8M16 8l-8 8"/></svg>NO ROUTE</div>
+            <dl class="no-route__facts">
+              <dt>Station</dt><dd data-nonmetric><strong>S4 hollow</strong> cannot be reached</dd>
+              <dt>Limit</dt><dd>Slope cap <span class="num" data-prov="source"><span class="num__value">15°</span><span class="num__prov">Moon, Pena-Asensio 2024</span></span></dd>
+              <dt>Why</dt><dd>Every way into the hollow crosses ground steeper than the cap. With the cap lifted, a path exists.</dd>
+            </dl>
+            <div class="btn-row"><button class="btn btn--primary">Open the editor</button><button class="btn">Show the blocked ground</button></div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">No route: one limit, one station, two ways forward. Shown example, not the current plan.</figcaption>
+    </figure>
+
+    <!-- 2D fallback notice -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen" style="align-items: start; background: var(--paper-2);">
+          <div class="banner" role="status" style="width: 100%;">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 12h16M12 4v16"/></svg>
+            <span class="banner__word">2D view</span>
+            <span class="banner__text">This device was too slow for the 3D view, so the map is flat. Same files, same route, same stations.</span>
+            <button class="btn banner__action">Try 3D again</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">2D fallback: a notice in the chart frame, not an error. It sits under the briefing strip.</figcaption>
+    </figure>
+
+    <!-- Bad inputs notice -->
+    <figure class="specimen">
+      <div class="specimen__frame">
+        <div class="screen" style="align-items: start; background: var(--paper-2);">
+          <div class="banner banner--fail" role="alert" style="width: 100%; flex-wrap: wrap;">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M8 8l8 8M16 8l-8 8"/></svg>
+            <span class="banner__word">Inputs not used</span>
+            <span class="banner__text" data-nonmetric>team-inputs.json: <strong>stations[2].kind</strong> is "peak" - it must be ridge or hollow. The committed inputs are loaded instead.</span>
+            <button class="btn banner__action">Open the editor</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="specimen__caption">Bad inputs: names the field and the rule, then keeps working on the committed file.</figcaption>
+    </figure>
+  </div>
+</main>
+</body>
+</html>
