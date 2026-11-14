@@ -26,9 +26,9 @@ try{
   await page.locator('.map-region-context .primary').click();await page.getByRole('button',{name:'Compare routes →'}).click();await page.locator('.route-card').last().waitFor({timeout:60000});
   await page.locator('.route-card').last().click();
   await clip('Compare shortest and gentler routes, including return time and explicit assumptions.');
-  await page.getByRole('button',{name:'Walk selected route →'}).click();await page.locator('.walking-scene canvas').waitFor();await page.getByLabel('Simulation pace').selectOption('20');await page.waitForTimeout(1500);
+  await page.getByRole('button',{name:'Walk selected route →'}).click();await page.locator('.walking-scene canvas').waitFor();await page.getByRole('button',{name:'HUD setup',exact:true}).click();await page.getByLabel('Simulation pace').selectOption('20');await page.getByRole('button',{name:'Resume surface HUD →'}).click();await page.waitForTimeout(1500);
   await clip('Walk the measured terrain with a minimap, waypoints, and return estimate · 20× demo pace.',async()=>{await page.locator('.walking-scene canvas').click({position:{x:450,y:350}});await page.locator('.walk-instructions').waitFor({state:'hidden'});const before=await page.getByTestId('position').textContent();await page.keyboard.down('w');await page.waitForTimeout(3000);await page.keyboard.up('w');await page.keyboard.press('Escape');if((await page.getByTestId('position').textContent())===before)throw new Error('Recording did not capture actual walking movement.');});
-  await nav().getByRole('button',{name:/Explore/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Jezero/}).click();await page.waitForTimeout(1800);await active();
+  await nav().getByRole('button',{name:/Station/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Jezero/}).click();await page.waitForTimeout(1800);await active();
   await clip('Explore Jezero too. Planning is enabled only where numeric terrain is prepared.');
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'docs/evidence/integrated-mobile.png',fullPage:true});
   const video=page.video();await context.close();const raw=await video.path();await rename(raw,'tmp/demo-video/walkthrough-raw.webm');

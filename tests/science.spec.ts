@@ -44,7 +44,7 @@ test('direct geological science example, linked profiles, provenance and surface
   await expect(page.locator('.walking-scene canvas')).toBeVisible();
   await expect(page.locator('.hud-heading')).toContainText('Yellowknife Bay entry');
   await page.screenshot({path:info.outputPath('v03-science-hud.png')});
-  await page.getByRole('button',{name:'← Return to planner',exact:true}).click();
+  await page.getByRole('button',{name:'← Open tablet',exact:true}).click();
   await page.getByRole('button',{name:'Continue free exploration',exact:true}).click();
   await expect(page.getByRole('region',{name:'Guided science example'})).toHaveCount(0);
   await expect(page.locator('.route-card')).toHaveCount(2);
@@ -64,7 +64,7 @@ test('one-click entry, inspectable regional geology, region isolation and data r
   await expect(page.getByRole('button',{name:'Compare science routes →'})).toBeDisabled();
   await page.unroute('**/gale/height.f32');await page.getByRole('button',{name:'Retry local data'}).click();
   await expect(page.getByRole('button',{name:'Compare science routes →'})).toBeEnabled();
-  await nav(page).getByRole('button',{name:/Explore/}).click();
+  await nav(page).getByRole('button',{name:/Station/}).click();
   const explorer=page.locator('.explorer');
   await expect(explorer.getByLabel('Geological units',{exact:true})).toBeChecked();
   await explorer.getByRole('button',{name:'View geological context ↗'}).click();
@@ -76,12 +76,12 @@ test('one-click entry, inspectable regional geology, region isolation and data r
   await page.waitForTimeout(1500);
   await page.screenshot({path:info.outputPath('v03-geology-globe.png')});
   await explorer.getByLabel('Geology opacity',{exact:true}).fill('60');
-  await nav(page).getByRole('button',{name:/Plan excursion/}).click();
+  await nav(page).getByRole('button',{name:/Tablet/}).click();
   await expect(page.getByRole('region',{name:'Gale route planner'}).getByLabel('Geology opacity',{exact:true})).toHaveValue('60');
-  await nav(page).getByRole('button',{name:/Explore/}).click();
+  await nav(page).getByRole('button',{name:/Station/}).click();
   await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Jezero/}).click();
-  await expect(nav(page).getByRole('button',{name:/Plan excursion/})).toBeDisabled();
-  await expect(nav(page).getByRole('button',{name:/Surface HUD/})).toBeDisabled();
+  await expect(nav(page).getByRole('button',{name:/Tablet/})).toBeEnabled();
+  await expect(nav(page).getByRole('button',{name:/HUD/})).toBeDisabled();
   await expect(explorer.getByLabel('Geological unit legend')).toContainText('Early Hesperian volcanic unit');
   await expect(explorer.getByLabel('Selected geological contact')).toHaveCount(0);
   await page.getByRole('button',{name:'Start guided Gale example →'}).click();

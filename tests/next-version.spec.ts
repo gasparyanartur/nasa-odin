@@ -5,7 +5,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   page.on('console',m=>{if(m.type()==='error'&&/THREE|shader/i.test(m.text()))errors.push(m.text());});
   await page.goto('/');
   await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale/}).click();
-  await page.getByRole('navigation').getByRole('button',{name:/Plan excursion/}).click();
+  await page.getByRole('button',{name:'Data & history',exact:true}).click();
   await expect(page.getByLabel('Historical timeline')).toBeVisible();
   await page.getByRole('button',{name:'Play timelapse',exact:true}).click();
   await expect(page.getByTestId('scenario-time')).not.toHaveText('12:00 LMST');
@@ -16,7 +16,8 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await page.getByRole('button',{name:'Play timelapse',exact:true}).click();
   await expect(page.getByRole('button',{name:'Play timelapse',exact:true})).toBeVisible();
   await expect(page.getByTestId('scenario-time')).toHaveText('23:59 LMST');
-  await page.getByLabel('Historical hour',{exact:true}).selectOption('3');
+  await page.getByLabel('Historical timeline').fill('3');
+  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
   await page.getByText('Departure conditions and limits',{exact:true}).click();
   await page.getByLabel('Minimum temperature',{exact:true}).fill('240');
   await page.getByLabel('Destination stop',{exact:true}).fill('10');
@@ -31,11 +32,15 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await page.getByRole('button',{name:'Compare routes →'}).click();
   await expect(page.locator('.route-card').first()).toContainText('Within configured limits');
   await expect(page.locator('.image-warning')).toHaveCount(0);
-  await page.locator('.scenario-timeline').screenshot({path:info.outputPath('v02-timeline.png')});
+  await page.getByRole('navigation').getByRole('button',{name:/Station/}).click();
+  await page.locator('.scenario-timeline').screenshot({path:info.outputPath('v04-timeline.png')});
+  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
   await page.evaluate(()=>{document.querySelector('.mission-sidebar')!.scrollTop=0;document.querySelector('.terrain-workspace')!.scrollTop=0;});
   await page.screenshot({path:info.outputPath('v02-planner.png'),fullPage:true});
   // Choosing another time invalidates the planned excursion, including the HUD entry.
+  await page.getByRole('navigation').getByRole('button',{name:/Station/}).click();
   await page.getByLabel('Historical timeline').fill('12.99');
+  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
   await page.getByRole('button',{name:'Compare routes →'}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
@@ -43,18 +48,17 @@ test('historical replay, environmental departure decisions, visor and graphics p
   const canvas=page.locator('.walking-scene canvas');await expect(canvas).toBeVisible();
   await page.waitForTimeout(1200);
   const pose=await page.getByTestId('position').textContent();
+  const setup=async()=>{await page.getByRole('button',{name:'HUD setup',exact:true}).click();};
+  const resume=async()=>{await page.getByRole('button',{name:'Resume surface HUD →'}).click();await expect(canvas).toBeVisible();};
   const width=await canvas.evaluate((c:HTMLCanvasElement)=>c.width);
-  await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');
+  await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');await resume();
   await expect.poll(()=>canvas.evaluate((c:HTMLCanvasElement)=>c.width)).toBeLessThan(width);
   await expect(page.getByTestId('position')).toHaveText(pose!);
-  await page.getByLabel('Visor overlay',{exact:true}).uncheck();
+  await setup();await page.getByLabel('Visor overlay',{exact:true}).uncheck();await resume();
   await expect(page.getByLabel('Visor navigation overlay')).toHaveCount(0);
-  await page.getByLabel('Visor overlay',{exact:true}).check();
-  await page.getByLabel('Graphics quality',{exact:true}).selectOption('high');
+  await setup();await page.getByLabel('Visor overlay',{exact:true}).check();await page.getByLabel('Graphics quality',{exact:true}).selectOption('high');await resume();
   await expect.poll(()=>canvas.evaluate((c:HTMLCanvasElement)=>c.width)).toBe(width);
-  // Software WebGL may render slowly; the clock check waits for mission time, not wall time.
-  await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');
-  await page.getByLabel('Simulation pace',{exact:true}).selectOption('20');
+  await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');await page.getByLabel('Simulation pace',{exact:true}).selectOption('20');await resume();
   const departure=await page.getByTestId('hud-lmst').textContent();
   await page.evaluate(()=>{const audit={start:0,end:0};(window as any).missionAudit=audit;document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement)audit.start=performance.now();else audit.end=performance.now();});});
   const refreshed=page.waitForResponse(r=>r.url().includes('/api/return')&&r.ok()&&r.request().postDataJSON().elapsedS>=60,{timeout:60000});
@@ -75,7 +79,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   expect(parseFloat(elapsed!)).toBeLessThan(expectedSeconds*1.2+2);
   await page.waitForTimeout(500);await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
   await expect(page.getByTestId('position')).toHaveText(pose!);
-  await page.getByLabel('Graphics quality',{exact:true}).selectOption('medium');
+  await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('medium');await resume();
   await page.screenshot({path:info.outputPath('v02-visor.png')});
   await page.setViewportSize({width:390,height:844});
   await expect(page.locator('.visor-waypoint')).not.toBeVisible();

@@ -4,7 +4,7 @@ test('real Gale layers, route comparison, walkable HUD and reset',async({page},i
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
   await page.getByRole('button',{name:'Gale · Bradbury',exact:false}).first().click();
-  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Plan excursion/}).click();
+  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
   await expect(page.getByRole('button',{name:'Compare routes →'})).toBeEnabled();
   await expect(page.getByText('REMS air temperature')).toBeVisible();
   await page.getByLabel('Slope',{exact:true}).check();
@@ -19,7 +19,9 @@ test('real Gale layers, route comparison, walkable HUD and reset',async({page},i
   await page.locator('.route-card').last().click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.getByRole('img',{name:'Astronaut minimap'})).toBeVisible();
+  await page.getByRole('button',{name:'HUD setup',exact:true}).click();
   await page.getByLabel('Simulation pace').selectOption('20');
+  await page.getByRole('button',{name:'Resume surface HUD →'}).click();
   await expect(page.locator('.walking-scene canvas')).toBeVisible();
   await page.waitForTimeout(1500);
   const before=await page.getByTestId('position').textContent();

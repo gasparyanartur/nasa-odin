@@ -70,7 +70,7 @@ test('production globe, controls, invalid import, live real-data swap and recove
   await expect(page.getByRole('alert')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer active', { timeout: 60_000 });
-  await expect(page.getByRole('heading', { name: 'Explore the surface.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See the bigger picture.' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('mola-mobile.png'), fullPage: true });
   expect(exceptions).toEqual([]);
 });

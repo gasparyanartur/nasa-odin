@@ -1,8 +1,10 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { BackSide, BufferAttribute, BufferGeometry, Color, Float32BufferAttribute, Line, LineBasicMaterial, SRGBColorSpace, TextureLoader, Vector3 } from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import type { Alternative, Pose, Settings, TerrainData } from './data';
+import ProjectedWaypoints, { type SceneWaypoint } from './ProjectedWaypoints';
+import type { HudSettings } from './HudSettings';
+import { SCIENCE } from '../datasets/geology';
+import type { Alternative, Point, Pose, Settings, TerrainData } from './data';
 import { advanceWalk, sample } from './data';
 import { drawingRatio, type GraphicsQuality } from './conditions';
 const CAMERA={near:.1,far:5000,fov:70};
@@ -38,34 +40,38 @@ function Track({data,route}:{data:TerrainData;route:Alternative}) {
 
 function Walker({data,initialPose,settings,timeScale,onPose,onBlocked,onLock}:{data:TerrainData;initialPose:Pose;settings:Settings;timeScale:number;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;onLock:(b:boolean)=>void}) {
   const {camera,gl}=useThree();
-  const pose=useRef({...initialPose}), keys=useRef(new Set<string>()), controls=useRef<PointerLockControls|null>(null), last=useRef(0),lastTick=useRef(0);
+  const pose=useRef({...initialPose}), keys=useRef(new Set<string>()), last=useRef(0),lastTick=useRef(0),active=useRef(false);
   useEffect(()=>{
-    const c=new PointerLockControls(camera,gl.domElement);controls.current=c;
+    const element=gl.domElement;
+    const isLocked=()=>document.pointerLockElement===element;
     const s=sample(data,pose.current)!;camera.position.set(pose.current.x,s.elevation-data.meta.referenceElevationM+1.7,-pose.current.y);
-    camera.rotation.set(-.12,-pose.current.heading,0,'YXZ');
+    camera.rotation.set(pose.current.pitch??-.12,-pose.current.heading,0,'YXZ');
     let ignoreNextMove=false;
-    const lock=()=>{lastTick.current=performance.now();ignoreNextMove=true;onLock(true);}, unlock=()=>{keys.current.clear();onLock(false);};
-    // Some browsers emit the pre-lock cursor delta as their first relative motion.
-    const guard=(e:MouseEvent)=>{if(c.isLocked&&ignoreNextMove){ignoreNextMove=false;e.stopImmediatePropagation();}};
-    document.addEventListener('mousemove',guard,true);
-    c.addEventListener('lock',lock);c.addEventListener('unlock',unlock);
-    const click=()=>{try{c.lock();}catch{onLock(false);}};
-    const down=(e:KeyboardEvent)=>{if(e.code==='Escape'){keys.current.clear();c.unlock();return;}if(c.isLocked&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.current.add(e.code);}};
+    const lockChanged=()=>{const locked=isLocked();active.current=locked;if(locked){lastTick.current=performance.now();ignoreNextMove=true;}else keys.current.clear();onLock(locked);};
+    const unlock=()=>{active.current=false;keys.current.clear();if(isLocked())document.exitPointerLock();};
+    const move=(e:MouseEvent)=>{
+      if(!active.current||!isLocked())return;
+      // Discard the initial cursor recentering delta after taking pointer lock.
+      if(ignoreNextMove){ignoreNextMove=false;return;}
+      camera.rotation.y-=e.movementX*.002;
+      camera.rotation.x=Math.max(-Math.PI/2+.01,Math.min(Math.PI/2-.01,camera.rotation.x-e.movementY*.002));
+    };
+    const click=()=>{try{void Promise.resolve(element.requestPointerLock()).catch(()=>onLock(false));}catch{onLock(false);}};
+    const down=(e:KeyboardEvent)=>{if(e.code==='Escape'){unlock();return;}if(isLocked()&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.current.add(e.code);}};
     const up=(e:KeyboardEvent)=>keys.current.delete(e.code);
-    const blur=()=>{keys.current.clear();c.unlock();};
-    const visibility=()=>{if(document.hidden)blur();};
-    document.addEventListener('visibilitychange',visibility);
-    gl.domElement.addEventListener('click',click);window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);
-    return()=>{document.removeEventListener('visibilitychange',visibility);document.removeEventListener('mousemove',guard,true);c.removeEventListener('lock',lock);c.removeEventListener('unlock',unlock);c.unlock();c.dispose();controls.current=null;gl.domElement.removeEventListener('click',click);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);};
+    const visibility=()=>{if(document.hidden)unlock();};
+    document.addEventListener('pointerlockchange',lockChanged);document.addEventListener('mousemove',move);document.addEventListener('visibilitychange',visibility);
+    element.addEventListener('click',click);window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',unlock);
+    return()=>{unlock();document.removeEventListener('pointerlockchange',lockChanged);document.removeEventListener('mousemove',move);document.removeEventListener('visibilitychange',visibility);element.removeEventListener('click',click);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',unlock);};
   },[camera,gl,data,onLock]);
   useFrame(()=>{
-    const c=controls.current;if(!c?.isLocked)return;
+    if(!active.current||document.pointerLockElement!==gl.domElement)return;
     const now=performance.now(),dt=Math.max(0,(now-lastTick.current)/1000)*timeScale;lastTick.current=now;
     const direction=camera.getWorldDirection(new Vector3()), heading=Math.atan2(direction.x,-direction.z);
     const k=keys.current, forward=Number(k.has('KeyW')||k.has('ArrowUp'))-Number(k.has('KeyS')||k.has('ArrowDown')),
       right=Number(k.has('KeyD')||k.has('ArrowRight'))-Number(k.has('KeyA')||k.has('ArrowLeft'));
     const advanced=advanceWalk(data,pose.current,settings,heading,forward,right,dt);
-    pose.current=advanced.pose;
+    pose.current={...advanced.pose,pitch:camera.rotation.x};
     const s=sample(data,pose.current);
     if(s)camera.position.set(pose.current.x,s.elevation-data.meta.referenceElevationM+1.7,-pose.current.y);
     last.current+=dt;
@@ -87,16 +93,24 @@ class SceneBoundary extends Component<{children:ReactNode},{failed:boolean}> {
   render(){return this.state.failed?<div className="scene-unavailable" role="alert">The 3D scene could not start. Enable WebGL and return to the planner to retry.</div>:this.props.children;}
 }
 
-export default function WalkingScene(p:{data:TerrainData;route:Alternative;settings:Settings;initialPose:Pose;timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void}) {
+export default function WalkingScene(p:{hud:HudSettings;start:Point;goal:Point;next:Point;data:TerrainData;route:Alternative;settings:Settings;initialPose:Pose;timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void}) {
   const [locked,setLocked]=useState(false);
+  const elements=useRef(new Map<string,HTMLDivElement>());
+  const points:SceneWaypoint[]=p.hud.waypoints?[
+    ...(p.hud.next?[{...p.next,id:'next',label:'Next route waypoint'}]:[]),
+    ...(p.hud.habitat?[{...p.start,id:'habitat',label:'Habitat'}]:[]),
+    ...(p.hud.destination?[{...p.goal,id:'destination',label:'Destination'}]:[]),
+    ...SCIENCE.targets.filter(t=>p.hud.science.includes(t.id)).map(t=>({...t.point,id:t.id,label:t.name})),
+  ]:[];
   return <div className="walking-scene">
     <SceneBoundary><Canvas dpr={drawingRatio(p.quality,window.devicePixelRatio||1)} camera={CAMERA} gl={{antialias:true}} onCreated={({scene})=>{scene.background=new Color('#d7ac8e');}}>
       <MartianSky/><fog attach="fog" args={['#d7ac8e',450,2600]}/><hemisphereLight args={['#f2d2b4','#664b3d',1.3]}/><directionalLight color="#ffe1c0" position={[500,800,200]} intensity={1.6}/>
       <Suspense fallback={null}><Ground data={p.data}/><Track data={p.data} route={p.route}/></Suspense>
-      <Walker {...p} onLock={setLocked}/>
+      <Walker {...p} onLock={setLocked}/><ProjectedWaypoints data={p.data} points={points} elements={elements.current}/>
       {p.settings.exclusions.map((e,i)=>{const s=sample(p.data,e);return s?<mesh key={i} position={[e.x,s.elevation-p.data.meta.referenceElevationM+.2,-e.y]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[e.radius-1,e.radius,64]}/><meshBasicMaterial color="#fa8064"/></mesh>:null;})}
-      {(()=>{const[x,y,z]=p.route.points[p.route.points.length-1];return <mesh position={[x,z-p.data.meta.referenceElevationM+4,-y]}><cylinderGeometry args={[.3,.3,8]}/><meshBasicMaterial color="#ffd5a0"/></mesh>;})()}
+
     </Canvas></SceneBoundary>
+    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)elements.current.set(point.id,el);else elements.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption"><b>{point.label}</b><small/></div></div>)}</div>
     {!locked&&<div className="walk-instructions"><span className="eyebrow">MANUAL SURFACE EXCURSION</span><h2>Take the next step.</h2><p>Click the terrain to begin. WASD to walk, mouse to look.<br/>Esc pauses the simulation and releases the mouse.</p><span>Measured terrain · simulated astronaut · illustrative lighting</span></div>}
     {locked&&<div className="reticle" aria-hidden="true">＋</div>}
   </div>;

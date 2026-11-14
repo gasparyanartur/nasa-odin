@@ -1,5 +1,5 @@
 export interface Point { x: number; y: number }
-export interface Pose extends Point { heading: number; elapsed: number }
+export interface Pose extends Point { heading: number; pitch?: number; elapsed: number }
 export interface Exclusion extends Point { radius: number }
 export interface Meta {
   id: 'gale-bradbury-v1'; version: number; name: string; size: number; stepM: number; extentM: number;

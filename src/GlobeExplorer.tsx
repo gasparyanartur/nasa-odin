@@ -62,8 +62,8 @@ export default function GlobeExplorer(p:Props) {
 
   return <main className="explorer">
     <aside className="sidebar" aria-label="Dataset controls">
-      <header className="brand"><span className="brand-mark" aria-hidden="true">◉</span><div>MARTIAN MAP<span>SURFACE EXPLORER</span></div><span className="version">REAL MARS</span></header>
-      <section className="intro"><div className="eyebrow">A PLANET OF POSSIBILITIES</div><h1>Explore the <br/>surface.</h1><p>Choose a region. Discover its data. Find your way across Mars.</p></section>
+      <header className="brand"><span className="brand-mark" aria-hidden="true">◉</span><div>MARTIAN MAP<span>STATION COMPUTER</span></div><span className="version">REAL MARS</span></header>
+      <section className="intro"><div className="eyebrow">PLANETARY ATLAS</div><h1>See the bigger <br/>picture.</h1><p>Choose a region. Discover its data. Find your way across Mars.</p></section>
       <div className="demo-entry"><span className="data-kind">CURATED SCIENCE EXCURSION</span><h3>Read a landscape. Choose a question.</h3><p>Explore Yellowknife Bay’s geological context, compare routes and enter the surface view.</p><button className="primary full" onClick={p.onDemo}>Start guided Gale example →</button><a href="?demo=yellowknife">Direct example link ↗</a></div><section className="region-section" aria-label="Regions">
         <div className="section-label">01 / CHOOSE A REGION <span className="tag">2 REGIONS</span></div>
         <div className="region-list">{REGIONS.map(r=><button key={r.id} className="region-card" aria-pressed={r.id===p.selectedRegionId} onClick={()=>selectRegion(r.id)}><strong>{r.shortName}<span>↗</span></strong><small>{canPlan(r)?'Explore · Plan · Walk':'Orbital exploration'}</small></button>)}</div>
@@ -72,7 +72,7 @@ export default function GlobeExplorer(p:Props) {
       {region&&<section className="region-details" aria-label="Selected region">
         <div className="eyebrow">SELECTED REGION</div><h2>{region.name}</h2><p className="description">{region.description}</p>
         <p className="region-coordinates">{Math.abs(region.center.latitude).toFixed(4)}° {region.center.latitude<0?'S':'N'} · {region.center.longitude.toFixed(4)}° E</p>
-        {canPlan(region)?<><span className="capability">2 × 2 KM PREPARED / 5 M TERRAIN GRID</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Plan excursion →':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available in Gale · Bradbury.</p></div>}
+        {canPlan(region)?<><span className="capability">2 × 2 KM PREPARED / 5 M TERRAIN GRID</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open astronaut tablet →':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available in Gale · Bradbury.</p></div>}
         <details className="region-source"><summary>Location and coverage</summary><p>{region.locationNote}</p><a href={region.sourceUrl} target="_blank" rel="noreferrer">Location source ↗</a></details>
       </section>}
       {region&&<GeologyPanel regionId={region.id} settings={p.geology} selection={p.geologySelection} onSettings={p.onGeologySettings} onSelect={p.onGeologySelect} onContext={()=>controller.current?.focusGeology(region.id)}/>}
@@ -96,7 +96,7 @@ export default function GlobeExplorer(p:Props) {
       <div ref={container} className="globe"/>
       <div className="region-markers">{markers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.x,top:m.y}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
       <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
-      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<button className="primary" disabled={!p.data} onClick={p.onExplore}>Plan excursion →</button>}</div>}
+      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<button className="primary" disabled={!p.data} onClick={p.onExplore}>Open astronaut tablet →</button>}</div>}
       <div className="map-guide"><span>DRAG TO ROTATE</span><i/><span>SCROLL TO ZOOM</span><i/><span>SELECT A REGION TO EXPLORE</span></div>
       <div className="map-footnote">Global context is a sphere.<br/>Gale relief is relative to the patch minimum.</div>
     </section>
