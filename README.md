@@ -6,6 +6,28 @@ Explore Mars through selectable real datasets, inspect geological evidence, choo
 
 Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5173/?demo=boxwork). Compare routes, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
 
+### Marswalk parts (branch `design/exhibit-system-team-feedback`)
+
+The Marswalk prototype's parts now sit inside the same three places. Nothing opens anywhere else.
+
+- **Station:** after you pick a prepared region, **Choose your walk** offers Geology walk, Safety watch, Water and chemistry search and Custom. Each card lists the features it turns on; a feature without data in the region reads "Not in this region". The choice is kept in this browser (with blocked storage it lasts until reload).
+- **Tablet → Display:** every feature as a labelled switch, grouped, with an info mark and a state word, beside a small schematic preview of what the helmet then shows. Changing a switch makes the walk Custom. Nothing switches by itself at a stop.
+- **Tablet → Map (Boxwork):** the two hazard areas are drawn hatched (one hatch per danger, no tint under the hatch) with a small legend that names the danger and its origin (source, assumption or scenario). The eight science stops and the two placed drill sites are marked; tap a stop for its full task.
+- **Tablet → Routes (Boxwork):** **Plan the science walk** asks the planner for nine legs: habitat, Stop 1 to Stop 8 in order, back to the habitat (shortest mode, through `/api/return`). The hazard areas go to the planner as restriction circles, at most 30 in total with your own restrictions; the circles can also block open ground just outside an area. A leg may end within 8 m of a stop that is steeper than the slope limit. A refused leg shows the planner's own diagnostics and no route is drawn. With the default 20° slope limit the planner refuses the first leg, because the stops sit on steep ridge walls in the 5 m planning grid.
+- **Tablet → Look closer:** the suit limits for the chosen route (value, unit, source), its distance from Curiosity's path, your saved walks with **Compare**, and **Run the solar storm scenario** (labelled scenario; needs Space weather on).
+- **HUD:** stop marks (number, and the short task for the next stop), an arrival notice "Stop n: ..." through the existing notices, the hazard areas hatched in the minimap and on the ground, a hazard symbol in the status row when you are inside or within 25 m of an area, and the storm as one notice under the compass (X dismisses, C cancels or restarts the way back, which is drawn while you return). Walked positions are kept, one point per 5 m, and saved when the tablet opens or the walk ends. A feature that is off shows nothing in the helmet.
+
+Marswalk data sources and licences (from `src/marswalk/README.md`):
+
+- Science stops and tasks: chosen by the Marswalk team (assumption); relief from the USGS Astrogeology 1 m terrain. Data: Marswalk app `public/data/team-inputs.default.json`, commit d2ed7bb0.
+- Hazard areas: drawn by the Marswalk team (assumption); no published source.
+- Drill sites: Curiosity rover position on the named sol, NASA Curiosity blog and NASA/JPL MMGIS MSL waypoints.
+- Curiosity path: sols 4534 to 4805, NASA/JPL MMGIS MSL waypoints, cut by Marswalk. NASA/PDS public data; no licence is stated on the source page.
+- Suit limits: NASA D-RATS 2022 Test Report (NTRS 20230017073), NASA-STD-3001 Vol 2 Rev C (note under Table 35), Pena-Asensio et al. (2024). Only cited sources are used; nothing is copied from them.
+- Solar storm scenario: NASA CCMC DONKI event 2025-05-13T18:14:00-SEP-001, provided as is, at prototyping quality and in a research context; no NASA endorsement.
+- Feature texts: project code under this repository's licence; each feature names its data owner.
+- Faces: Gloock and Overpass, SIL Open Font License 1.1 (licence texts in `public/fonts/`).
+
 ## Try the excursion
 
 Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
