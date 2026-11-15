@@ -240,19 +240,18 @@ Martian Map needs Node.js 22.17 or newer. Python is not required to install, bui
 ### Step 2: Get access to the repository (once)
 
 1. If you don't have a GitHub account, create a free one at [github.com](https://github.com/signup).
-2. The repository is private. Send your GitHub username to the repository owner, `gasparyanartur`, and ask to be added as a collaborator.
-3. GitHub emails you an invitation. Open it and click **Accept invitation**. The invitation is also at [github.com/gasparyanartur/nasa-martian-map/invitations](https://github.com/gasparyanartur/nasa-martian-map/invitations) once it has been sent.
+2. The repository is public: https://github.com/gasparyanartur/nasa-odin. You need no invitation to download it. To push changes, ask the repository owner, `gasparyanartur`, to add you as a collaborator.
 
 ### Step 3: Download the code (once)
 
 In PowerShell (Windows) or Terminal (macOS/Linux), run:
 
 ```bash
-git clone -c core.autocrlf=input https://github.com/gasparyanartur/nasa-martian-map.git
-cd nasa-martian-map
+git clone -c core.autocrlf=input https://github.com/gasparyanartur/nasa-odin.git
+cd nasa-odin
 ```
 
-This creates a `nasa-martian-map` folder inside the folder your terminal is in, which is your user folder unless you `cd` somewhere else first.
+This creates a `nasa-odin` folder inside the folder your terminal is in, which is your user folder unless you `cd` somewhere else first.
 
 The first time, Git asks you to sign in to GitHub:
 
@@ -261,7 +260,7 @@ The first time, Git asks you to sign in to GitHub:
 
 Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Both apps reject any terrain data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
 
-To get your teammates' latest changes later, run `git pull` inside the `nasa-martian-map` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
+To get your teammates' latest changes later, run `git pull` inside the `nasa-odin` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
 
 ### Step 4: Install the website packages
 
@@ -299,7 +298,7 @@ Open [the production preview](http://127.0.0.1:4173). Global imagery needs inter
 Open a terminal in the folder where you cloned the repository and run:
 
 ```bash
-cd nasa-martian-map/hypersimulation-prototype
+cd nasa-odin/hypersimulation-prototype
 npm run dev:all
 ```
 
@@ -313,7 +312,7 @@ Each app keeps running in its own terminal. To run both, open two terminals: run
 
 `npm run build` produces a complete static website under `dist/`, including datasets, Cesium assets and the browser planner worker. Serve that directory over HTTP/HTTPS; no API, Python process, secrets or database is needed. Opening `index.html` directly as a `file://` URL is unsupported because the app loads modules, workers and data files.
 
-To serve the site below a folder (GitHub Pages serves a project at `/<repository>/`), set the folder when building: `VITE_BASE=/nasa-martian-map/ npx vite build`. Every data file, the planner worker and the Cesium files then load from under that folder. Without `VITE_BASE` the build serves from the site root, as before.
+To serve the site below a folder (GitHub Pages serves a project at `/<repository>/`), set the folder when building: `VITE_BASE=/nasa-odin/ npx vite build`. Every data file, the planner worker and the Cesium files then load from under that folder. Without `VITE_BASE` the build serves from the site root, as before.
 
 FR-029 tracks setting up Cloudflare static hosting and publishing the public URL; it is not deployed by FR-028. See the [deployment plan](docs/plans/2026-11-15-demo-deployment.md) and [release instructions](docs/release.md).
 
