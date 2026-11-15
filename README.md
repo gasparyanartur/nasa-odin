@@ -2,7 +2,7 @@
 
 **Offworld Discovery Intelligence Network** - a map for an astronaut's first walk on Mars.
 
-NASA Space Apps 2026, challenge "Interplanetary Survival Guide: Martian Map". Team Clanker Lovers.
+NASA Space Apps 2026, challenge "Interplanetary Survival Guide: Martian Map". Team Pathfinders 4600.
 
 [![ODIN: a map for an astronaut's first walk on Mars. Three screens: Station, Tablet, Helmet.](docs/readme-hero.png)](https://gasparyanartur.github.io/nasa-odin/)
 
