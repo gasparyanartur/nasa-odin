@@ -42,4 +42,3 @@ The next extensions are additional verified terrain packages and science stops w
 - Public demo: pending upload of the 28-second recording.
 - Source: this repository, branch `codex/integrated-explore`; confirm that the final source URL is accessible to judges.
 - Team name and members: confirm in the official project page.
-- Development history and event eligibility: confirm with organizers; this prototype predates the official hackathon start.
