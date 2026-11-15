@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-15",
+  "frontendTests": {
+    "passed": 57
+  },
+  "apiTests": {
+    "passed": 33
+  },
+  "focusedBrowserCases": {
+    "passed": 2,
+    "file": "tests/route-diagnostics.spec.ts"
+  },
+  "productionBuild": "passed",
+  "container": {
+    "image": "martian-map:hyper-integration",
+    "id": "dfef2bc17d81c19ff3b464802295b79edb71d04d603ac8361b78ff0e53048ecd",
+    "url": "http://127.0.0.1:8374",
+    "defaultRoutes": [
+      "gale-bradbury-v1",
+      "gale-boxwork-v1"
+    ],
+    "blockedBoxwork15Deg": "422 with endpoint slope diagnostics"
+  },
+  "unchangedOpenGates": [
+    "startup performance",
+    "intended laptop verification"
+  ]
+}

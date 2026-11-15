@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-15",
+  "scope": "Follow-up: Boxwork default planning and validation errors",
+  "cause": "Two existing local planner processes were stale. Port 8100 rejected Boxwork, conditionsMode and departureHour; port 8200 rejected Boxwork. Current API source supports all of these. Frontend discarded structured FastAPI validation details.",
+  "fixes": [
+    "Restarted both local preview/planner pairs on 4173/8100 and 5273/8200",
+    "Display structured validation field names and reasons, with older-planner restart hint",
+    "Show request errors above Tablet workspace instead of inside scrolling route panel",
+    "Document restart after updating production preview"
+  ],
+  "verification": {
+    "build": "passed; boxwork-build.log",
+    "frontend": "58 passed; boxwork-frontend.log",
+    "browser": "4 passed; boxwork-browser.log",
+    "livePreviews": {
+      "4173": "HTTP 200, two Boxwork alternatives with full UI defaults",
+      "5273": "HTTP 200, two Boxwork alternatives with full UI defaults"
+    },
+    "visual": "boxwork-validation.png; inspected at 1280x720"
+  },
+  "sha256": {
+    "src/App.tsx": "09eafaca57102847d794b7aaca64f32d0429048faf3b36718fc9e4c5334a5dc7",
+    "src/mission/data.ts": "63605550867f81a7b244fef7fb1183c48999ea80ea60b095d5b02ce60d9ce33a",
+    "src/mission/api.test.ts": "83a92954041ea06128cac9973523c040339aa1fe1d096ef8f5040b6e56cf67bb",
+    "tests/boxwork.spec.ts": "d34071958708afaf8c305fb322d48b6a7b92ef65292f48ae96c0d77673f491c6"
+  }
+}

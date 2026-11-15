@@ -1,0 +1,26 @@
+{
+  "sepID": "2025-05-13T18:14:00-SEP-001",
+  "eventTime": "2025-05-13T18:14Z",
+  "instruments": [
+    "SOHO: COSTEP 15.8-39.8 MeV"
+  ],
+  "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/38846/-1",
+  "linkedEvents": [
+    "2025-05-13T15:25:00-FLR-001",
+    "2025-05-13T16:15:00-CME-001"
+  ],
+  "submissionTime": "2025-05-13T18:28Z",
+  "units": {
+    "eventTime": "UTC, ISO 8601",
+    "submissionTime": "UTC, ISO 8601"
+  },
+  "source": {
+    "title": "NASA CCMC DONKI, Solar Energetic Particle (SEP) events",
+    "urls": [
+      "https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP?startDate=2025-05-10&endDate=2025-05-16"
+    ],
+    "citation": "DONKI is provided as is, at prototyping quality and in a research context; no NASA endorsement (https://ccmc.gsfc.nasa.gov/tools/DONKI/).",
+    "retrieved": "2026-11-14"
+  },
+  "note": "Measured near Earth. Arrival at Mars is not claimed. Replayed as a scenario."
+}

@@ -1,2 +1,9 @@
-tools/.venv/
+tmp/
+node_modules/
+dist/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.venv/
 __pycache__/
+.pytest_cache/

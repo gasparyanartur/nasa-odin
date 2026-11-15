@@ -2,7 +2,7 @@
 
 Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Start at the suggested Gale–Boxwork site for detailed terrain, colour orbital imagery and saved Curiosity/route examples. Gale–Bradbury offers another prepared walking area. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
-**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the Marswalk hypersimulation prototype.
+**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the combined app in `hypersimulation-prototype/`.
 
 Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5173/?demo=boxwork). Plan route, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
 
@@ -71,7 +71,7 @@ The optional Explore exclusion tool marks user-declared 40 m restricted areas; *
 The repository holds two separate apps:
 
 - **Martian Map** (repository root): the Station, Tablet and HUD app described above. It needs Git and Node.js. Routing runs in a browser Web Worker; no Python server is needed.
-- **Marswalk** (`hypersimulation-prototype/`): the hypersimulation prototype, a guided five-step walk at the Gale boxwork ridges. It needs Git and Python only.
+- **Combined app** (`hypersimulation-prototype/`): this Station, Tablet and HUD app with the combined design system, the quiet HUD and the Marswalk content (walk presets, science stops, hazard areas, the prepared science walk, the storm scenario). It is built on the earlier version of Martian Map that planned routes in a Python server, so it needs Python as well as Node.js; Step 6 has the setup. It replaces the old static Marswalk app, which remains in git history at commit 66ee212. See [its README](hypersimulation-prototype/README.md).
 
 These steps assume a computer with none of these tools installed. Skip any step you have already done.
 
@@ -136,7 +136,7 @@ The first time, Git asks you to sign in to GitHub:
 - **Windows:** a sign-in window opens. Choose **Sign in with your browser** and approve the request on GitHub. Git remembers this.
 - **macOS and Linux:** Git asks for a username and a password. Enter your GitHub username. GitHub does not accept your account password here, so create a token instead: go to [github.com/settings/tokens](https://github.com/settings/tokens), choose **Generate new token (classic)**, tick **repo**, click **Generate token**, and paste the token as the password. Nothing appears while you paste; press Enter.
 
-Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Marswalk rejects any data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
+Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Both apps reject any terrain data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
 
 To get your teammates' latest changes later, run `git pull` inside the `nasa-martian-map` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
 
@@ -169,20 +169,30 @@ npm run demo
 
 Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared terrain, imagery and environmental observations are bundled. No Cesium ion account is needed. After changing source, rebuild and restart the preview; reload the browser to use the new build.
 
-### Step 6: Run Marswalk (hypersimulation prototype)
+### Step 6: Run the combined app (hypersimulation-prototype/)
 
 Open a terminal in the folder where you cloned the repository and run:
 
+Once, create the Python environment for its route planner (macOS or Linux; on Windows use `python` and `.venv\Scripts\python.exe`):
+
 ```bash
 cd nasa-martian-map/hypersimulation-prototype
-python3 -I tools/dev_server.py --port 8642
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-runtime.txt
 ```
 
-On Windows, type `python` instead of `python3`. Open [Marswalk](http://127.0.0.1:8642/) in your browser. Press Enter four times to go through the five steps, or open a single step with `?step=1` to `?step=5`. The app is plain HTML and JavaScript, so after you edit a file in `hypersimulation-prototype/app/`, refresh the page to see the change. [hypersimulation-prototype/START-HERE.md](hypersimulation-prototype/START-HERE.md) has more detail, including the checks.
+Then start it:
+
+```bash
+cd nasa-martian-map/hypersimulation-prototype
+npm run dev:all
+```
+
+Open [the combined app](http://127.0.0.1:5174) in your browser. It starts its own Vite on port 5174 and its own planner API on port 8101. It needs no `npm install` of its own: it uses the root `node_modules/` from Step 4. Martian Map itself no longer needs Python; only the combined app does. [hypersimulation-prototype/README.md](hypersimulation-prototype/README.md) has more detail, including its known limits.
 
 ### Run both at once, and stop them
 
-Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 and 8642), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
+Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 for Martian Map, and 5174 with 8101 for the combined app), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
 
 ## Deploy the public demo
 

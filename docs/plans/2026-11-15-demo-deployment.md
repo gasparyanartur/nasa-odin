@@ -1,5 +1,7 @@
 # Client-side Martian Map demo
 
+Note (2026-11-15): this is a dated record. Paths under `hypersimulation-prototype/app/src` and the old static Marswalk app it names were removed from the tree on 2026-11-15; they remain in git history at commit 66ee212.
+
 Date: 2026-11-15. Status: In progress. The user authorized FR-028 on 2026-11-15. FR-028 is complete locally after the review below; hosting/publication remains FR-029 and has not started. This revises the earlier Docker/Render proposal.
 
 ## Goal and success criteria

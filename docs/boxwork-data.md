@@ -4,7 +4,7 @@ The Boxwork site is a separate Mount Sharp area, not a replacement for Bradbury.
 
 ## Data and coordinates
 
-`public/boxwork/manifest.json` identifies `gale-boxwork-v1` and lists input SHA-256 hashes. Rebuild it from the committed donor package with `npm run prepare:boxwork`; no download or external raw-data path is required. The original Fable application remains under `hypersimulation-prototype/` for reference.
+`public/boxwork/manifest.json` identifies `gale-boxwork-v1` and lists input SHA-256 hashes. Rebuild it from the committed donor package with `npm run prepare:boxwork`; no download or external raw-data path is required. `hypersimulation-prototype/` now holds the combined app, the donor data stays at `hypersimulation-prototype/app/public/data/`, and the original Fable application (with its source catalogue and alignment report) remains in git history at commit 66ee212.
 
 The supplied display core is 1,024 projected metres across, with 1,025 × 1,025 height samples and four 2,048 px colour or greyscale image tiles at 0.25 m/pixel. A 2,048 m surround provides visual context at lower detail. Processed colour is not a true-colour claim. Source post spacing and centimetre height encoding do not establish source accuracy. See the preserved source catalogue, data licence and original alignment report.
 
@@ -36,7 +36,7 @@ The native Three.js renderer is adapted into the existing React application; the
 
 Public deployment, cross-patch/regional routing, chemical overlays, audio notes, the donor's scripted hazard/tour and a broader interface redesign remain separate scope. Local browser checks on software rendering do not establish performance on the donor's target laptop.
 
-Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged.
+Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged in git history at commit 66ee212.
 
 
 ## Local verification and remaining performance gates

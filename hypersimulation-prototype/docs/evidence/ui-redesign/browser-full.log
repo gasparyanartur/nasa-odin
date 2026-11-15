@@ -1,0 +1,71 @@
+[WebServer] INFO:     Started server process [21948]
+
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8273 (Press CTRL+C to quit)
+
+
+Running 27 tests using 1 worker
+
+(node:21964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/27] tests/boxwork-recovery.spec.ts:3:1 › missing detail and WebGL context loss preserve the Boxwork mission and recover on the Tablet
+[2/27] tests/boxwork-recovery.spec.ts:26:1 › full Boxwork detail and responsive HUD use the same real dataset
+[3/27] tests/boxwork.spec.ts:4:1 › Boxwork terrain integrates route, manual HUD, clocks and field records without crossing sites
+[4/27] tests/contexts.spec.ts:5:1 › functional contexts, projected waypoints and clock visibility retain one mission
+[5/27] tests/contexts.spec.ts:94:1 › tablet touch pinch, drag, tap inspection and placement share transformed coordinates
+[6/27] tests/environment.spec.ts:5:1 › numeric environmental maps, historical data and causal forecast share state without changing a mission
+[7/27] tests/environment.spec.ts:69:1 › environmental package failure is recoverable and preserves the tablet
+[8/27] tests/explore.spec.ts:7:1 › discover regions, choose data, preserve layers and isolate missions
+[9/27] tests/explore.spec.ts:59:1 › regional data failure recovers without enabling another region’s planner
+[10/27] tests/field-data.spec.ts:14:1 › field notes, HUD inspection, pose capture, undo, export/import and reload retain provenance
+[11/27] tests/field-data.spec.ts:57:1 › drawn geology and point readings remain annotations; declared circles change both route candidates
+[12/27] tests/field-data.spec.ts:89:1 › unread storage is preserved, imports fail atomically and quota errors retain exportable records
+[13/27] tests/field-data.spec.ts:104:1 › live pose logging and constraint replanning retain mission state and use restrictions for return
+[14/27] tests/globe.spec.ts:5:1 › production globe, controls, invalid import, live real-data swap and recovery
+  1) tests/globe.spec.ts:5:1 › production globe, controls, invalid import, live real-data swap and recovery 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'See the bigger picture.' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'See the bigger picture.' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'See the bigger picture.' })
+
+
+      77 |   await page.setViewportSize({ width: 800, height: 700 });
+      78 |   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer active', { timeout: 60_000 });
+    > 79 |   await expect(page.getByRole('heading', { name: 'See the bigger picture.' })).toBeVisible();
+         |                                                                                ^
+      80 |   await page.screenshot({ path: testInfo.outputPath('mola-mobile.png'), fullPage: true });
+      81 |   expect(exceptions).toEqual([]);
+      82 | });
+        at /home/gasparyanartur/dev/nasa-martian-map/tests/globe.spec.ts:79:80
+
+    Error Context: test-results/globe-production-globe-con-2409e-real-data-swap-and-recovery/error-context.md
+
+
+(node:25814) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[15/27] tests/mission.spec.ts:4:1 › real Gale layers, route comparison, walkable HUD and reset
+[16/27] tests/next-version.spec.ts:4:1 › historical replay, environmental departure decisions, visor and graphics preserve mission
+[17/27] tests/route-diagnostics.spec.ts:6:1 › preset route failure gives exact slopes and reset restores the working example
+[18/27] tests/route-diagnostics.spec.ts:31:1 › hidden saved restriction is named, retained by reset and opens its field record
+[19/27] tests/science.spec.ts:5:1 › direct geological science example, linked profiles, provenance and surface destination
+[20/27] tests/science.spec.ts:60:1 › one-click entry, inspectable regional geology, region isolation and data recovery
+[21/27] tests/tablet-map.spec.ts:3:1 › Tablet maps fit the available display without changing full-area coverage
+[22/27] tests/tablet-map.spec.ts:23:1 › Tablet map supports keyboard selection, mouse wheel zoom, drag and click placement
+[23/27] tests/ui-redesign.spec.ts:29:1 › free exploration on both sites retains pose, time, draft and independent return estimates
+[24/27] tests/ui-redesign.spec.ts:73:1 › planning and route adoption preserve walking pose, layers and profile remain accessible
+[25/27] tests/ui-redesign.spec.ts:110:1 › return API failure does not block free walking and can be retried
+[26/27] tests/ui-redesign.spec.ts:124:1 › laptop layouts keep core actions and complete map visible without page scrolling
+[27/27] tests/ui-redesign.spec.ts:151:1 › keyboard help, modal focus, unsupported terrain and loading errors are explicit
+  1 failed
+    tests/globe.spec.ts:5:1 › production globe, controls, invalid import, live real-data swap and recovery 
+  26 passed (12.3m)

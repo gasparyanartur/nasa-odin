@@ -1,0 +1,77 @@
+import { uiRoutes, uiDisplay, uiClose, uiStation } from './ui-helpers';
+import {test,expect} from '@playwright/test';
+const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{name:'Main navigation'});
+test('Boxwork terrain integrates route, manual HUD, clocks and field records without crossing sites',async({page},info)=>{
+  test.setTimeout(240_000);
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/?demo=boxwork');
+  await expect(page.getByRole('dialog')).toContainText('Gale · Boxwork');
+  await uiRoutes(page);await page.locator('.target-picker > summary').click();await expect(page.getByLabel('Boxwork rover evidence')).toBeVisible();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await expect(page.locator('.route-card')).toHaveCount(2);
+  const route=await page.locator('.route-card.selected').textContent();
+  await page.getByLabel('Boxwork imagery').selectOption('grey');
+  await expect(page.locator('.route-card.selected')).toHaveText(route!);
+  await page.getByLabel('Boxwork imagery').selectOption('colour');
+  await page.screenshot({timeout:60_000,path:info.outputPath('boxwork-tablet.png'),fullPage:true});
+  await page.getByRole('button',{name:'Walk selected route →'}).click();
+  await expect(page.locator('.walk-instructions')).toBeVisible({timeout:60000});
+  await expect(page.locator('.hud-clock-panel')).toContainText('SOL 4600');
+  await expect(page.locator('.surface-status')).toHaveCount(0,{timeout:60000});
+  await page.screenshot({timeout:60_000,path:info.outputPath('boxwork-real-surface.png')});
+  await page.locator('.walking-scene canvas').click({position:{x:450,y:350}});
+  await page.keyboard.down('w');
+  await expect.poll(async()=>parseFloat((await page.getByTestId('elapsed').textContent())!),{timeout:60000}).toBeGreaterThan(1);
+  await page.keyboard.up('w');await page.keyboard.press('Escape');
+  await expect(page.locator('.walk-instructions')).toBeVisible();
+  const position=await page.getByTestId('position').textContent(),elapsed=await page.getByTestId('elapsed').textContent();
+  await page.getByRole('button',{name:'Log here',exact:true}).click();
+  await page.getByLabel('Field record title').fill('Boxwork field note');
+  await page.getByRole('button',{name:'Save field record'}).click();
+  await expect(page.getByRole('button',{name:/Boxwork field note Geological note/})).toBeVisible();
+  await expect(page.getByLabel('Field record details')).toContainText('137.38');
+  await expect(page.getByLabel('Field record details')).toContainText('Boxwork');
+  await uiDisplay(page);
+  await expect(page.getByTestId('tablet-position')).toContainText(position!);
+  await expect(page.getByTestId('tablet-position')).toContainText(elapsed!.replace(' s',' s elapsed'));
+  await uiClose(page);
+  await expect(page.getByLabel('HUD field inspection')).toContainText('Boxwork field note');
+  await page.getByRole('button',{name:'Close field inspection'}).click();
+  await expect(page.locator('.walk-instructions')).toBeVisible({timeout:60000});
+  await expect(page.getByTestId('position')).toHaveText(position!);
+  await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
+  await uiStation(page);
+  await page.getByRole('button',{name:'Data & history',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Gale / Curiosity Sol 4600'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Use snapshot as fixed mission assumptions'})).toHaveCount(0);
+  await page.goto('/?demo=yellowknife');
+  await page.getByRole('button',{name:'Field data',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Boxwork field note Geological note/})).toHaveCount(0);
+  await page.goto('/?demo=boxwork');
+  await page.getByRole('button',{name:'Field data',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Boxwork field note Geological note/})).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Boxwork defaults plan from Station and explain an outdated planner rejection',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale · Boxwork/}).click();
+  await page.getByRole('button',{name:'Open tablet',exact:true}).last().click();
+  await uiRoutes(page);
+  await page.route('**/api/routes',r=>r.fulfill({status:422,contentType:'application/json',body:JSON.stringify({detail:[
+    {type:'literal_error',loc:['body','datasetId'],msg:"Input should be 'gale-bradbury-v1'"},
+    {type:'extra_forbidden',loc:['body','settings','departureHour'],msg:'Extra inputs are not permitted'},
+  ]})}));
+  await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  const error=page.getByRole('alert').filter({hasText:'Cannot plan route'});
+  await expect(error).toContainText("Terrain dataset: Input should be 'gale-bradbury-v1'");
+  await expect(error).toContainText('Departure hour: Extra inputs are not permitted');
+  await expect(error).toContainText('Restart the planner');
+  await expect(error).toBeInViewport();
+  await page.unroute('**/api/routes');
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/routes'));
+  await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  expect((await response).ok()).toBe(true);
+  await expect(page.locator('.route-card')).toHaveCount(2);
+  await expect(error).toHaveCount(0);
+});

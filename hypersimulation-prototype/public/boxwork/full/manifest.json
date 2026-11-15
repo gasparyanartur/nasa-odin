@@ -1,0 +1,198 @@
+{
+  "id": "gale-boxwork-full-v1",
+  "datasetId": "gale-boxwork-v1",
+  "version": 1,
+  "frame": {
+    "name": "team local frame",
+    "rule": "x_team = x_marswalk * groundScaleX; y_team = y_marswalk",
+    "groundScaleX": 0.9964884795347444,
+    "origin": {
+      "longitude": 137.38299966521333,
+      "latitude": -4.802997938337184
+    },
+    "radiusM": 3396190.0,
+    "derivedFrom": "public/boxwork/detail/scene.json ground_scale.x, the cosine of the origin latitude"
+  },
+  "extentTeamM": {
+    "west": -510.20210152178913,
+    "east": 510.20210152178913,
+    "south": -512.0,
+    "north": 512.0,
+    "derivedFrom": "scene.json core.size_m = 1024 projected metres centred on the origin; x times groundScaleX"
+  },
+  "teamAreaM": {
+    "west": -500.0,
+    "east": 500.0,
+    "south": -500.0,
+    "north": 500.0,
+    "derivedFrom": "public/boxwork/manifest.json extentM"
+  },
+  "imagery": {
+    "pixelSizeM": {
+      "east": 0.2491221198836861,
+      "north": 0.25
+    },
+    "pixelSizeNote": "scene.json core.image_m_per_px = 0.25 projected metres; east size times groundScaleX",
+    "tileGrid": {
+      "rows": 2,
+      "cols": 2,
+      "tilePx": 2048,
+      "tileSizeTeamM": {
+        "east": 510.20210152178913,
+        "north": 512.0
+      },
+      "order": "row 0 is north, column 0 is west; image pixel edges sit on the extent edges"
+    },
+    "modes": {
+      "colour": {
+        "label": "HiRISE colour mosaic (USGS, July 2025)",
+        "sourceId": "usgs_gale_colour_2025"
+      },
+      "grey": {
+        "label": "HiRISE RED mosaic, greyscale",
+        "sourceId": "image_25cm"
+      }
+    },
+    "files": {
+      "colour_0_0": {
+        "url": "/boxwork/detail/ortho/colour_core_0_0.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1181780,
+        "sha256": "bb4b1ebba8adfa2a7569ec8618169517363644e8760257d4b1f387ab1300a619"
+      },
+      "colour_0_1": {
+        "url": "/boxwork/detail/ortho/colour_core_0_1.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1211836,
+        "sha256": "13b501558f4a6c32083a5815f701d781bf28548bbb72a714cab4e1a95c0f1b0b"
+      },
+      "colour_1_0": {
+        "url": "/boxwork/detail/ortho/colour_core_1_0.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1257606,
+        "sha256": "ea538add844f3f8cafe642952b8b81a494833d139aeec004b9b37ad4cefc1a5e"
+      },
+      "colour_1_1": {
+        "url": "/boxwork/detail/ortho/colour_core_1_1.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1278910,
+        "sha256": "00ff44f2a052bcb3df22d2f5e52d2415017c94ce2b7a6b8498950ec21ee8a46b"
+      },
+      "colour_half": {
+        "url": "/boxwork/detail/ortho/colour_core_half.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1443572,
+        "sha256": "23c763711e15e687c0651cf4b395759417406c136c6e7d79d36400ae7d614b32"
+      },
+      "grey_0_0": {
+        "url": "/boxwork/detail/ortho/grey_core_0_0.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 889548,
+        "sha256": "55fd762842e4714276bf9b4d309f3a445cda5f9bc2a26723e273be10fe026ae7"
+      },
+      "grey_0_1": {
+        "url": "/boxwork/detail/ortho/grey_core_0_1.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 927548,
+        "sha256": "b789e689f9c4c7bfe27542d918eb06dcc765e24b5c4a98317194e1a8c0c2255c"
+      },
+      "grey_1_0": {
+        "url": "/boxwork/detail/ortho/grey_core_1_0.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 937480,
+        "sha256": "5b389e65d7a0cb06c820e3120a5347a9c1b2ac85f2de2db7bb1b3be4c308b9ec"
+      },
+      "grey_1_1": {
+        "url": "/boxwork/detail/ortho/grey_core_1_1.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 938818,
+        "sha256": "ab00d6c525fb482ee0e9c25531603d903298ae77dbca0c4d40a8914dc900081e"
+      },
+      "grey_half": {
+        "url": "/boxwork/detail/ortho/grey_core_half.webp",
+        "widthPx": 2048,
+        "heightPx": 2048,
+        "bytes": 1089604,
+        "sha256": "9677a1d094aab649f88bda4e076e82dfeef2b4234bc9d6b4d98f270315fca2b9"
+      }
+    },
+    "note": "The tiles are not duplicated here: they are the byte-identical files already in public/boxwork/detail/ortho/ (checked by sha256 against the Marswalk app)."
+  },
+  "height": {
+    "url": "/boxwork/full/height.f32",
+    "format": "float32 little-endian, row-major",
+    "rows": 1025,
+    "cols": 1025,
+    "order": "row 0 is north, column 0 is west; samples sit on the grid corners, so the first and last sample lie on the extent edges",
+    "stepTeamM": {
+      "east": 0.9964884795347444,
+      "north": 1.0
+    },
+    "units": "metres, source areoid elevation (same as public/boxwork/height.f32)",
+    "noData": "NaN",
+    "noDataCount": 0,
+    "min": -3718.67,
+    "max": -3464.59,
+    "bytes": 4202500,
+    "sha256": "32b1a88c44a2f173371baced586ca9308aaa7cdd521676c611bbfb7363d90ad5",
+    "derivedFrom": "Marswalk public/data/dem_core.bin: uint16 little-endian codes; elevation = -3897.0 + code * 0.01 m; code 65535 becomes NaN. Decoded once, not resampled. Encoding step 0.01 m."
+  },
+  "checks": {
+    "teamNodeMaxAbsDiffM": 0.00012206517476442968,
+    "teamNodeNote": "Bilinear of this grid at every 5 m node of public/boxwork/height.f32 minus that node (float32 rounding only).",
+    "fiveMetreDeviationMaxM": 2.9449894884023706,
+    "fiveMetreDeviationP99M": 0.7613843096598338,
+    "fiveMetreDeviationNote": "Absolute difference between this 1 m grid and the bilinear 5 m team grid, at every valid 1 m sample inside the team area. The maximum is the largest disagreement found at any 1 m sample and serves as the comparison tolerance."
+  },
+  "licence": "CC BY-SA 3.0 IGO (https://creativecommons.org/licenses/by-sa/3.0/igo/); see public/boxwork/DATA-LICENSE.md",
+  "credit": [
+    "Calef III, F. J., & Parker, T. (2016), USGS Astrogeology. MSL Gale Merged Orthophoto Mosaic and MSL Gale Merged DEM Mosaic, v3.",
+    "USGS Gale HiRISE colour mosaic (July 2025); NASA/JPL-Caltech/University of Arizona (HiRISE).",
+    "ESA/DLR/FU Berlin (HRSC)."
+  ],
+  "sources": [
+    {
+      "id": "image_25cm",
+      "title": "MSL Gale Merged Orthophoto Mosaic 25 cm, v3",
+      "url": "https://astrogeology.usgs.gov/search/map/mars_msl_gale_merged_orthophoto_mosaic_25cm",
+      "licence": "USGS page: access constraints \"Please credit authors\", use constraints \"None\"; no named licence. Our derived image files: CC BY-SA 3.0 IGO (cautious reading, the product contains HRSC data)",
+      "credit": "Calef III, F. J., & Parker, T. (2016), USGS Astrogeology; ESA/DLR/FU Berlin (HRSC)"
+    },
+    {
+      "id": "dem_1m",
+      "title": "MSL Gale Merged DEM Mosaic 1 m, v3",
+      "url": "https://astrogeology.usgs.gov/search/map/mars_msl_gale_merged_dem_1m",
+      "licence": "USGS page: access constraints \"Please credit authors\", use constraints \"None\"; no named licence. Our derived terrain and slope files: CC BY-SA 3.0 IGO (cautious reading, the product contains HRSC data)",
+      "credit": "Calef III, F. J., & Parker, T. (2016), USGS Astrogeology; ESA/DLR/FU Berlin (HRSC)"
+    },
+    {
+      "id": "hrsc",
+      "title": "HRSC data inside the two USGS products",
+      "url": "https://astrogeology.usgs.gov/search/map/mars_msl_gale_merged_dem_1m",
+      "licence": "CC BY-SA 3.0 IGO (https://creativecommons.org/licenses/by-sa/3.0/igo/)",
+      "credit": "ESA/DLR/FU Berlin (HRSC)"
+    },
+    {
+      "id": "usgs_gale_colour_2025",
+      "title": "MSL Gale HiRISE colour mosaic (78 quads, sharpened), July 2025",
+      "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/Mars/MSL/MSL_Gale_HiRISE-LRGB_78quads_sharp_cog.tif",
+      "licence": "USGS: \"Access Constraints: Please credit authors\", \"Use Constraints: None\"; our derived files CC BY-SA 3.0 IGO",
+      "credit": "Parker, T., & Calef III, F. J. (2025), USGS Astrogeology; HiRISE: NASA/JPL-Caltech/University of Arizona"
+    }
+  ],
+  "inputHashes": {
+    "public/data/dem_core.bin": "bd858d632b95835d50e7bea7ff3bf3e676c4a69ff3465d08e0592f0f6176e1d7",
+    "public/data/scene.json": "159096ff4664d7fef84d36650b39fd674df7950e426e1815f61b84b382a95a4d",
+    "public/media/credits.json": "2a14c815a41beef64bd3eab6a33b673559da6b196dec43da25930d6b8c640aa5"
+  },
+  "script": "scripts/prepare_boxwork_full.py"
+}

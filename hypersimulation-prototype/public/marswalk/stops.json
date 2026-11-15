@@ -1,0 +1,211 @@
+{
+ "schema": "marswalk-stops",
+ "version": 1,
+ "frame": {
+  "datasetId": "gale-boxwork-v1",
+  "team": "Team app Boxwork local frame: ground metres east (x) and north (y) from the origin in public/boxwork/manifest.json",
+  "marswalk": "Marswalk local frame: projected metres (equirectangular, standard parallel 0) from the same origin, public/data/scene.json",
+  "rule": "x_team = x_marswalk * groundScaleX; y_team = y_marswalk",
+  "groundScaleX": 0.9964884795347444,
+  "origin": {
+   "longitude": 137.38299966521333,
+   "latitude": -4.802997938337184
+  },
+  "radiusM": 3396190.0
+ },
+ "source": "Marswalk app, public/data/team-inputs.default.json (branch hackathon/marswalk-simple-front, commit d2ed7bb0)",
+ "scienceGoal": "Test if the difference between ridge rock and hollow rock holds across several ridge and hollow pairs in the walk area.",
+ "base": {
+  "x": 202.978724,
+  "y": 318.916,
+  "marswalk": {
+   "x": 203.694,
+   "y": 318.916
+  },
+  "label": "Crew rover, parked at the Curiosity position of sol 4534",
+  "origin": "assumption",
+  "originNote": "A parked pressurized crew rover is an assumption of the Marswalk team; the position is the Curiosity waypoint of sol 4534 (NASA/JPL MMGIS MSL waypoints)."
+ },
+ "stops": [
+  {
+   "id": 1,
+   "x": -93.669917,
+   "y": 44,
+   "marswalk": {
+    "x": -94,
+    "y": 44
+   },
+   "kind": "ridge",
+   "onPath": true,
+   "reliefM": 1.1,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Break a fresh face on the ridge rock with a hammer. Compare the inside with the weathered surface through a hand lens and bag the chip.",
+   "short": "Break ridge rock, compare, bag chip",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 2,
+   "x": -132.532968,
+   "y": 40,
+   "marswalk": {
+    "x": -133,
+    "y": 40
+   },
+   "kind": "hollow",
+   "onPath": true,
+   "reliefM": -0.78,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Dig a trench 20 cm deep in the hollow floor. Photograph the wall of the trench and bag material from the top and from the bottom.",
+   "short": "Trench hollow 20 cm, bag both",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 3,
+   "x": -216.238,
+   "y": -214,
+   "marswalk": {
+    "x": -217,
+    "y": -214
+   },
+   "kind": "ridge",
+   "onPath": true,
+   "reliefM": 3.64,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Measure the direction and the tilt of the ridge wall at three points with a compass clinometer, and mark each point on the map.",
+   "short": "Measure ridge wall at three points",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 4,
+   "x": -200.294184,
+   "y": -218,
+   "marswalk": {
+    "x": -201,
+    "y": -218
+   },
+   "kind": "hollow",
+   "onPath": true,
+   "reliefM": -1.01,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Trace one light vein by hand from the ridge wall into the hollow floor. Sample both ends and record the length walked.",
+   "short": "Trace a vein, sample both ends",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 5,
+   "x": -114.596175,
+   "y": -277,
+   "marswalk": {
+    "x": -115,
+    "y": -277
+   },
+   "kind": "hollow",
+   "onPath": true,
+   "reliefM": -1.7,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Pick the three nodules that look most different inside a circle of 5 m, by eye. Bag them and photograph each place before removal.",
+   "short": "Bag three different nodules, photograph first",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 6,
+   "x": -91.67694,
+   "y": -292,
+   "marswalk": {
+    "x": -92,
+    "y": -292
+   },
+   "kind": "ridge",
+   "onPath": true,
+   "reliefM": 1.41,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Chip paired samples from the ridge top and from the hollow edge next to it, in the same light, within one stop.",
+   "short": "Chip paired ridge and edge samples",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 7,
+   "x": -55.803355,
+   "y": -215,
+   "marswalk": {
+    "x": -56,
+    "y": -215
+   },
+   "kind": "hollow",
+   "onPath": false,
+   "reliefM": -1.14,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Sample a hollow that the rover did not visit: dig a trench 20 cm deep and bag material from the top and from the bottom.",
+   "short": "Trench unvisited hollow, bag both",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  },
+  {
+   "id": 8,
+   "x": -67.761217,
+   "y": -192,
+   "marswalk": {
+    "x": -68,
+    "y": -192
+   },
+   "kind": "ridge",
+   "onPath": false,
+   "reliefM": 0.51,
+   "reliefNote": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Sample a ridge that the rover did not visit: break a fresh face, compare it with station 1 by eye, and bag the chip.",
+   "short": "Chip unvisited ridge, compare with 1",
+   "origin": "assumption",
+   "originNote": "Stop position and task chosen by the Marswalk team; no published source. Relief derived from the USGS 1 m terrain."
+  }
+ ],
+ "drillSites": [
+  {
+   "name": "Altadena",
+   "x": -0.748363,
+   "y": 153.584,
+   "marswalk": {
+    "x": -0.751,
+    "y": 153.584
+   },
+   "sol": 4571,
+   "kind": "edge of the boxwork",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "sourceUrl": "https://science.nasa.gov/blog/curiosity-blog-sols-4804-4811-kicking-off-the-final-phase-of-boxwork-exploration",
+   "positionNote": "rover position on sol 4571; the drill position is not published",
+   "origin": "source"
+  },
+  {
+   "name": "Valle de la Luna",
+   "x": null,
+   "y": null,
+   "marswalk": null,
+   "sol": null,
+   "kind": "hollow",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "sourceUrl": "https://science.nasa.gov/blog/curiosity-blog-sols-4689-4694-drill-in-the-boxwork-unit-is-go/",
+   "positionNote": "position not published",
+   "origin": "source"
+  },
+  {
+   "name": "Nevado Sajama",
+   "x": -93.305202,
+   "y": -286.816,
+   "marswalk": {
+    "x": -93.634,
+    "y": -286.816
+   },
+   "sol": 4805,
+   "kind": "ridge",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "sourceUrl": "https://science.nasa.gov/blog/curiosity-blog-sols-4804-4811-kicking-off-the-final-phase-of-boxwork-exploration",
+   "positionNote": "rover position on sol 4805; the drill position is not published",
+   "origin": "source"
+  }
+ ]
+}
