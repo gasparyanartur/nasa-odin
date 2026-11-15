@@ -16,6 +16,14 @@ Then open http://localhost:5174. Details, data sources and licences: [hypersimul
 
 Static build (for example for a sub-path host): `VITE_BASE=/nasa-martian-map/ npx vite build` inside `hypersimulation-prototype/`.
 
+## Live site
+
+A push to `master` builds the app and publishes it with GitHub Pages (`.github/workflows/pages.yml`). In the repository settings, Pages must have the source "GitHub Actions".
+
+## Licence
+
+The code in this repository is licensed under the Apache License 2.0, see [LICENSE](LICENSE). Mars imagery, terrain and measurements come from NASA, USGS, ESA and other agencies and keep their own terms; see `hypersimulation-prototype/public/boxwork/DATA-LICENSE.md` and the source notes in the app README. Parts of the code and documents were written with AI assistance (Claude by Anthropic, OpenAI Codex) and reviewed by the team.
+
 ## What is in `archive/`
 
 - `archive/martian-map-v1/`: the earlier Martian Map app that used to be in the repository root, with its own README. The current app grew out of it and contains its features.
