@@ -151,7 +151,7 @@ The browser suite serves production files on port 8274 (`TEST_PORT` overrides it
 
 ## AI use
 
-Built with Claude (Anthropic) under Arda's direction. The code and these texts are AI-written, reviewed by a separate AI pass, and not yet reviewed by a human.
+Built with AI coding assistants (Claude by Anthropic, OpenAI Codex) under the team's direction. The assistants wrote code and texts, and the team reviewed them.
 
 ## Licence
 

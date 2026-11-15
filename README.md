@@ -37,7 +37,6 @@ How it works, the data sources and the known limits: [odin/README.md](odin/READM
 
 - `odin/`: the app (TypeScript, React, Vite, CesiumJS, three.js) with its data, tests and documents.
 - `docs/`: the image for this page.
-- `archive/`: earlier versions and working documents of the team, kept for reference and attribution. Nothing in it is needed to run ODIN. See [archive/README.md](archive/README.md).
 - `.github/workflows/pages.yml`: builds `odin/` and publishes the live site on every push to `master`.
 
 ## Data and credits
@@ -46,7 +45,7 @@ All Mars imagery, terrain and measurements are real data from NASA, USGS, ESA an
 
 ## AI use
 
-Large parts of the code and documents were written with AI coding assistants (Claude by Anthropic, OpenAI Codex) under the team's direction. The app contains no AI-generated images.
+Large parts of the code and documents were written with AI coding assistants (Claude by Anthropic, OpenAI Codex) under the team's direction, and the team reviewed them. The app contains no AI-generated images.
 
 ## Licence
 
