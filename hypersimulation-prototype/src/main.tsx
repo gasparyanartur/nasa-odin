@@ -9,5 +9,7 @@ import './environment/environment.css';
 import './contexts.css';
 import './design/skin.css';
 import './marswalk/marswalk.css';
+import TourProvider from './tour/Tour';
+import './tour/tour.css';
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><TourProvider><App /></TourProvider></React.StrictMode>);

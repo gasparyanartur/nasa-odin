@@ -4,7 +4,7 @@ test('missing detail and WebGL context loss preserve the Boxwork mission and rec
   test.setTimeout(180_000);
   await page.route('**/boxwork/detail/dem_core.bin',r=>r.abort());
   await page.goto('/?demo=boxwork');await uiRoutes(page);
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   const route=await page.locator('.route-card.selected').textContent();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
@@ -32,7 +32,7 @@ test('full Boxwork detail and responsive HUD use the same real dataset',async({p
   await uiDisplay(page);
   await page.getByLabel('Graphics quality',{exact:true}).selectOption('high');
   await page.getByRole('button',{name:'Explore local map →'}).click();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.locator('.walk-instructions')).toBeVisible({timeout:60000});
   await expect(page.locator('.surface-status')).toHaveCount(0,{timeout:60000});

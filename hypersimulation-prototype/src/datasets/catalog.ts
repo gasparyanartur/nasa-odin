@@ -4,6 +4,7 @@ import ctx from '../../public/datasets/ctx.json';
 import gale from '../../public/gale/manifest.json';
 import boxwork from '../../public/boxwork/manifest.json';
 import { parseDataset, type DatasetDefinition } from './definition';
+import { withBase } from '../assetUrl';
 
 export const BASEMAPS: DatasetDefinition[] = [parseDataset(viking), parseDataset(mola), parseDataset(ctx)];
 export type RegionId = 'gale-bradbury' | 'gale-boxwork' | 'jezero';
@@ -21,7 +22,16 @@ export interface Region {
   terrain?: { datasetId: string; baseUrl: string; bounds: [number, number, number, number]; outlineHeightM: number };
 }
 
+export const SUGGESTED_REGION_ID:RegionId='gale-boxwork';
 export const REGIONS: Region[] = [
+  {
+    id: 'gale-boxwork', name: 'Gale · Mount Sharp Boxwork', shortName: 'Gale · Boxwork',
+    description: 'Explore the boxwork ridges with detailed terrain and colour orbital imagery.',
+    center: boxwork.origin, cameraHeightM: 3200, sourceUrl: boxwork.sources[0].catalog,
+    locationNote: 'A separate Mount Sharp site. 1 km analytical footprint; 1 m core height posts and 0.25 m imagery. The surround is display context only.',
+    basemapIds: BASEMAPS.map(b=>b.id), capabilities: {plan:true,walk:true},
+    terrain: {datasetId:boxwork.id,baseUrl:withBase('/boxwork'),bounds:boxwork.bounds as [number,number,number,number],outlineHeightM:boxwork.maxElevationM-boxwork.referenceElevationM+2},
+  },
   {
     id: 'gale-bradbury', name: 'Gale · Bradbury landing area', shortName: 'Gale · Bradbury',
     description: 'Explore Curiosity’s landing area, inspect measured terrain, and plan a local excursion on foot.',
@@ -29,7 +39,7 @@ export const REGIONS: Region[] = [
     sourceUrl: gale.sources[0].catalog,
     locationNote: 'Center and 2 × 2 km prepared footprint from the USGS Gale terrain package. The footprint is the planning boundary, not all of Gale crater.',
     basemapIds: BASEMAPS.map(b => b.id), capabilities: { plan: true, walk: true },
-    terrain: { datasetId: gale.id, baseUrl: '/gale', bounds: gale.bounds as [number, number, number, number], outlineHeightM: gale.maxElevationM - gale.referenceElevationM + 2 },
+    terrain: { datasetId: gale.id, baseUrl: withBase('/gale'), bounds: gale.bounds as [number, number, number, number], outlineHeightM: gale.maxElevationM - gale.referenceElevationM + 2 },
   },
   {
     id: 'jezero', name: 'Jezero · Perseverance landing area', shortName: 'Jezero',
@@ -39,14 +49,7 @@ export const REGIONS: Region[] = [
     locationNote: 'Marker: Perseverance landing coordinates reported by Bell et al. (2022), 18.4446° N, 77.4509° E. Camera framing is illustrative, not a prepared-data footprint.',
     basemapIds: BASEMAPS.map(b => b.id), capabilities: { plan: false, walk: false },
   },
-  {
-    id: 'gale-boxwork', name: 'Gale · Mount Sharp Boxwork', shortName: 'Gale · Boxwork',
-    description: 'Explore the boxwork ridges with detailed terrain and colour orbital imagery.',
-    center: boxwork.origin, cameraHeightM: 3200, sourceUrl: boxwork.sources[0].catalog,
-    locationNote: 'A separate Mount Sharp site. 1 km analytical footprint; 1 m core height posts and 0.25 m imagery. The surround is display context only.',
-    basemapIds: BASEMAPS.map(b=>b.id), capabilities: {plan:true,walk:true},
-    terrain: {datasetId:boxwork.id,baseUrl:'/boxwork',bounds:boxwork.bounds as [number,number,number,number],outlineHeightM:boxwork.maxElevationM-boxwork.referenceElevationM+2},
-  },
+
 
 ];
 

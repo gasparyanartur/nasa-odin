@@ -15,6 +15,10 @@ const RULES: [RegExp, IconName, string][] = [
   [/^Elapsed time exceeds/, 'time', 'Over the time budget'],
   [/detector-dose proxy exceeds/, 'radiation', 'Over the dose budget'],
   [/return estimate exceeds/, 'back', 'Return over the time budget'],
+  [/^Solar-particle scenario: Danger/, 'radiation', 'Solar scenario: return to habitat'],
+  [/^Solar-particle scenario/, 'station', 'Solar scenario: stay at the habitat'],
+  [/^Local dust scenario: Danger/, 'nogo', 'Dust scenario: leave the area'],
+  [/^Local dust scenario/, 'warning', 'Dust scenario: avoid the area'],
 ];
 
 /** The pictogram and the one short line a helmet notice gets; the full sentence stays in the list and the Tablet. */
@@ -70,7 +74,7 @@ export function HudToast({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: ()
 export function HudNoticeList({ log, open, onToggle, onDetails }: { log: Entry[]; open: boolean; onToggle: () => void; onDetails: () => void }) {
   const activeCount = log.filter(e => e.active && e.kind === 'warning').length;
   return <div className="hud-notices">
-      <button type="button" className={`hud-notices__toggle ${activeCount ? 'is-warning' : ''}`} aria-expanded={open} aria-controls="hud-notice-list" aria-label={`Notices, ${activeCount} active`} onClick={onToggle}>
+      <button type="button" className={`hud-notices__toggle ${activeCount ? 'is-warning' : ''}`} data-tour="hud-notices" aria-expanded={open} aria-controls="hud-notice-list" aria-label={`Notices, ${activeCount} active`} onClick={onToggle}>
         <Icon name={activeCount ? 'warning' : 'bell'} /><span aria-hidden="true">{activeCount}</span><kbd aria-hidden="true">N</kbd>
       </button>
       {open && <section id="hud-notice-list" className="hud-notices__list" aria-label="Notice list">

@@ -11,8 +11,8 @@ test('direct geological science example, linked profiles, provenance and surface
   await uiLayers(page);const workspace=page.getByLabel('Map layers',{exact:true});
   await expect(workspace.getByLabel('Geological units',{exact:true})).toBeChecked();
   await expect(workspace.getByLabel('Geological unit legend')).toContainText('AHi');
-  await uiRoutes(page);await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await expect(page.getByRole('region',{name:'Explain route comparison'})).toBeVisible();
   await page.getByLabel('Profile distance',{exact:true}).fill('150');
@@ -37,7 +37,7 @@ test('direct geological science example, linked profiles, provenance and surface
   await expect(terrain).toHaveAttribute('data-highlighted-edge','');
   await page.getByRole('button',{name:'Reset guided example',exact:true}).click();
   await expect(page.locator('.endpoint').nth(1)).toContainText('450 E · -10 N');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await page.evaluate(()=>{document.querySelector('.mission-sidebar')!.scrollTop=0;document.querySelector('.terrain-workspace')!.scrollTop=0;});
   await page.screenshot({timeout:60_000,path:info.outputPath('v03-guided-planner.png')});
@@ -62,9 +62,9 @@ test('one-click entry, inspectable regional geology, region isolation and data r
   await page.route('**/gale/height.f32',r=>r.abort());
   await page.goto('/');await page.getByRole('button',{name:'Start guided Gale example →'}).click();
   await expect(page.getByRole('alert')).toContainText('Local Gale data could not load');
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeDisabled();
   await page.unroute('**/gale/height.f32');await page.getByRole('button',{name:'Retry local data'}).click();
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
   await uiStation(page);
   await uiStationData(page);const explorer=page.locator('.explorer');
   await expect(explorer.getByLabel('Geological units',{exact:true})).toBeChecked();

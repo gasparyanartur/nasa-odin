@@ -235,7 +235,11 @@ export function toggleFeature(setup: unknown, id: FeatureId): Setup {
   const cur = normal(setup);
   const feat = BY_ID.get(id);
   if (!feat || feat.locked || !availableIn(id, cur.region)) return cur;
-  return { region: cur.region, mission: 'custom', features: { ...cur.features, [id]: !cur.features[id] } };
+  const features = { ...cur.features, [id]: !cur.features[id] };
+  // A switch flipped back so the set equals a walk choice's set again is that walk choice, not Custom.
+  const same = (m: Mission) => IDS.every(f => applyMission(m.id, cur.region)[f] === (features[f] && availableIn(f, cur.region)));
+  const back = MISSIONS.find(m => m.id !== 'custom' && same(m));
+  return { region: cur.region, mission: back?.id ?? 'custom', features };
 }
 
 export function overlaysFor(setup: unknown): OverlayId[] {

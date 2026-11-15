@@ -5,7 +5,7 @@ import type {FieldRecord} from '../src/field/model';
 
 test('preset route failure gives exact slopes and reset restores the working example',async({page},info)=>{
   await page.goto('/?demo=boxwork');await uiRoutes(page);
-  const compare=page.getByRole('button',{name:'Compare routes',exact:true});
+  const compare=page.getByRole('button',{name:'Plan route',exact:true});
   await expect(compare).toBeEnabled();
   await uiAssumptions(page);await page.getByLabel('Slope limit',{exact:true}).fill('15');
   await compare.click();
@@ -24,7 +24,7 @@ test('preset route failure gives exact slopes and reset restores the working exa
   await expect(failure).toHaveCount(0);
   // Fresh Bradbury preset must still work.
   await page.goto('/?demo=yellowknife');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
 });
 
@@ -35,7 +35,7 @@ test('hidden saved restriction is named, retained by reset and opens its field r
   const pack={type:'FeatureCollection',schema:'martian-map-field-data',version:2,planet:'Mars',reference:'EPSG:104905',sites:{'gale-boxwork':meta.id},features:[{type:'Feature',id:record.id,properties:record,geometry:{type:'Point',coordinates}}]};
   await page.addInitScript(pack=>localStorage.setItem('martian-map.field-data.v2',JSON.stringify(pack)),pack);
   await page.goto('/?demo=boxwork');await uiRoutes(page);
-  const compare=page.getByRole('button',{name:'Compare routes',exact:true});
+  const compare=page.getByRole('button',{name:'Plan route',exact:true});
   await expect(compare).toBeEnabled();
   await uiAssumptions(page);await expect(page.getByLabel('Active route constraints')).toContainText('1 saved field restrictions');
   await compare.click();

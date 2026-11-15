@@ -12,7 +12,7 @@ export interface FieldRecord {
   context:{sol:number;lmstHour:number;elapsedS:number;positionSource:'simulated-pose'|'map-selection'|'manual-coordinates'};
   importedFrom?:string; importedAt?:string;
 }
-export const fieldMeta:Meta={...manifest,id:'gale-bradbury-v1',bounds:manifest.bounds as [number,number,number,number]};
+export const fieldMeta:Meta={...manifest,regionId:'gale-bradbury',id:'gale-bradbury-v1',bounds:manifest.bounds as [number,number,number,number]};
 export const metaFor=(regionId:FieldRecord['regionId']):Meta=>regionId==='gale-boxwork'?{...boxwork,regionId:'gale-boxwork',bounds:boxwork.bounds as [number,number,number,number]}:fieldMeta;
 export const unitFor=(kind:FieldKind)=>kind==='temperature'?'K':kind==='radiation'?'µGy/h':undefined;
 export const colorFor=(kind:FieldKind)=>kind==='obstacle'?'#ffaf85':kind==='temperature'?'#ffcf83':kind==='radiation'?'#dcb2ff':'#a7e6e4';

@@ -149,8 +149,6 @@ kbd{font:12px var(--font-text);color:var(--ui-muted);border:1px solid var(--ui-l
 .tablet-device .field-notice{margin:0;padding:8px 18px;font-size:12px;flex-shrink:0}
 .tablet-device .empty-context{padding:30px;overflow:auto;flex:1}
 .help{position:relative;margin-left:auto;display:inline-flex}
-.help [role=tooltip]{display:none;position:absolute;right:0;top:calc(100% + 8px);width:280px;padding:14px;background:var(--plinth-hi);border:1px solid var(--on-wall-2);border-radius:8px;box-shadow:0 8px 20px #0005;color:var(--ui-text);font:12px/1.7 var(--font-text);z-index:30}
-.help:hover [role=tooltip],.help:focus-within [role=tooltip],.help-pinned [role=tooltip]{display:block}
 
 /* Field editing and display configuration share the bounded device shell. */
 .tablet-device .field-workspace{flex:1;min-height:0;display:grid;grid-template-columns:350px minmax(0,1fr);background:var(--ui-bg)}
@@ -361,3 +359,50 @@ kbd{font:12px var(--font-text);color:var(--ui-muted);border:1px solid var(--ui-l
 .tablet-device select{min-height:32px;max-width:100%;padding:6px 8px;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--ui-line);border-radius:5px;font-size:12px}
 .tablet-device .mission-sidebar>label{display:grid;gap:8px;margin:12px 0}
 .tablet-device .mission-sidebar>label small{font-size:12px;line-height:1.6;color:var(--ui-muted)}
+
+/* Feedback bundle: contextual explanations, actual traverses and shared events. The helmet layout stays in design/skin.css. */
+.context-guide{flex-shrink:0;padding:0 18px;border-bottom:1px solid var(--ui-line)}
+.context-guide-content{max-height:230px;overflow:auto;padding:0 6px 12px;font-size:12px;line-height:1.65;overscroll-behavior:contain}
+.context-guide-content h2{font-size:19px;margin:10px 0}
+.context-guide-content h3{font-size:13px;margin:12px 0 4px;color:var(--ui-accent)}
+.context-guide-content p{margin:0;color:var(--ui-muted)}
+.explorer .context-guide{padding:0;margin:12px 0}
+.explorer .help,.section-label .help,.map-toolbar .help{margin:0 4px}
+.traverse-history h2{font-size:21px;display:flex;align-items:center;gap:6px}
+.traverse-history>label{display:grid;gap:6px;margin:10px 0}
+.traverse-history input:not([type=checkbox]){width:100%;padding:9px;background:var(--ui-bg);border:1px solid var(--ui-line);color:var(--ui-text);border-radius:5px}
+.saved-traverse{border:1px solid var(--ui-line);border-radius:7px;padding:12px;margin:12px 0}
+.saved-traverse label,.rover-toggle{display:flex;align-items:center;gap:8px;line-height:1.5}
+.saved-traverse p,.saved-traverse small,.traverse-comparison,.traverse-history>a{font-size:11px;line-height:1.65}
+.saved-traverse small{color:var(--ui-muted)}
+.traverse-comparison{padding:12px;background:color-mix(in srgb,var(--lamp) 7%,transparent);border:1px solid color-mix(in srgb,var(--lamp) 38%,transparent);border-radius:6px}
+.trace-legend{display:flex;gap:6px 14px;flex-wrap:wrap;color:var(--ui-muted);font-size:10px;flex-shrink:0}
+.trace-legend__hazard{color:var(--alarm-ink)}
+.events-workspace{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;padding:24px;overscroll-behavior:contain}
+.events-workspace h1{font-size:28px;margin:8px 0;display:flex;align-items:center;gap:10px}
+.events-workspace h2{font-size:21px}
+.events-workspace h3{font-size:18px;margin:8px 0}
+.events-workspace p{font-size:12px;line-height:1.7}
+.events-workspace aside{border-left:1px solid var(--ui-line);padding-left:22px}
+.event-generator,.event-entry{padding:16px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-panel);margin-bottom:14px}
+.event-generator label{display:grid;gap:6px;margin:12px 0;font-size:12px}
+.event-generator select,.event-generator input{padding:10px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-bg);color:var(--ui-text);width:100%}
+.event-generator input{max-width:140px}
+.event-entry.active{border-color:color-mix(in srgb,var(--alarm-ink) 40%,transparent)}
+.event-entry small{font-size:11px;color:var(--ui-muted);line-height:1.6}
+.event-entry .button-row{margin-top:10px}
+.event-entry.ended{opacity:.75}
+.event-warning{padding:12px;border:1px solid color-mix(in srgb,var(--lamp) 33%,transparent);background:color-mix(in srgb,var(--lamp) 4%,transparent);border-radius:7px}
+.waypoint-caption b,.waypoint-caption button{max-height:40px;overflow:hidden;overflow-wrap:anywhere}
+.suggested-example{border-color:color-mix(in srgb,var(--brass) 36%,transparent);background:color-mix(in srgb,var(--brass) 5%,transparent)}
+.region-card[aria-pressed=true] small{color:var(--ui-green)}
+.path-swatch{display:inline-block;width:18px;height:3px;margin-right:7px;vertical-align:middle}
+.saved-traverse .data-kind{display:block;color:var(--ui-accent);margin-top:12px}
+.saved-traverse a{font-size:11px;display:block;margin:8px 0}
+.traverse-history h3{font-size:19px;margin-top:24px}
+.route-workflow{position:sticky;top:0;z-index:3;padding:12px 0;margin-bottom:22px;background:var(--ui-panel);border-bottom:1px solid var(--ui-line)}
+.route-workflow-switch{display:flex;gap:6px;margin-top:10px}
+.tablet-device .route-workflow-switch button{flex:1;min-height:42px;padding:8px;font-size:12px;background:transparent;border:1px solid var(--ui-line);color:var(--ui-muted);border-radius:6px}
+.tablet-device .route-workflow-switch button[aria-pressed=true]{background:color-mix(in srgb,var(--cobalt-hi) 10%,transparent);border-color:var(--cobalt-hi);color:var(--on-wall)}
+.map-toolbar>div{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:900px){.events-workspace{grid-template-columns:minmax(0,1fr) 210px;padding:18px;gap:16px}.tablet-device .tablet-tabs button{padding:7px 10px}.map-toolbar .help{margin:0}.map-toolbar>div{gap:3px}}

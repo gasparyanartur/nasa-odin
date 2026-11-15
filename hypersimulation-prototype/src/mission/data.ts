@@ -1,11 +1,13 @@
+import { withBase } from '../assetUrl';
+
 export interface Point { x: number; y: number }
 export interface Pose extends Point { heading: number; pitch?: number; elapsed: number }
 export interface Exclusion extends Point { radius: number }
 export interface Meta {
-  id: string; regionId?: 'gale-bradbury' | 'gale-boxwork'; defaultStart?: Point; defaultGoal?: Point; detail?: {baseUrl:string;scene:string}; version: number; name: string; size: number; stepM: number; extentM: number;
+  id: string; pathsFile?:string; regionId?: 'gale-bradbury' | 'gale-boxwork'; defaultStart?: Point; defaultGoal?: Point; detail?: {baseUrl:string;scene:string}; version: number; name: string; size: number; stepM: number; extentM: number;
   origin: { longitude: number; latitude: number }; radiusM: number; bounds: [number, number, number, number];
   referenceElevationM: number; minElevationM: number; maxElevationM: number; validFraction: number;
-  verticalReference: string; resolutionNote: string; slopeDefinition: string; attribution: string;
+  horizontalReference?: string; verticalReference: string; resolutionNote: string; slopeDefinition: string; attribution: string;
   sources: { name: string; url: string; catalog: string }[];
 }
 export interface Observation { timeLabel: string; hour: number; temperatureK: number | null; pressurePa: number | null; windMps: number | null }
@@ -26,8 +28,8 @@ export interface RouteSegment { fromDistanceM: number; distanceM: number; durati
 export interface Route { profile?: ProfilePoint[]; segments?: RouteSegment[]; mode: 'shortest' | 'gentler'; points: [number, number, number][]; geographic: [number, number, number][]; metrics: Metrics }
 export interface ConditionEvaluation { departureHour: number; arrivalHour: number; minTemperatureK: number | null; coldSeconds: number; unknownSeconds: number; doseMicroGy: number; warnings: string[]; status: 'within' | 'exceeds' | 'unknown' }
 export interface Alternative extends Route { returnRoute: Route; roundTripS: number; roundTripDoseMicroGy: number; warnings: string[]; conditions: ConditionEvaluation; departures: ConditionEvaluation[] }
-export interface RouteResult { datasetId: string; version: number; settings: Settings; routes: Alternative[]; recommendedIndex: number; assumptions: string }
-export interface ReturnResult { route: Route | null; warnings: string[]; atHabitat?: boolean }
+export interface RouteResult { reference?:string; datasetId: string; version: number; settings: Settings; routes: Alternative[]; recommendedIndex: number; assumptions: string }
+export interface ReturnResult { datasetId?:string; version?:number; conditions?:ConditionEvaluation; route: Route | null; warnings: string[]; atHabitat?: boolean }
 export interface RouteDiagnostics {
   code: 'blocked_endpoints' | 'disconnected' | 'same_cell'; slopeLimitDeg: number; stepM: number; activeExclusionCount: number;
   endpoints: { label: string; x: number; y: number; slopeDeg?: number; reasons: string[]; exclusionIndices: number[] }[];
@@ -37,7 +39,7 @@ export class RoutePlanningError extends Error {
   constructor(message: string, public diagnostics?: RouteDiagnostics) { super(message); this.name='RoutePlanningError'; }
 }
 
-export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Promise<TerrainData> {
+export async function loadTerrain(signal?: AbortSignal, baseUrl = withBase('/gale')): Promise<TerrainData> {
   const get = async (file: string) => {
     let r: Response;
     try { r = await fetch(`${baseUrl}/${file}`, { signal }); }
@@ -51,6 +53,7 @@ export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Prom
     get('environment.json').then(r => r.json()),
   ]);
   if (h.byteLength !== meta.size**2*4 || s.byteLength !== h.byteLength || v.byteLength !== meta.size**2) throw new Error('Gale data arrays do not match their manifest.');
+  if (meta.detail) meta.detail = { ...meta.detail, baseUrl: withBase(meta.detail.baseUrl) };
   const evidence=meta.detail?await get('evidence.json').then(r=>r.json()):undefined;
   return { baseUrl, meta, evidence, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
 }
@@ -117,39 +120,4 @@ export function routeProgress(route: Route, point: Point) {
     along+=length; total=along;
   }
   return { offRouteM: nearest, remainingM: Math.max(0,total-bestAlong), target: points[Math.min(points.length-1,index+3)] };
-}
-
-function validationMessage(detail: unknown): string | undefined {
-  if (!Array.isArray(detail)) return;
-  const labels: Record<string,string> = {
-    datasetId:'Terrain dataset', start:'Habitat / start', goal:'Destination',
-    speedMps:'Walking speed', maxSlopeDeg:'Slope limit', maxDurationMin:'Time budget',
-    doseRateMicroGyH:'Detector rate proxy', maxDoseMicroGy:'Dose proxy budget',
-    temperatureK:'Temperature', minTemperatureK:'Minimum temperature', windMps:'Wind assumption',
-    maxWindMps:'Maximum wind', conditionsMode:'Conditions mode', departureHour:'Departure hour',
-    dwellMin:'Destination stop', exclusions:'Travel restrictions', radius:'Restriction radius',
-    elapsedS:'Elapsed mission time', mode:'Return route mode',
-  };
-  let incompatible=false;
-  const messages=detail.flatMap(issue=>{
-    if (!issue || typeof issue!=='object' || typeof issue.msg!=='string') return [];
-    const path: (string|number)[]=Array.isArray(issue.loc)?issue.loc.filter((part:unknown)=>typeof part==='string'||typeof part==='number'):[];
-    if ((path.includes('datasetId')&&issue.type==='literal_error') || issue.type==='extra_forbidden') incompatible=true;
-    const field=path.filter(part=>part!=='body'&&part!=='settings').map(part=>typeof part==='number'?`#${part+1}`:labels[part]??part).join(' · ');
-    return [`${field||'Request'}: ${issue.msg}.`];
-  });
-  if (!messages.length) return;
-  return `Cannot plan route. ${messages.join(' ')}${incompatible?' The planner may be running an older version. Restart the planner from the current project and try again.':''}`;
-}
-
-export async function api<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
-  let r: Response;
-  try { r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal}); }
-  catch (error) { if ((error as Error).name==='AbortError') throw error; throw new Error('Route planning is temporarily unavailable. Please try again.'); }
-  if (!r.ok) {
-    let detail: unknown, diagnostics: RouteDiagnostics | undefined;
-    try { const failure=await r.json(); detail=failure.detail; diagnostics=failure.diagnostics??undefined; } catch { /* Development proxy may return an empty 502. */ }
-    throw new RoutePlanningError(typeof detail==='string'?detail:validationMessage(detail)??(r.status===422?'The planner rejected this request without specifying a setting. Restart the planner from the current project and try again.':'Route planning is temporarily unavailable. Please try again.'),diagnostics);
-  }
-  return r.json();
 }

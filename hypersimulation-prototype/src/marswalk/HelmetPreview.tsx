@@ -14,7 +14,7 @@ export default function HelmetPreview({ setup, hud }: { setup: Setup; hud: HudSe
   const shown = [compass && 'compass', minimap && (zones ? 'round minimap with hatched hazard areas' : 'round minimap'), clocks && 'clocks',
     stops && 'stop marks with number and short task', zones && 'hazard symbol in the status row', 'alert, time and return symbols'].filter(Boolean) as string[];
   const raised = ['RETURN NOW (scenario), with the way back', ...(on.stops ? ['arrival at a stop'] : [])];
-  return <figure className="helmet-preview" aria-label="Helmet preview">
+  return <figure className="helmet-preview" data-tour="helmet-preview" aria-label="Helmet preview">
     <div className="helmet-preview__view" aria-hidden="true">
       <span className="helmet-preview__horizon" />
       {hud.visor && <svg className="helmet-preview__rim" viewBox="0 0 1000 500" preserveAspectRatio="none"><path d={RIM} /></svg>}
@@ -23,7 +23,7 @@ export default function HelmetPreview({ setup, hud }: { setup: Setup; hud: HudSe
         {minimap && <span className="helmet-preview__map">{zones && <span className="helmet-preview__zone" style={{ backgroundImage: HATCH_SWATCH['hatch-scarp'] }} />}<b>N</b></span>}
         {clocks && <span className="helmet-preview__pill"><Icon name="sun" />12:00</span>}
       </span>}
-      {stops && <span className="helmet-preview__stop"><b>{first.id}</b><small>{first.short}</small></span>}
+      {stops && <span className="helmet-preview__stop" data-tour="helmet-preview-stop"><b>{first.id}</b><small>{first.short}</small></span>}
       <span className="helmet-preview__status">
         <span><Icon name="fine" /></span><span><Icon name="clock" /></span><span><Icon name="back" /></span>
         {zones && <span className="is-warning"><Icon name="nogo" /></span>}

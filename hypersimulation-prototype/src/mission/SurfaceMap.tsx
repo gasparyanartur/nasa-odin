@@ -1,3 +1,4 @@
+import {type ExpeditionEvent} from './events';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Alternative, Exclusion, Point, Pose, TerrainData } from './data';
 import { geoToLocal, sample } from './data';
@@ -15,6 +16,7 @@ import { FOLLOW_TILE_ZOOM, followViewport, followWidth, useSharpImagery } from '
 export type PickMode = 'inspect' | 'start' | 'goal' | 'exclude' | 'field';
 interface Props {
   imagery?:'colour'|'grey';
+  traces?:{id:string;label:string;points:Point[];color:string;dashed?:boolean}[];events?:ExpeditionEvent[];
   environmentLayer?:ScalarLayer; environmentOpacity?:number;
   mapLabel?:string; fields?:FieldRecord[]; selectedField?:string; onFieldSelect?:(id:string)=>void; draft?:FieldRecord; active?:boolean; geology?: GeologySettings; targetId?:string; onTargetSelect?:(id:string)=>void; highlightedEdge?:number;
   data: TerrainData; start: Point; goal?: Point; routes?: Alternative[]; selected: number;
@@ -91,9 +93,15 @@ export default function SurfaceMap(p: Props) {
     ctx.strokeStyle='#ffffff20';ctx.lineWidth=thin;
     for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(i*100,0);ctx.lineTo(i*100,size);ctx.moveTo(0,i*100);ctx.lineTo(size,i*100);ctx.stroke();}
     if(p.data.evidence){
-      ctx.save();ctx.strokeStyle='#b9dad7';ctx.lineWidth=1.5*thin;ctx.setLineDash([5,4]);ctx.beginPath();p.data.evidence.path.forEach((q,i)=>{const[x,y]=pixel(q);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();ctx.setLineDash([]);
+      ctx.save();
       for(const marker of p.data.evidence.markers){const[x,y]=pixel(marker);ctx.fillStyle='#b9dad7';ctx.fillRect(x-4,y-4,8,8);}
       ctx.restore();
+    }
+    for(const e of p.events??[]){
+      const center=e.kind==='solar'?p.start:e.center,[x,y]=pixel(center),radius=e.radiusM/(2*half)*size;
+      ctx.save();ctx.beginPath();
+      if(e.kind==='solar')ctx.rect(0,0,size,size);
+      ctx.moveTo(x+radius,y);ctx.arc(x,y,radius,0,Math.PI*2);ctx.fillStyle='#ef634c42';ctx.fill('evenodd');ctx.strokeStyle=e.kind==='solar'?'#9defbf':'#ff9b77';ctx.lineWidth=3*thin;ctx.stroke();ctx.restore();
     }
     const css=800/(el.clientWidth||800)/view.zoom;
     if(p.zones?.length)drawZones(ctx,p.zones,pixel,(p.mini?7:9)*css,css);
@@ -102,6 +110,9 @@ export default function SurfaceMap(p: Props) {
       ctx.beginPath();route.points.forEach(([x,y],j)=>{const q=pixel({x,y});if(j===0)ctx.moveTo(...q as [number,number]);else ctx.lineTo(...q as [number,number]);});
       ctx.strokeStyle=i===p.selected?'#f7c383':'#70c5c0';ctx.lineWidth=(i===p.selected?4:2)*(following?2.5*thin:thin);ctx.globalAlpha=i===p.selected?1:.65;ctx.stroke();ctx.globalAlpha=1;
     });
+    for(const trace of p.traces??[]){
+      ctx.save();ctx.beginPath();trace.points.forEach((point,i)=>{const[x,y]=pixel(point);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.strokeStyle=trace.color;ctx.lineWidth=(trace.id==='current'?2:4)*thin;ctx.setLineDash((trace.id==='current'?[4,3]:trace.dashed?[6,4]:[]).map(d=>d*thin));ctx.stroke();ctx.restore();
+    }
     if(p.highlightedEdge!==undefined&&p.routes?.[p.selected]){
       const route=p.routes[p.selected],a=route.points[p.highlightedEdge],b=route.points[p.highlightedEdge+1];
       if(a&&b){ctx.beginPath();const pa=pixel({x:a[0],y:a[1]}),pb=pixel({x:b[0],y:b[1]});ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.strokeStyle='#fff7d4';ctx.lineWidth=11;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
@@ -155,7 +166,7 @@ export default function SurfaceMap(p: Props) {
     if(target&&p.onTargetSelect)p.onTargetSelect(target.id);else p.onPick?.(q);
   }
   return <div ref={frame} className={`surface-map ${p.mini?'mini':''}`}>
-    <canvas ref={canvas} style={!p.mini&&displaySize?{width:displaySize,height:displaySize,marginInline:'auto'}:undefined} width={800} height={800} data-pick-mode={p.mode} data-highlighted-edge={p.highlightedEdge??''} data-zoom={view.zoom.toFixed(2)} data-imagery-detail={sharp.map(t=>t.key).join(' ')||'ortho'} data-window-m={following?followM:undefined} role="img" tabIndex={p.mini?undefined:0} aria-label={p.mini?'Astronaut minimap':p.mapLabel??'Gale terrain selection map'}
+    <canvas ref={canvas} style={!p.mini&&displaySize?{width:displaySize,height:displaySize,marginInline:'auto'}:undefined} width={800} height={800} data-pick-mode={p.mode} data-highlighted-edge={p.highlightedEdge??''} data-zoom={view.zoom.toFixed(2)} data-imagery-detail={sharp.map(t=>t.key).join(' ')||'ortho'} data-window-m={following?followM:undefined} data-traces={(p.traces??[]).map(t=>t.id).join(',')} data-hazards={p.events?.length??0} role="img" tabIndex={p.mini?undefined:0} aria-label={p.mini?'Astronaut minimap':p.mapLabel??'Gale terrain selection map'}
       onPointerDown={e=>{if(p.mini)return;e.currentTarget.setPointerCapture(e.pointerId);const at=normalized(e);if(!pointers.current.size)gesture.current={moved:false,start:at};else gesture.current.moved=true;pointers.current.set(e.pointerId,at);}}
       onPointerMove={e=>{
         if(p.mini)return;const at=normalized(e),old=pointers.current.get(e.pointerId);
@@ -174,7 +185,7 @@ export default function SurfaceMap(p: Props) {
       onLostPointerCapture={e=>pointers.current.delete(e.pointerId)}
       onWheel={e=>{if(p.mini)return;const r=e.currentTarget.getBoundingClientRect();update(zoomViewport(current.current,current.current.zoom*Math.exp(-e.deltaY*.002),{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height}));}}
       onKeyDown={e=>{if(p.mini)return;if(e.key==='+'||e.key==='=')update(zoomViewport(current.current,current.current.zoom*1.5));else if(e.key==='-')update(zoomViewport(current.current,current.current.zoom/1.5));else if(e.key==='Home')update(FULL_MAP);else if(e.key==='Enter')select({x:.5,y:.5});else if(e.key.startsWith('Arrow'))update(boundViewport({...current.current,x:current.current.x+(e.key==='ArrowLeft'?.1:e.key==='ArrowRight'?-.1:0),y:current.current.y+(e.key==='ArrowUp'?.1:e.key==='ArrowDown'?-.1:0)}));else return;e.preventDefault();}} />
-    {!p.mini&&<div ref={tools} className="map-tools" aria-label="Map navigation"><button aria-label="Zoom in local map" onClick={()=>update(zoomViewport(current.current,current.current.zoom*1.5))}>＋</button><output>{viewport.zoom.toFixed(1)}×</output><button aria-label="Zoom out local map" onClick={()=>update(zoomViewport(current.current,current.current.zoom/1.5))}>−</button><button onClick={()=>update(FULL_MAP)}>Full area</button><span>Drag · wheel / pinch zoom · click / tap · keys: arrows, +/−, Enter</span></div>}
+    {!p.mini&&<div ref={tools} className="map-tools" aria-label="Map navigation"><button title="Zoom into the local map; wheel scrolling also zooms around the cursor." aria-label="Zoom in local map" onClick={()=>update(zoomViewport(current.current,current.current.zoom*1.5))}>＋</button><output>{viewport.zoom.toFixed(1)}×</output><button aria-label="Zoom out local map" onClick={()=>update(zoomViewport(current.current,current.current.zoom/1.5))}>−</button><button title="Restore the complete prepared terrain footprint, north-up." onClick={()=>update(FULL_MAP)}>Full area</button><span>Drag · wheel / pinch zoom · click / tap · keys: arrows, +/−, Enter</span></div>}
     {!images.length&&<span className="image-warning" role={imageError?'alert':undefined}>{imageError?'Local imagery is unavailable. Restore the Gale assets and reload.':'Loading local imagery…'}</span>}
   </div>;
 }

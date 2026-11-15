@@ -15,6 +15,7 @@ The three places stay the same: Station, Tablet and HUD. The [Marswalk parts](#m
 - **Station:** after you pick a prepared region, step **02 / Choose your task** offers the walk presets (`src/marswalk/WalkChoice.tsx`).
 - **Tablet:** the tools are Map, Routes, Field data, Display and Look closer. Look closer is new: suit limits, Curiosity's path, saved walks, the solar storm scenario and the ground panorama.
 - **HUD:** a quiet HUD. A notice shows for 10 seconds, then moves to a notice list you open with N (`src/mission/HudNotices.tsx`). A feature that is off shows nothing in the helmet.
+- **Guided tour:** on the first visit the Station offers "Take the 2 minute tour". It never starts by itself; **Tour** beside the Station and Tablet help marks starts it again. A drawn pointer moves to each real control and clicks it, and the app answers as it does for you. **Let me do it** hands the clicks to you; Skip tour or Esc ends it at once. It runs a route preview but never starts a walk, a hazard or pointer lock. Steps and captions: `src/tour/steps.ts`; anchors: `docs/tour-anchors.md`.
 
 ### HUD keys
 
@@ -56,7 +57,7 @@ Typed modules with data in `public/marswalk/`. [The module README](src/marswalk/
 
 ## Run it beside the root app
 
-From the repository root, after `npm ci` in the root (the root README's Step 4). Since 2026-11-15 the root app plans routes in the browser and no longer sets up Python, so create this folder's Python environment once first: `python3 -m venv .venv` and `.venv/bin/python -m pip install -r requirements-runtime.txt`, both run inside this folder. Then:
+From the repository root, after `npm ci` in the root (the root README's Step 4). Routes are planned in a browser Web Worker (`src/mission/planner/`), so running this app needs no Python environment. Then:
 
 ```bash
 cd hypersimulation-prototype
@@ -68,25 +69,25 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 | | Root app | This folder |
 |---|---|---|
 | Web (`npm run dev:all`) | 5173 | 5174 |
-| Planner API | 8100 | 8101 |
 | Production preview (`npm run demo`) | 4173 | 4174 |
 | Browser tests server | 8273 | 8274 |
 
-`API_PORT` and `WEB_PORT` still override the defaults, as in Step 5 below.
+`WEB_PORT` (and `TEST_PORT` for the browser tests) still override the defaults, as in Step 5 below.
 
 - **No `npm install` needed here.** Node finds the root `node_modules/` from this folder. Running `npm ci` in this folder is optional; it gives the folder its own copy.
-- **Python:** the planner and every Python script here use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`). A root `.venv` exists only on machines set up before 2026-11-15, so create this folder's own environment as described above.
+- **Python:** only for data preparation (`prepare:*`), the server tests (`test:api`) and the planner reference check (`test:planner:reference`). The files under `server/` stay for those scripts; the app never starts them. These scripts use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`); create one with `python3 -m venv .venv` and `.venv/bin/python -m pip install -r requirements.txt` inside this folder.
 
 ## Tests
 
-- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 29 test files, 138 tests, all passed on 2026-11-15 after the move into this folder.
-- The server tests (`npm run test:api`) and the full browser suite (`npm run test:browser`) were not re-run after the move.
+- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 40 test files, 259 tests, all passed on 2026-11-15 after the guided tour was added (191 before it). The tour's unit tests cover its state machine, its storage and its card placement; the tour itself was not played in a browser for this count.
+- The server tests (`npm run test:api`), the planner reference check (`npm run test:planner:reference`) and the full browser suite (`npm run test:browser`) were not re-run after that port.
 
 ## Known limits
 
 - The planner works on a 5 m grid. The default science walk is a prepared route, planned ahead of time by the old Marswalk planner on the 1 m grid. Re-planning with the 5 m planner can refuse it, because the stops sit on steep ridge walls.
 - Hazard areas reach the planner as circles, which can also block open ground just outside an area.
 - Hazard areas are drawn and announced, but walking into one is not stopped.
+- An event scenario shows in the helmet as a notice only; its details, acknowledgement and **Guide to habitat** are on Tablet → Events.
 - Browser tests that need pointer lock fail in headless Chromium on macOS.
 - No unfamiliar user has tested the combined app yet.
 
@@ -100,7 +101,7 @@ The rest of this file is the team app's README as it was copied. Its run steps n
 
 # Martian Map
 
-Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
+Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Start at the suggested Gale–Boxwork site for detailed terrain, colour orbital imagery and saved Curiosity/route examples. Gale–Bradbury offers another prepared walking area. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
 **Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the root app and this combined app.
 
@@ -113,7 +114,7 @@ The Marswalk prototype's parts now sit inside the same three places. Nothing ope
 - **Station:** after you pick a prepared region, **Choose your task** offers Geology walk, Safety watch, Water and chemistry search and Custom. Each card lists the features it turns on; a feature without data in the region reads "Not in this region". The choice is kept in this browser (with blocked storage it lasts until reload).
 - **Tablet → Display:** every feature as a labelled switch, grouped, with an info mark and a state word, beside a small schematic preview of what the helmet then shows. Changing a switch makes the walk Custom. Nothing switches by itself at a stop.
 - **Tablet → Map (Boxwork):** the two hazard areas are drawn hatched (one hatch per danger, no tint under the hatch) with a small legend that names the danger and its origin (source, assumption or scenario). The eight science stops and the two placed drill sites are marked; tap a stop for its full task.
-- **Tablet → Routes (Boxwork):** the default science walk is the prepared route, "Planned by the Marswalk planner on the 1 m terrain grid" (`src/marswalk/preparedRoute.ts`, `public/marswalk/science-route.json`). While you follow it, each step is checked on the 1 m grid. **Plan it again with the route planner** asks the team planner for nine legs: habitat, Stop 1 to Stop 8 in order, back to the habitat (shortest mode, through `/api/return`). The hazard areas go to the planner as restriction circles, at most 30 in total with your own restrictions; the circles can also block open ground just outside an area. A leg may end within 8 m of a stop that is steeper than the slope limit. A refused leg shows the planner's own diagnostics, and the prepared route stays the guidance. With the default 20° slope limit the planner can refuse a leg, because the stops sit on steep ridge walls in the 5 m planning grid.
+- **Tablet → Routes (Boxwork):** the default science walk is the prepared route, "Planned by the Marswalk planner on the 1 m terrain grid" (`src/marswalk/preparedRoute.ts`, `public/marswalk/science-route.json`). While you follow it, each step is checked on the 1 m grid. **Plan it again with the route planner** asks the team planner for nine legs: habitat, Stop 1 to Stop 8 in order, back to the habitat (shortest mode, through the browser planner's return lane, `src/mission/planner/`). The hazard areas go to the planner as restriction circles, at most 30 in total with your own restrictions; the circles can also block open ground just outside an area. A leg may end within 8 m of a stop that is steeper than the slope limit. A refused leg shows the planner's own diagnostics, and the prepared route stays the guidance. With the default 20° slope limit the planner can refuse a leg, because the stops sit on steep ridge walls in the 5 m planning grid.
 - **Tablet → Look closer:** the suit limits for the chosen route (value, unit, source), its distance from Curiosity's path, your saved walks with **Compare**, the ground panorama, and **Run the solar storm scenario** (labelled scenario). With Space weather on, the scenario also starts by itself 150 minutes into a walk (an assumption).
 - **HUD:** stop marks (number, and the short task for the next stop), an arrival notice "Stop n: ..." through the existing notices, the hazard areas hatched in the minimap and on the ground, a hazard symbol in the status row when you are inside or within 25 m of an area, and the storm as one notice under the compass (X dismisses, C cancels or restarts the way back, which is drawn while you return). Walked positions are kept, one point per 5 m, and saved when the tablet opens or the walk ends. A feature that is off shows nothing in the helmet.
 
@@ -128,9 +129,21 @@ Marswalk data sources and licences (from `src/marswalk/README.md`):
 - Feature texts: project code under this repository's licence; each feature names its data owner.
 - Faces: Gloock and Overpass, SIL Open Font License 1.1 (licence texts in `public/fonts/`).
 
+## Expedition help, history and events
+
+**Help · controls & symbols** explains each Station/Tablet workspace. Information buttons also work on hover, keyboard focus and click. In this combined app the helmet keeps its quiet HUD: an active event scenario shows as one helmet notice under the compass and in the notice list (key N); the full feed is on **Tablet → Events**.
+
+On **Tablet → Routes → Load previous path**, name and save a snapshot of your actual walk. Toggle saved walks, the historical Curiosity path and prepared plans onto the map and surface. With two visible paths, compare sampled distance; elapsed-time differences apply only to recorded walks. Visibility choices survive reload. Stops count while the simulation runs; Tablet/Station/Esc pause it. Saved history survives reload in this browser, supports deletion and backup download, and is separate from planned route candidates. Restart starts a new trace and retains saved history. Boxwork is the first, suggested site and includes Curiosity’s saved historical traverse plus a prepared ridge route (the Marswalk science walk stays a separate default under Plan new route); Bradbury includes its own planned example and has no registered rover traverse bundled. Different endpoints, dates and vehicle capabilities prevent a fair speed comparison.
+
+On **Tablet → Events**, schedule a solar-particle or local dust scenario after a chosen number of simulated minutes, or use **Trigger now**. Solar highlights exposed terrain outside a 35 m demonstration shelter at the habitat; dust marks a 60 m circle at the trigger setup location. The HUD notices and Tablet share active status; acknowledgement and the log are on Tablet → Events. **Guide to habitat** (Tablet → Events) follows the terrain return estimate, retaining your position and time. Acknowledgement keeps the hazard active; **End scenario** clears its area while retaining its entry. Restart clears current events.
+
+Events are opt-in simulations, not live Mars forecasts or shielding calculations. Hazard areas are advisory; they do not modify measured terrain, walking restrictions or the historical detector-dose proxy. Current traces are unsaved until explicitly saved, history is limited to 20 entries / 12,000 samples per trace, and browser storage failures are shown visibly. Assumptions are captured at save; changing them during a walk does not retroactively create a controlled comparison.
+
 ## Try the excursion
 
-Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5174/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
+Choose **Explore Boxwork →** at Station, or open [the Boxwork example](http://127.0.0.1:5174/?demo=boxwork). Under **Routes**, choose **Plan new route** to set endpoints and calculate terrain guidance, or **Load previous path** to show the saved Curiosity traverse and prepared ridge route on the same map.
+
+For a science-led alternative, choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5174/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
 
 Version **0.6** adds **Station → Data & history → Environmental explorer**: inspect global Odyssey GRS potassium/thorium composition and water-equivalent hydrogen, dated MCS surface-temperature soundings, and 19 sols of Curiosity temperature/radiation records. Compare observed values with an explicitly simulated Sol 29 daily-profile outlook and its held-out errors. Select layers on the atlas or Tablet; inspect source, scale, timestamps and uncertainty. **Use snapshot as fixed mission assumptions** explicitly applies an available Gale reading/forecast without changing the mission clock. Composition is separate from radiation dose, and sparse observations remain unknown. See [environmental data, model and validation](docs/environment-data.md).
 
@@ -138,7 +151,7 @@ Version **0.5** adds a personal field layer on **Tablet → Field data** in the 
 
 - Create geological notes, draw unit polygons/contact lines, declare circular obstacles, or record point temperature (K) and detector dose-rate (µGy/h) readings. Pick/draw on the map, enter local coordinates, or use **Log here** on the HUD to capture the astronaut's simulated position and mission time.
 - Save, inspect, edit, hide, delete and undo records. The map and HUD share markers and terrain-following boundaries; press Esc, then select a projected field marker to inspect its source, observation UTC, uncertainty, geometry and simulated context.
-- Enable **Restrict routes and walking** on an obstacle to use its 5–500 m radius in outbound/return planning and swept movement checks. Restrictions clear stale routes while retaining position/time; **Compare routes** computes updated alternatives from the configured endpoints. Hiding an annotation leaves an enabled restriction enforced and its boundary visible. Disable or move a restriction surrounding the astronaut to move again.
+- Enable **Restrict routes and walking** on an obstacle to use its 5–500 m radius in outbound/return planning and swept movement checks. Restrictions clear stale routes while retaining position/time; **Plan route** computes updated alternatives from the configured endpoints. Hiding an annotation leaves an enabled restriction enforced and its boundary visible. Disable or move a restriction surrounding the astronaut to move again.
 - Saved records persist in this browser and survive view/region switches. Export **Mars GeoJSON v1** for a backup or transfer; import merges matching IDs and is undoable. Ordinary Earth GeoJSON is rejected. Undo retains the last 20 layer edits for the session; unfinished drafts are not persisted on reload. If browser storage fails, records remain in memory with an export warning. Malformed saved files are preserved until you explicitly replace them.
 
 Geology and readings are user interpretations/point observations, separate from published source layers. Readings do not change the historical scenario or surrounding cells; no terrain, radiation field or forecast is inferred. Only enabled circular obstacles affect planning/movement. Up to 100 records, 100 vertices per geometry and 30 combined manual/field restrictions are supported. Field data is currently unavailable at Jezero. See [field-data effects, recovery and transfer format](docs/field-data.md).
@@ -180,12 +193,12 @@ The optional Explore exclusion tool marks user-declared 40 m restricted areas; *
 
 The repository holds two separate apps:
 
-- **Martian Map** (repository root): the team's Station, Tablet and HUD app. It needs Git, Node.js and Python.
-- **Combined app** (`hypersimulation-prototype/`, this folder): the same app with the combined design system and the Marswalk content. It uses the root setup.
+- **Martian Map** (repository root): the Station, Tablet and HUD app. It needs Git and Node.js. Routing runs in a browser Web Worker; no Python server is needed.
+- **Combined app** (`hypersimulation-prototype/`, this folder): the same app with the combined design system and the Marswalk content. It uses the root setup and also needs no Python to run.
 
 These steps assume a computer with none of these tools installed. Skip any step you have already done.
 
-### Step 1: Install Git, Node.js and Python (once per computer)
+### Step 1: Install Git and Node.js (once per computer)
 
 npm, the command that installs and runs Martian Map, comes with Node.js. It is not a separate download.
 
@@ -193,7 +206,7 @@ npm, the command that installs and runs Martian Map, comes with Node.js. It is n
 
 1. **Git:** download the installer from [git-scm.com/downloads/win](https://git-scm.com/downloads/win), run it and keep every default option.
 2. **Node.js and npm:** download the **LTS** Windows installer from [nodejs.org](https://nodejs.org/en/download), run it and keep the default options. You don't need the optional "Tools for Native Modules".
-3. **Python:** download the latest Python 3 installer from [python.org/downloads](https://www.python.org/downloads/). On the installer's first screen, tick **Add python.exe to PATH**, then click **Install Now**. If that box is not ticked, the `python` command won't work.
+3. **Optional Python (Marswalk/data tools only):** download the latest Python 3 installer from [python.org/downloads](https://www.python.org/downloads/). On the installer's first screen, tick **Add python.exe to PATH**, then click **Install Now**. If that box is not ticked, the `python` command won't work.
 4. Open PowerShell: press the Windows key, type `PowerShell` and press Enter. If PowerShell was already open, close it and open a new window, because only new windows find newly installed programs.
 5. Check that each of these commands prints a version number:
 
@@ -201,7 +214,6 @@ npm, the command that installs and runs Martian Map, comes with Node.js. It is n
    git --version
    node --version
    npm --version
-   python --version
    ```
 
    - If `npm` fails with "running scripts is disabled on this system", run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, answer `Y`, and try again.
@@ -212,19 +224,18 @@ npm, the command that installs and runs Martian Map, comes with Node.js. It is n
 1. Open Terminal: press Cmd+Space, type `Terminal` and press Enter.
 2. **Git:** run `git --version`. If Git is missing, macOS offers to install the command line developer tools. Click **Install**, wait for it to finish, then run `git --version` again.
 3. **Node.js and npm:** download the **LTS** macOS installer from [nodejs.org](https://nodejs.org/en/download) and run it.
-4. **Python:** download the latest Python 3 macOS installer from [python.org/downloads](https://www.python.org/downloads/) and run it.
+4. **Optional Python (Marswalk/data tools only):** download the latest Python 3 macOS installer from [python.org/downloads](https://www.python.org/downloads/) and run it.
 5. Close Terminal, open a new one, and check that each of these commands prints a version number:
 
    ```bash
    git --version
    node --version
    npm --version
-   python3 --version
    ```
 
-**Linux:** install Git, Node.js 22.17 or newer (from [nodejs.org](https://nodejs.org/en/download) or your distribution) and Python 3.12 or newer with its `venv` module. On Debian or Ubuntu, `sudo apt install git python3 python3-venv` covers Git and Python.
+**Linux:** install Git, Node.js 22.17 or newer (from [nodejs.org](https://nodejs.org/en/download) or your distribution). Python 3.12 or newer with `venv` is optional for data preparation and reference checks, and Python is needed for the separate Marswalk development server.
 
-Martian Map needs Node.js 22.17 or newer and Python 3.12 or newer. The LTS Node.js and latest Python offered on those sites are new enough.
+Martian Map needs Node.js 22.17 or newer. Python is not required to install, build or run the integrated app.
 
 ### Step 2: Get access to the repository (once)
 
@@ -252,50 +263,27 @@ Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings,
 
 To get your teammates' latest changes later, run `git pull` inside the `nasa-martian-map` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
 
-### Step 4: Set up Martian Map (once)
+### Step 4: Install the website packages
 
-From inside the `nasa-martian-map` folder:
-
-Windows (PowerShell):
-
-```powershell
-npm ci
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
-
-macOS / Linux:
+From the repository folder:
 
 ```bash
 npm ci
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
 ```
 
-`npm ci` installs the website's packages into `node_modules/`. The next two lines create a Python environment for this project in `.venv/` and install the route planner's packages into it. Each step can take a few minutes. If you use nvm, run `nvm use` first to switch to the Node.js version in `.nvmrc`.
-
-Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. The combined app in `hypersimulation-prototype/` uses this same setup.
+This installs the website packages into `node_modules/`. If you use nvm, run `nvm use` first. Run `npm ci` again after an update changes `package-lock.json`. The combined app in `hypersimulation-prototype/` uses this same setup.
 
 ### Step 5: Run Martian Map
 
-Open a terminal in the folder where you cloned the repository and run:
-
 ```bash
-cd nasa-martian-map
-npm run dev:all
+npm run dev
 ```
 
-Open [the local application](http://127.0.0.1:5173) in your browser. This one command starts Vite and the local Python planner API on port 8100. Keep the terminal open while you use the application. `npm run dev` alone starts only the frontend, so route comparison and return estimates fail; prepared-terrain free exploration remains available.
+Open [the local application](http://127.0.0.1:5173). Keep the terminal open while using it. The globe, route comparison, conditions evaluation, return estimates and POV walking all run in your browser. `npm run dev:all` remains an alias for starting this frontend; it no longer starts Python.
 
-To keep another checkout running, start this workspace on separate ports:
+On Windows, the `prepare:*` and `test:api` scripts in the root still call `.venv/bin/python`. Run their commands from `package.json` directly, using `.venv\Scripts\python.exe` in its place. In `hypersimulation-prototype/` these scripts go through `scripts/python.mjs`, which also finds the Windows path.
 
-```bash
-API_PORT=8200 WEB_PORT=5273 npm run dev:all
-```
-
-In PowerShell, run `$env:API_PORT=8200; $env:WEB_PORT=5273; npm run dev:all` instead. Then open [the separate workspace](http://127.0.0.1:5273).
-
-On Windows, `npm run test:api` and the `prepare:*` scripts still call `.venv/bin/python`. Run their commands from `package.json` directly, using `.venv\Scripts\python.exe` in its place. In `hypersimulation-prototype/` these scripts go through `scripts/python.mjs`, which also finds the Windows path.
+For another checkout, use `WEB_PORT=5273 npm run dev:all` (PowerShell: `$env:WEB_PORT=5273; npm run dev:all`) and open port 5273.
 
 For a production preview:
 
@@ -304,9 +292,7 @@ npm run build
 npm run demo
 ```
 
-Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared Gale imagery, terrain and environmental observations are bundled locally. No Cesium ion account is needed. A static-only deployment cannot compute routes: host the Python API and proxy `/api` to it, as the local setup does.
-
-After updating the project, stop the running preview, rebuild, and start `npm run demo` again so the frontend and Python planner use the same version. Refreshing the browser alone does not restart the planner. If it rejects a terrain dataset or an unfamiliar setting, the Tablet now shows the rejected field and a restart hint.
+Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared terrain, imagery and environmental observations are bundled. No Cesium ion account is needed. After changing source, rebuild and restart the preview; reload the browser to use the new build.
 
 ### Step 6: Run the combined app (hypersimulation-prototype/)
 
@@ -317,24 +303,34 @@ cd nasa-martian-map/hypersimulation-prototype
 npm run dev:all
 ```
 
-Open [the combined app](http://127.0.0.1:5174) in your browser. It starts its own Vite on port 5174 and its own planner API on port 8101. It uses the root `node_modules/` and the root `.venv/` from Step 4, unless this folder has its own `.venv/`. For its production preview, run `npm run build` and `npm run demo` in this folder and open [the preview](http://127.0.0.1:4174).
+Open [the combined app](http://127.0.0.1:5174) in your browser. It starts its own Vite on port 5174; routes are planned in the browser, so no Python process starts. It uses the root `node_modules/` from Step 4. For its production preview, run `npm run build` and `npm run demo` in this folder and open [the preview](http://127.0.0.1:4174).
 
 ### Run both at once, and stop them
 
-Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 with 8100, and 5174 with 8101), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
+Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 and 5174), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
 
 ## Deploy the public demo
 
-The Docker image serves the frontend, prepared local assets and FastAPI planner from one origin. It does not download or regenerate terrain at startup.
+`npm run build` produces a complete static website under `dist/`, including datasets, Cesium assets and the browser planner worker. Serve that directory over HTTP/HTTPS; no API, Python process, secrets or database is needed. Opening `index.html` directly as a `file://` URL is unsupported because the app loads modules, workers and data files.
+
+To serve the site below a folder (GitHub Pages serves a project at `/<repository>/`), set the folder when building: `VITE_BASE=/nasa-martian-map/ npx vite build`. Every data file, the planner worker and the Cesium files then load from under that folder. Without `VITE_BASE` the build serves from the site root, as before.
+
+FR-029 tracks setting up Cloudflare static hosting and publishing the public URL; it is not deployed by FR-028. See the [deployment plan](docs/plans/2026-11-15-demo-deployment.md) and [release instructions](docs/release.md).
+
+For a local files-only acceptance check after building:
 
 ```bash
-docker build -t martian-map:explore .
-docker run --rm -p 127.0.0.1:8373:10000 martian-map:explore
+node scripts/serve-static.mjs --port 8373
 ```
 
-Open [the container demo](http://127.0.0.1:8373). `GET /api/health` reports the terrain dataset/version. Missing files and unknown API routes return 404s.
+Open [the static demo](http://127.0.0.1:8373). Missing files and `/api/*` return errors. The optional Docker image serves this same static build, without the old FastAPI backend:
 
-For Render, sign in with GitHub, connect this repository and select the `codex/integrated-explore` branch. Create a **Blueprint** from `render.yaml`, or create a **Docker Web Service** on the Free plan with health check `/api/health`. No database, account system, API secret or custom domain is required. Prepared Gale assets are bundled; global Viking/MOLA/CTX tiles still require external network access. Free services can take about a minute to start after inactivity. See [deployment and release instructions](docs/release.md).
+```bash
+docker build -t martian-map:static .
+docker run --rm -p 127.0.0.1:8373:10000 martian-map:static
+```
+
+Field records stay in the visitor's browser for that hostname; use export/import to transfer them to another browser or domain. Hardware-accelerated WebGL is needed for practical POV performance. Public hosting does not move rendering to a server.
 
 ## What the data represents
 
@@ -353,7 +349,14 @@ Preliminary feature ideas and open requests live in the [feature backlog](docs/b
 
 ## Reproduce the data package
 
-Prepared files are included, so the normal demo does not download multi-gigabyte mosaics. To regenerate them:
+Prepared files are included, so the normal demo needs no Python installation and does not download multi-gigabyte mosaics. To regenerate data or run the offline Python reference checks, first create `.venv` and install `requirements.txt`:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+On Windows, use `python` and `.venv\Scripts\python.exe`; run the Python commands in the `prepare:*` scripts directly with that executable. To regenerate data:
 
 ```bash
 npm run prepare:data
@@ -361,6 +364,8 @@ npm run prepare:data
 npm run prepare:science
 # Optional: regenerate numeric environmental maps, multi-sol history and forecasts
 npm run prepare:environment
+# After regenerating either terrain package, rebuild the saved path library
+npm run prepare:paths
 ```
 
 This uses HTTP range requests against USGS rasters and downloads PDS environmental products. It can take several minutes and needs network access. Source records are cached under the repository's `tmp/`. It fails if usable data or verified radiation units are unavailable; it does not generate replacement terrain.
@@ -369,8 +374,10 @@ This uses HTTP range requests against USGS rasters and downloads PDS environment
 
 ```bash
 npm test
-npm run test:api
 npm run build
+# Optional offline parity verification (requires the Python environment above):
+npm run test:planner:reference
+npm run test:api
 ```
 
 In `hypersimulation-prototype/`, `npm run test:api` fails as written; see [Known limits](#known-limits) at the top of this file.
@@ -381,6 +388,8 @@ For browser checks, install local Chromium once and then run:
 mkdir -p tmp/browser
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npx playwright install chromium
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
+# On a machine with GPU acceleration, run the POV checks using hardware:
+TEST_HARDWARE=1 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
 ```
 
-The UI redesign browser suite checks route-free entry, retained pose/time/drafts, route adoption, return failure/retry, modal keyboard access, unsupported/loading states and bounded laptop layouts. The broader browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273 (8274 when run in `hypersimulation-prototype/`). It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
+The UI redesign browser suite checks route-free entry, retained pose/time/drafts, route adoption, return failure/retry, modal keyboard access, unsupported/loading states and bounded laptop layouts. The broader browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite serves production files only on port 8273 (8274 when run in `hypersimulation-prototype/`), with no backend. Set `TEST_PORT` and `STATIC_DIR` for an isolated build/check. Worker observation and fault injection replace the old API mocks. The dedicated static test checks that no runtime `/api` requests are made. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
