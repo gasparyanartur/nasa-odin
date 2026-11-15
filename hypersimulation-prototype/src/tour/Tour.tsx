@@ -1,14 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../design/icons';
-import { INITIAL, dwellMs, reduce, type TourEvent, type TourStep } from './engine';
-import { boxes, bringIntoView, centre, present, pressed, ready, reducedMotion, shownRect, visible } from './dom';
+import { INITIAL, cardText, dwellMs, overlay, reduce, restorePath, type TourEvent, type TourStep } from './engine';
+import { boxes, bringIntoView, centre, present, pressed, ready, reducedMotion, shownRect, sweepTour, visible } from './dom';
 import { placeCard } from './layout';
 import { tourMemory } from './memory';
 import { createScope, type Scope } from './scope';
 import { RECOVER, STEPS } from './steps';
 
 const TIMEOUT_MS = 6000, POLL_MS = 150, LOST_AFTER_MS = 1500, RING_PAD = 6;
+/** The caption card glides this long to a new place; a shift smaller than CARD_SNAP_PX follows the layout at once. */
+const CARD_GLIDE_MS = 620, CARD_SNAP_PX = 24;
 /** Key context the caption card covers as little as it can, in every step. */
 const BUSY = ['.mission-nav', '.context-bar', '.tablet-header', '.tablet-tabs', '.tablet-footer'];
 /** The helmet view: the card sits left middle, never over these. */
@@ -44,8 +46,9 @@ function waitFor<T>(scope: Scope, read: () => T | null | undefined | false, ms: 
 const ease = (k: number) => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 
 /**
- * Plays the tour on the real app: a drawn pointer glides to each data-tour anchor, the anchor is clicked with .click(),
- * and the next step waits until the app shows the expected result. The state machine lives in engine.ts.
+ * Runs the tour on the real app. By default the ring marks each data-tour anchor and the tour waits for the visitor
+ * to use it. With Show me a drawn pointer glides to the anchor and clicks it with .click(); the next step waits until
+ * the app shows the expected result. The state machine lives in engine.ts.
  */
 export default function TourProvider({ children }: { children: ReactNode }) {
   const memory = useMemo(() => tourMemory(), []);
@@ -53,7 +56,12 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   const send = useCallback((e: TourEvent) => setState(s => reduce(s, e, STEPS.length)), []);
   const paused = useRef(false); paused.current = state.paused;
   const pointer = useRef<HTMLDivElement>(null), ring = useRef<HTMLDivElement>(null), card = useRef<HTMLElement>(null);
-  const ringTarget = useRef<HTMLElement | null>(null);
+  const ringTarget = useRef<HTMLElement | null>(null), ringFor = useRef<HTMLElement | null>(null);
+  // The card's place now, where it heads, and the glide between them.
+  const cardAt = useRef<{ left: number; top: number } | null>(null), cardGoal = useRef<{ left: number; top: number } | null>(null);
+  const cardGlide = useRef<{ from: { left: number; top: number }; t0: number } | null>(null);
+  // The step's control could not be brought back: the card explains it, without a ring.
+  const [explain, setExplain] = useState(false);
   const pointerAt = useRef({ x: 0, y: 0 });
   // The element the pointer rests on between glides, so it stays on it when the window is resized.
   const pointerOn = useRef<HTMLElement | null>(null), gliding = useRef(false);
@@ -73,7 +81,8 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     memory.remember('started');
     previewByTour.current = false; pending.current = null; lastActed.current = performance.now();
     pointerAt.current = { x: window.innerWidth * .5, y: window.innerHeight * .72 }; pointerOn.current = null;
-    setShown(-1);
+    cardAt.current = null; cardGoal.current = null; cardGlide.current = null; ringFor.current = null;
+    setShown(-1); setExplain(false);
     send({ type: 'start' });
   }, [memory, send]);
 
@@ -166,13 +175,38 @@ export default function TourProvider({ children }: { children: ReactNode }) {
 
   const failure = (): TourEvent => lastTouch.current > lastActed.current ? { type: 'lost' } : { type: 'failed' };
 
+  /**
+   * Previous and Resume: bring the app back to the state the step needs with its own controls. A preview that runs is
+   * stopped for a step outside the helmet; then the way into the step's chapter and its via controls are clicked
+   * until the step's control is ready.
+   */
+  async function restore(scope: Scope, s: TourStep) {
+    const path = restorePath(s, RECOVER, !!present('preview-controls'));
+    for (let i = 0; i < path.length; i++) {
+      const name = path[i];
+      if (name !== 'preview-stop' && ready(s.target)) break;
+      const el = ready(name);
+      if (!el) continue;
+      if (bringIntoView(el)) await scope.sleep(reducedMotion() ? 50 : 400);
+      if (scope.disposed) return;
+      el.click();
+      if (name === 'preview-route') previewByTour.current = true;
+      if (name === 'preview-stop') previewByTour.current = false;
+      await waitFor(scope, () => (name !== 'preview-stop' && ready(s.target)) || path.slice(i + 1).some(n => present(n)), 2500);
+    }
+    await waitFor(scope, () => present(s.target), 600);
+  }
+
   async function auto(scope: Scope, s: TourStep, index: number, recover: boolean): Promise<TourEvent> {
     // Between steps no ring shows: the previous caption stays until this step's target is found and in view.
     ringTarget.current = null; gliding.current = false;
+    setExplain(false);
     await leave(scope, true);
+    if (recover) await restore(scope, s);
+    if (scope.disposed) return { type: 'failed' };
     const withPointer = s.pointer !== false;
     showPointer(withPointer);
-    const path = [...(recover ? RECOVER[s.chapter] : []), ...(s.via ?? [])];
+    const path = s.via ?? [];
     for (let i = 0; i < path.length; i++) {
       if (ready(s.target)) break;
       const el = ready(path[i]);
@@ -227,16 +261,34 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     return { type: 'acted' };
   }
 
-  function hands(scope: Scope, s: TourStep, index: number) {
-    void leave(null, false);
+  /** Hands-on: the ring marks the control (or the way to it) and the step moves on when the visitor uses it. */
+  async function hands(scope: Scope, s: TourStep, index: number, recover: boolean) {
+    await leave(null, false);
+    if (scope.disposed) return;
     showPointer(false);
     gliding.current = false; pointerOn.current = null;
+    if (recover) {
+      // Until the app is back in the step's state, the earlier card shows without a ring.
+      ringTarget.current = null;
+      setExplain(true); setShown(index);
+      await restore(scope, s);
+      if (scope.disposed) return;
+    }
+    const reachable = () => !!present(s.target) || (s.via ?? []).some(n => !!present(n));
+    // Previous or Resume could not bring the control back: the card explains the step and Next moves on.
+    const explainOnly = recover && !reachable();
+    setExplain(explainOnly);
     setShown(index);
+    if (explainOnly) { ringTarget.current = null; return; }
     let missing: number | undefined, done = false;
     const tick = () => {
       if (done) return;
       const el = present(s.target) ?? (s.via ?? []).map(present).find(Boolean) ?? null;
       ringTarget.current = el;
+      if (!el && s.action === 'click' && s.expect && present(s.expect)) {
+        // The visitor already did it (the tablet is open, the preview has stopped): move on.
+        done = true; lastActed.current = performance.now(); send({ type: 'acted' }); return;
+      }
       if (!el && !s.optional) {
         missing ??= performance.now();
         if (performance.now() - missing > LOST_AFTER_MS) { send({ type: 'lost' }); return; }
@@ -274,19 +326,23 @@ export default function TourProvider({ children }: { children: ReactNode }) {
       let left = dwellMs(step.caption);
       const tick = () => { if (!paused.current) left -= 100; if (left <= 0) send({ type: 'dwell-over' }); else scope.timeout(tick, 100); };
       scope.timeout(tick, 100);
-    } else if (state.stage === 'wait-user') hands(scope, step, state.index);
+    } else if (state.stage === 'wait-user') void hands(scope, step, state.index, state.recover);
     return () => scope.dispose();
   }, [state.run, state.stage, state.phase]);
 
   // Leaving the tour: undo the open step's side effect, stop a preview the tour started, clear the pointer and ring.
+  // Off: React has unmounted the whole tour layer by now; the sweep removes any stray node or mark, so nothing stays lit.
   useEffect(() => {
     if (state.phase === 'running') return;
-    ringTarget.current = null;
+    ringTarget.current = null; ringFor.current = null; pointerOn.current = null; gliding.current = false;
     showPointer(false);
+    if (ring.current) { ring.current.hidden = true; ring.current.classList.remove('is-in'); }
+    pointer.current?.classList.remove('is-pressing');
     if (state.phase === 'ended' || state.phase === 'off') {
       void leave(null, false);
       if (previewByTour.current) { previewByTour.current = false; ready('preview-stop')?.click(); }
     }
+    if (state.phase === 'off') sweepTour();
   }, [state.phase, leave]);
 
   // Visitor activity: a click outside the tour marks a possible detour; Escape ends the tour at once.
@@ -305,8 +361,8 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   // Ring, card and pointer follow the live layout every frame while the tour is on screen.
   useEffect(() => {
     if (state.phase === 'off' || state.phase === 'invite') return;
-    const scope = createScope();
-    const frame = () => {
+    const scope = createScope(), still = reducedMotion();
+    const frame = (now: number) => {
       // The ring shows only the part of the target a visitor can see; a target scrolled out of its panel has no ring.
       const r = ringTarget.current ? shownRect(ringTarget.current) : null;
       let box: { left: number; top: number; width: number; height: number } | null = null;
@@ -315,9 +371,20 @@ export default function TourProvider({ children }: { children: ReactNode }) {
         const right = Math.min(window.innerWidth - 2, r.right + RING_PAD), bottom = Math.min(window.innerHeight - 2, r.bottom + RING_PAD);
         if (right > left && bottom > top) box = { left, top, width: right - left, height: bottom - top };
       }
-      if (ring.current) {
-        ring.current.hidden = !box;
-        if (box) Object.assign(ring.current.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px` });
+      const rg = ring.current;
+      if (rg) {
+        if (!box) { rg.hidden = true; rg.classList.remove('is-in'); ringFor.current = null; }
+        else {
+          rg.hidden = false;
+          Object.assign(rg.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px` });
+          // A new target: the ring does not slide across the screen, it fades in where the target is.
+          if (ringFor.current !== ringTarget.current) {
+            rg.classList.remove('is-in');
+            void rg.offsetWidth;
+            rg.classList.add('is-in');
+            ringFor.current = ringTarget.current;
+          }
+        }
       }
       const c = card.current, s = STEPS[at.current.index];
       if (c) {
@@ -325,8 +392,21 @@ export default function TourProvider({ children }: { children: ReactNode }) {
         const helmet = s?.chapter === 'Helmet' && at.current.phase === 'running';
         const keep = boxes([...(s?.keep ?? []), '[data-tour="preview-controls"]', ...(helmet ? HELMET_KEEP : [])]);
         const busy = boxes([...BUSY, ...(s?.avoid ?? [])]);
-        const spot = placeCard(box, size, view, { keep, busy, home: helmet ? { left: 24, top: (view.height - size.height) / 2 } : undefined });
-        c.style.transform = `translate(${Math.round(spot.left)}px, ${Math.round(spot.top)}px)`;
+        const spot = placeCard(box, size, view, { keep, busy, home: helmet ? { left: 24, top: (view.height - size.height) / 2 } : undefined, stay: cardGoal.current ?? undefined });
+        const goal = { left: Math.round(spot.left), top: Math.round(spot.top) }, before = cardGoal.current;
+        cardGoal.current = goal;
+        if (!before || !cardAt.current || still) { cardGlide.current = null; cardAt.current = goal; }
+        else {
+          // A new place: glide there with an ease-in-out curve. A small shift (scroll, resize) follows at once.
+          if (Math.hypot(goal.left - before.left, goal.top - before.top) > CARD_SNAP_PX) cardGlide.current = { from: { ...cardAt.current }, t0: now };
+          const g = cardGlide.current;
+          if (g) {
+            const k = Math.min(1, (now - g.t0) / CARD_GLIDE_MS), e = ease(k);
+            cardAt.current = { left: g.from.left + (goal.left - g.from.left) * e, top: g.from.top + (goal.top - g.from.top) * e };
+            if (k >= 1) cardGlide.current = null;
+          } else cardAt.current = goal;
+        }
+        c.style.transform = `translate(${Math.round(cardAt.current.left)}px, ${Math.round(cardAt.current.top)}px)`;
         c.style.visibility = 'visible';
       }
       const rest = pointerOn.current;
@@ -342,12 +422,20 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   const total = STEPS.length;
   const handsOn = state.mode === 'hands';
 
+  // Hands-on Next on an action step the visitor has not done: the tour does it, so the next step finds its control.
+  const next = () => {
+    const s = STEPS[state.index];
+    const act = !!s && state.phase === 'running' && handsOn && state.stage === 'wait-user' && s.action === 'click' && !explain
+      && (!!ready(s.target) || (s.via ?? []).some(n => !!ready(n)));
+    send({ type: 'next', act });
+  };
+
   let body: ReactNode = null;
   if (state.phase === 'invite') {
     body = <section ref={invite} className="tour-invite tour-ui" role="dialog" aria-labelledby="tour-invite-title">
       <span className="eyebrow">First time here</span>
       <h2 id="tour-invite-title">Take the 2 minute tour</h2>
-      <p>A pointer shows you the real controls, one step at a time.</p>
+      <p>The tour marks the real controls and you use them, one step at a time.</p>
       <div className="tour-actions">
         <button type="button" className="tour-primary" onClick={start}>Start tour</button>
         <button type="button" className="tour-quiet" onClick={() => { memory.remember('dismissed'); send({ type: 'not-now' }); }}>Not now</button>
@@ -356,43 +444,51 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   } else if (state.phase !== 'off' && step) {
     const seen = STEPS[shownIndex] ?? step;
     const head = <header className="tour-card__head"><span className="tour-card__chapter">{state.phase === 'ended' ? 'Tour' : seen.chapter}</span>{state.phase !== 'ended' && <span className="tour-card__count">{shownIndex + 1} of {total}</span>}</header>;
-    let text: string, actions: ReactNode;
+    let text: string, actions: ReactNode = null, nav: ReactNode = null;
     if (state.phase === 'ended') {
       text = 'Tour ended here. Start it again from Help.';
       actions = <button type="button" className="tour-primary" onClick={() => send({ type: 'close' })}>Close</button>;
     } else if (state.phase === 'lost') {
       text = 'You left the tour path. Pick up where you were, or end the tour.';
       actions = <><button type="button" className="tour-primary" onClick={() => send({ type: 'resume' })}>Resume tour</button><button type="button" className="tour-quiet" onClick={() => send({ type: 'end' })}>End tour</button></>;
-    } else if (seen.final) {
-      text = seen.caption;
-      actions = <button type="button" className="tour-primary" onClick={() => send({ type: 'next' })}>Finish</button>;
     } else {
-      text = handsOn ? seen.doIt : seen.caption;
-      actions = <>
-        {handsOn
-          ? <button type="button" className="tour-quiet" onClick={() => send({ type: 'show-me' })}><Icon name="play" />Show me</button>
-          : <button type="button" className="tour-quiet" aria-pressed={state.paused} onClick={() => send({ type: state.paused ? 'play' : 'pause' })}><Icon name={state.paused ? 'play' : 'pause'} />{state.paused ? 'Play' : 'Pause'}</button>}
-        <button type="button" className="tour-primary" onClick={() => send({ type: 'next' })}>Next<Icon name="next" /></button>
-        {!handsOn && <button type="button" className="tour-quiet" onClick={() => send({ type: 'hands-on' })}>Let me do it</button>}
-        <button type="button" className="tour-link" onClick={() => send({ type: 'end' })}>Skip tour</button>
-      </>;
+      const previous = shownIndex > 0 && <button type="button" className="tour-quiet" onClick={() => send({ type: 'back' })}><Icon name="back" />Previous</button>;
+      text = cardText(seen, state.mode, explain);
+      if (seen.final) {
+        nav = <>{previous}<button type="button" className="tour-primary" onClick={() => send({ type: 'next' })}>Finish</button></>;
+      } else {
+        nav = <>{previous}<button type="button" className="tour-primary" onClick={next}>Next<Icon name="next" /></button></>;
+        actions = <>
+          {handsOn
+            ? !explain && <button type="button" className="tour-quiet" onClick={() => send({ type: 'show-me' })}><Icon name="play" />Show me</button>
+            : <>
+              <button type="button" className="tour-quiet" onClick={() => send({ type: 'hands-on' })}>Let me do it</button>
+              <button type="button" className="tour-quiet" aria-pressed={state.paused} onClick={() => send({ type: state.paused ? 'play' : 'pause' })}><Icon name={state.paused ? 'play' : 'pause'} />{state.paused ? 'Play' : 'Pause'}</button>
+            </>}
+          <button type="button" className="tour-link" onClick={() => send({ type: 'end' })}>Skip tour</button>
+        </>;
+      }
     }
     body = <section ref={card} className="tour-card tour-ui" role="dialog" aria-label="Guided tour" style={{ visibility: 'hidden' }}>
       {head}
       <p className="tour-card__text" aria-live="polite">{text}</p>
       {state.phase === 'running' && <div className="tour-card__track" aria-hidden="true"><span style={{ width: `${((shownIndex + 1) / total) * 100}%` }} /></div>}
-      <div className="tour-actions">{actions}</div>
+      {nav && <div className="tour-actions tour-actions--nav">{nav}</div>}
+      {actions && <div className="tour-actions">{actions}</div>}
     </section>;
   }
 
+  const parts = overlay(state.phase);
   return <TourContext.Provider value={api}>
     {children}
-    {createPortal(<div className="tour-layer" data-phase={state.phase}>
-      <div ref={ring} className="tour-ring" hidden aria-hidden="true" />
-      <div ref={pointer} className="tour-pointer" data-shown="false" aria-hidden="true">
-        <svg viewBox="0 0 28 32" width="28" height="32"><path d="M3 2 L3 25 L9.2 19.6 L13.4 29 L17.6 27.2 L13.5 18 L22 18 Z" /></svg>
-        <span className="tour-pointer__tap" />
-      </div>
+    {parts.layer && createPortal(<div className="tour-layer" data-phase={state.phase}>
+      {parts.marks && <>
+        <div ref={ring} className="tour-ring" hidden aria-hidden="true" />
+        <div ref={pointer} className="tour-pointer" data-shown="false" aria-hidden="true">
+          <svg viewBox="0 0 28 32" width="28" height="32"><path d="M3 2 L3 25 L9.2 19.6 L13.4 29 L17.6 27.2 L13.5 18 L22 18 Z" /></svg>
+          <span className="tour-pointer__tap" />
+        </div>
+      </>}
       {body}
     </div>, document.body)}
   </TourContext.Provider>;

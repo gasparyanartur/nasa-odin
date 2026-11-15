@@ -56,6 +56,28 @@ export function boxes(selectors: string[]): { left: number; top: number; width: 
   return out;
 }
 
+/** Every node the tour itself puts in the page. None of them may remain once the tour is off. */
+export const TOUR_NODES = '.tour-layer, .tour-ring, .tour-pointer, .tour-card, .tour-invite';
+/** Marks the tour sets on page elements, as attributes. */
+export const TOUR_MARKS = ['data-tour-invite'];
+
+interface SweepDoc {
+  documentElement: { removeAttribute(name: string): void };
+  querySelectorAll(selector: string): ArrayLike<{ remove(): void; removeAttribute(name: string): void }>;
+}
+
+/**
+ * Removes every tour node and mark still in the page. Safe to call any number of times. Called after the tour is off,
+ * when React has already unmounted its own nodes, so it only catches strays.
+ */
+export function sweepTour(doc: SweepDoc = document): void {
+  for (const name of TOUR_MARKS) {
+    doc.documentElement.removeAttribute(name);
+    for (const el of Array.from(doc.querySelectorAll(`[${name}]`))) el.removeAttribute(name);
+  }
+  for (const el of Array.from(doc.querySelectorAll(TOUR_NODES))) el.remove();
+}
+
 /** Scrolls only when the element is not fully inside its scrolling parents and the window. */
 export function bringIntoView(el: Element): boolean {
   const r = el.getBoundingClientRect();

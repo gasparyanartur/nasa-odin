@@ -8,9 +8,21 @@ export type Side = 'right' | 'left' | 'below' | 'above' | 'free';
  * (key context such as the region label, the local map or the tablet title). home: a fixed calm spot that wins
  * whenever it is clear of the target, keep and busy (the helmet chapter).
  */
-export interface PlaceOptions { keep?: Box[]; busy?: Box[]; home?: { left: number; top: number } }
+export interface PlaceOptions {
+  keep?: Box[]; busy?: Box[]; home?: { left: number; top: number };
+  /** Where the card is now. It stays there while that spot is as good as the best one and near the target. */
+  stay?: { left: number; top: number };
+}
 
 const GAP = 16, MARGIN = 12, HARD = 1e6;
+/** A card further than this from its target moves beside it. */
+export const NEAR = 220;
+
+function distance(a: Box, b: Box): number {
+  const dx = Math.max(0, a.left - (b.left + b.width), b.left - (a.left + a.width));
+  const dy = Math.max(0, a.top - (b.top + b.height), b.top - (a.top + a.height));
+  return Math.hypot(dx, dy);
+}
 
 function overlap(a: Box, b: Box): number {
   const w = Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left);
@@ -40,6 +52,10 @@ export function placeCard(target: Box | null, card: { width: number; height: num
     const left = clamp(opts.home.left, MARGIN, maxLeft), top = clamp(opts.home.top, MARGIN, maxTop);
     if (cost(left, top) === 0) return { left, top, side: 'free' };
   }
+  // Keeping its place is calmer than moving: the card stays where it is while that spot is clear and near the target.
+  const stay = opts.stay ? { left: clamp(opts.stay.left, MARGIN, maxLeft), top: clamp(opts.stay.top, MARGIN, maxTop) } : null;
+  const near = !!stay && (!target || distance({ ...stay, ...card }, target) <= NEAR);
+  if (stay && near && cost(stay.left, stay.top) === 0) return { ...stay, side: 'free' };
   if (!target) {
     const left = clamp((view.width - card.width) / 2, MARGIN, maxLeft), top = clamp(view.height - card.height - 28, MARGIN, maxTop);
     if (cost(left, top) === 0) return { left, top, side: 'free' };
@@ -67,5 +83,6 @@ export function placeCard(target: Box | null, card: { width: number; height: num
     const c = cost(s.left, s.top);
     if (!best || c < best.cost || (c === best.cost && s.rank < best.rank)) best = { ...s, cost: c };
   }
+  if (stay && near && cost(stay.left, stay.top) <= best!.cost) return { ...stay, side: 'free' };
   return { side: best!.side, left: best!.left, top: best!.top };
 }

@@ -4,8 +4,10 @@
 .tour-layer .tour-ui{pointer-events:auto}
 
 /* Ring: a lit lamp line around the real control, with a slow pulse */
-.tour-ring{position:fixed;border-radius:var(--radius-frame);box-shadow:0 0 0 2px var(--lamp),0 0 0 5px var(--halo);pointer-events:none}
+.tour-ring{position:fixed;border-radius:var(--radius-frame);box-shadow:0 0 0 2px var(--lamp),0 0 0 5px var(--halo);pointer-events:none;opacity:0}
 .tour-ring[hidden]{display:none}
+/* A new target: the ring fades in where it is, it never slides across the screen */
+.tour-ring.is-in{opacity:1;transition:opacity 250ms var(--ease)}
 .tour-ring::after{content:"";position:absolute;inset:-2px;border-radius:inherit;box-shadow:0 0 0 2px var(--lamp);opacity:0;animation:tour-pulse 1.8s var(--ease) infinite}
 @keyframes tour-pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.06)}}
 
@@ -19,16 +21,20 @@
 .tour-pointer.is-pressing .tour-pointer__tap{animation:tour-tap .45s var(--ease) forwards}
 @keyframes tour-tap{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(1.15)}}
 
-/* Caption card: a cream wall label */
-.tour-card{position:fixed;left:0;top:0;width:min(340px,calc(100vw - 24px));padding:14px 16px 12px;background:var(--card);color:var(--label-ink);border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-pop);font:400 var(--fs-sm2)/var(--lh-text) var(--font-text);transition:transform var(--dur-2) var(--ease)}
+/* Caption card: a cream wall label. Tour.tsx glides it (about 620 ms, ease-in-out); no CSS transition on transform. */
+.tour-card{position:fixed;left:0;top:0;width:min(340px,calc(100vw - 24px));padding:14px 16px 12px;background:var(--card);color:var(--label-ink);border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-pop);font:400 var(--fs-sm2)/var(--lh-text) var(--font-text);will-change:transform}
 .tour-card__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:2px}
 .tour-card__chapter{font:400 var(--fs-md)/1.1 var(--font-display);color:var(--label-ink)}
 .tour-card__count{font:700 var(--fs-xs)/1.2 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--label-ink-2);white-space:nowrap}
-.tour-card__text{margin:8px 0 10px;color:var(--label-ink);font-size:var(--fs-sm2);line-height:var(--lh-text);text-wrap:pretty}
+/* Room for three lines, so a new caption does not change the card's size */
+.tour-card__text{margin:8px 0 10px;min-height:calc(3em * var(--lh-text));color:var(--label-ink);font-size:var(--fs-sm2);line-height:var(--lh-text);text-wrap:pretty}
 .tour-card__track{height:2px;margin:0 0 10px;background:var(--card-line);border-radius:var(--radius-pill);overflow:hidden}
 .tour-card__track>span{display:block;height:100%;background:var(--brass-lo);transition:width var(--dur-2) var(--ease)}
 
 .tour-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* Previous and Next on their own row, so the card keeps one size from step to step */
+.tour-card .tour-actions--nav{justify-content:flex-end}
+.tour-card .tour-actions+.tour-actions{margin-top:8px;min-height:36px}
 .tour-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 12px;border-radius:var(--radius-case);font:700 var(--fs-sm)/1 var(--font-text);letter-spacing:.02em;cursor:pointer}
 .tour-actions .pict{width:16px;height:16px}
 .tour-actions .tour-primary{background:var(--cobalt);color:#fff;border:0;box-shadow:0 4px 10px rgba(0,0,0,.25)}
@@ -54,7 +60,7 @@ button.tour-entry:hover:not(:disabled){border-color:var(--brass)}
 .tablet-device .tablet-tabs button.tour-entry{align-self:center;min-height:30px;margin-right:6px}
 
 @media (prefers-reduced-motion: reduce){
-  .tour-card,.tour-pointer,.tour-pointer path{transition:none}
+  .tour-ring.is-in,.tour-pointer,.tour-pointer path,.tour-card__track>span{transition:none}
   .tour-ring::after,.tour-pointer.is-pressing .tour-pointer__tap,.tour-invite{animation:none}
 }
 @media (max-width:600px){

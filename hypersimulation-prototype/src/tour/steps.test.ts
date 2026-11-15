@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { anchorsOf, wordCount } from './engine';
+import { anchorsOf, cardText, wordCount } from './engine';
 import { RECOVER, STEPS } from './steps';
 
 function sources(dir: string): string[] {
@@ -38,6 +38,14 @@ describe('tour steps', () => {
     for (const text of [s.caption, s.doIt]) {
       expect(wordCount(text)).toBeLessThanOrEqual(14);
       expect(text).not.toMatch(new RegExp(String.fromCharCode(0x2014)));
+    }
+  });
+
+  it('hands-on is the default text, and every action step tells the visitor what to do', () => {
+    for (const s of STEPS) {
+      expect(cardText(s, 'hands', false)).toBe(s.doIt);
+      if (s.action !== 'point' && !s.final) expect(s.doIt).toMatch(/\b(Click|Choose|pick|Open|Drag)\b/);
+      expect(s.doIt).not.toMatch(/\bpointer\b/i);
     }
   });
 
