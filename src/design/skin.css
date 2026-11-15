@@ -88,6 +88,7 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .region-card strong{font:700 var(--fs-sm2)/1.2 var(--font-text)}
 .region-card strong span{color:var(--brass-hi)}
 .region-card[aria-pressed=true]{background:var(--brass);box-shadow:none}
+.region-card[aria-pressed=true] small,.region-card[aria-pressed=true] strong span{color:var(--label-ink)}
 .region-details h2,.sidebar h2{font-size:var(--fs-1)}
 .region-coordinates,.capability{color:var(--brass-hi)}
 .coverage-note{background:var(--plinth);border-left:2px solid var(--brass)}
@@ -225,7 +226,7 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .wall-label .mission-clocks small,.wall-label .mission-clocks span{color:var(--label-ink-2)}
 
 /* ---------- HUD: depth 0 is the visor line, compass, sparse marks, round minimap, small symbols ---------- */
-.hud-page{--hud-top:clamp(14px,3.4vh,34px);--hud-side:clamp(56px,8.5vw,150px);--hud-text:clamp(12px,.92vw,15px);background:var(--wall-2)}
+.hud-page{--hud-top:clamp(14px,3.4vh,34px);--hud-side:clamp(64px,10.5vw,190px);--hud-text:clamp(12px,.92vw,15px);background:var(--wall-2)}
 .hud-page .visor-frame{inset:1.2vh 1.4vw;border:0;border-radius:0;box-shadow:none;pointer-events:none;color:var(--eng);text-shadow:none}
 .visor-rim{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .visor-rim path{fill:none;vector-effect:non-scaling-stroke}
@@ -244,11 +245,11 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .visor-waypoint>span .pict{width:22px;height:22px}
 .hud-page .visor-waypoint small{font:700 var(--hud-text)/1 var(--font-text);color:var(--eng)}
 /* route state, top left, one short line */
-.hud-page .hud-heading{position:absolute;top:calc(var(--hud-top) + 4vh);left:var(--hud-side);max-width:240px;display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--hud-plate);border:1px solid var(--hud-plate-line);border-radius:var(--radius-pill);color:var(--eng);text-shadow:none;pointer-events:none}
+.hud-page .hud-heading{position:absolute;top:calc(var(--hud-top) + 6vh);left:var(--hud-side);max-width:240px;display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--hud-plate);border:1px solid var(--hud-plate-line);border-radius:var(--radius-pill);color:var(--eng);text-shadow:none;pointer-events:none}
 .hud-page .hud-heading .pict{width:18px;height:18px}
 .hud-page .hud-heading h2{margin:0;font:700 var(--hud-text)/1.2 var(--font-text);letter-spacing:.01em;color:var(--eng);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* top right: the round minimap, then the clocks, then the notice symbol */
-.hud-corner{position:absolute;top:calc(var(--hud-top) + 4vh);right:var(--hud-side);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3;pointer-events:none}
+.hud-corner{position:absolute;top:calc(var(--hud-top) + 6vh);right:var(--hud-side);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3;pointer-events:none}
 .hud-page .hud-map{position:relative;top:auto;right:auto;width:clamp(112px,10vw,168px);aspect-ratio:1;border-radius:50%;overflow:hidden;opacity:1;border:0;background:var(--wall-2);box-shadow:0 0 0 1.5px var(--eng),0 0 0 4px var(--halo)}
 .hud-map .surface-map{border:0;width:100%;height:100%;min-height:0;max-height:none;border-radius:50%}
 .hud-map canvas{width:100%!important;height:100%!important;max-height:none;object-fit:cover}
@@ -322,7 +323,7 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .pause-menu h2{font-size:var(--fs-2);color:var(--on-wall)}
 .pause-menu p{color:var(--on-wall-2);font-size:var(--fs-sm)}
 .pause-menu button:not(.primary){background:transparent;border:1px solid var(--plinth-line);color:var(--on-wall);font-size:var(--fs-sm);border-radius:var(--radius)}
-.hud-page .hud-field-inspector{top:calc(var(--hud-top) + 4vh + 46px);left:var(--hud-side);width:min(300px,30vw);max-height:calc(100% - 260px);overflow:auto;padding:12px;background:rgba(21,20,18,.82);border:1px solid var(--hud-plate-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
+.hud-page .hud-field-inspector{top:calc(var(--hud-top) + 6vh + 46px);left:var(--hud-side);width:min(300px,30vw);max-height:calc(100% - 260px);overflow:auto;padding:12px;background:rgba(21,20,18,.82);border:1px solid var(--hud-plate-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
 
 @media (max-width:800px){
   .hud-page{--hud-side:clamp(28px,5vw,56px)}
