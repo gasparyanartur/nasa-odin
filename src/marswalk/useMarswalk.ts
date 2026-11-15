@@ -86,10 +86,13 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   // Walked paths
   const store = useMemo(() => localStore(), []);
   const current = useRef<Walk | null>(null);
+  const latest = useRef(pose); latest.current = pose;
   const [walks, setWalks] = useState<Walk[]>(() => walkable(regionId) ? listWalks(store, regionId) : []);
   const [savedOk, setSavedOk] = useState(store.persistent);
   const refresh = useCallback(() => setWalks(walkable(regionId) ? listWalks(store, regionId) : []), [store, regionId]);
   const flush = useCallback((end: boolean) => {
+    // Opening the tablet keeps the last position even when it is closer than one sampling step.
+    if (!end && current.current) current.current = appendSample(current.current, { x: latest.current.x, y: latest.current.y, elapsedS: latest.current.elapsed });
     const w = current.current;
     if (w && w.samples.length >= 2) { setSavedOk(saveWalk(store, closeWalk(w, new Date().toISOString())) && store.persistent); }
     if (end) current.current = null;
