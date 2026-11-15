@@ -28,6 +28,34 @@ export function centre(el: Element): { x: number; y: number } {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
+export interface Rect { left: number; top: number; right: number; bottom: number }
+
+/** The part of the element a visitor can see: cut to every clipping parent and the window; null when none of it shows. */
+export function shownRect(el: Element): Rect | null {
+  if (!visible(el)) return null;
+  const r = el.getBoundingClientRect();
+  let left = Math.max(0, r.left), top = Math.max(0, r.top), right = Math.min(window.innerWidth, r.right), bottom = Math.min(window.innerHeight, r.bottom);
+  for (let p: Element | null = el; p && p !== document.body; p = p.parentElement) {
+    const s = getComputedStyle(p);
+    if (p !== el && /(auto|scroll|hidden|clip)/.test(s.overflowY + s.overflowX)) {
+      const b = p.getBoundingClientRect();
+      left = Math.max(left, b.left); top = Math.max(top, b.top); right = Math.min(right, b.right); bottom = Math.min(bottom, b.bottom);
+    }
+    if (s.position === 'fixed') break;
+  }
+  return right - left > 1 && bottom - top > 1 ? { left, top, right, bottom } : null;
+}
+
+/** Boxes of every visible element matching the selectors, as left / top / width / height. */
+export function boxes(selectors: string[]): { left: number; top: number; width: number; height: number }[] {
+  const out: { left: number; top: number; width: number; height: number }[] = [];
+  for (const sel of selectors) for (const el of Array.from(document.querySelectorAll(sel))) {
+    const r = shownRect(el);
+    if (r) out.push({ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top });
+  }
+  return out;
+}
+
 /** Scrolls only when the element is not fully inside its scrolling parents and the window. */
 export function bringIntoView(el: Element): boolean {
   const r = el.getBoundingClientRect();

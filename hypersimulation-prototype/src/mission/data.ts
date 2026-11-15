@@ -1,3 +1,5 @@
+import { withBase } from '../assetUrl';
+
 export interface Point { x: number; y: number }
 export interface Pose extends Point { heading: number; pitch?: number; elapsed: number }
 export interface Exclusion extends Point { radius: number }
@@ -37,7 +39,7 @@ export class RoutePlanningError extends Error {
   constructor(message: string, public diagnostics?: RouteDiagnostics) { super(message); this.name='RoutePlanningError'; }
 }
 
-export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Promise<TerrainData> {
+export async function loadTerrain(signal?: AbortSignal, baseUrl = withBase('/gale')): Promise<TerrainData> {
   const get = async (file: string) => {
     let r: Response;
     try { r = await fetch(`${baseUrl}/${file}`, { signal }); }
@@ -51,6 +53,7 @@ export async function loadTerrain(signal?: AbortSignal, baseUrl = '/gale'): Prom
     get('environment.json').then(r => r.json()),
   ]);
   if (h.byteLength !== meta.size**2*4 || s.byteLength !== h.byteLength || v.byteLength !== meta.size**2) throw new Error('Gale data arrays do not match their manifest.');
+  if (meta.detail) meta.detail = { ...meta.detail, baseUrl: withBase(meta.detail.baseUrl) };
   const evidence=meta.detail?await get('evidence.json').then(r=>r.json()):undefined;
   return { baseUrl, meta, evidence, heights: new Float32Array(h), slopes: new Float32Array(s), valid: new Uint8Array(v), environment };
 }

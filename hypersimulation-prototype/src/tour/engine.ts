@@ -29,6 +29,15 @@ export interface TourStep {
   timeoutMs?: number;
   /** How the step undoes its own side effect when the tour moves on. */
   leave?: { reclickIfExpanded?: boolean; restorePressed?: string[] };
+  /**
+   * data-tour name of the mark a switch shows. When the first click hides the mark, the tour clicks again so the
+   * visitor sees it appear, and the setting ends as it was; when the first click shows it, leaving clicks once more.
+   */
+  flip?: string;
+  /** CSS selectors of key context the caption card should cover as little as it can. */
+  avoid?: string[];
+  /** CSS selectors the caption card must never cover. */
+  keep?: string[];
   /** The closing card: no dwell, the card offers Finish. */
   final?: boolean;
 }
@@ -123,5 +132,5 @@ export const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boole
 
 /** Every data-tour name a step can touch. */
 export function anchorsOf(step: TourStep): string[] {
-  return [step.target, ...(step.via ?? []), ...(step.expect ? [step.expect] : []), ...(step.show ? [step.show] : []), ...(step.leave?.restorePressed ?? [])];
+  return [step.target, ...(step.via ?? []), ...(step.expect ? [step.expect] : []), ...(step.show ? [step.show] : []), ...(step.flip ? [step.flip] : []), ...(step.leave?.restorePressed ?? [])];
 }

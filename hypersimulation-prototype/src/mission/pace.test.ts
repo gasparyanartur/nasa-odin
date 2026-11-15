@@ -20,4 +20,14 @@ describe('simulation pace', () => {
     expect(storedPace({ getItem: () => { throw new Error('blocked'); } })).toBe(20);
     expect(() => savePace(5, { setItem: () => { throw new Error('blocked'); } })).not.toThrow();
   });
+  it('survives a browser where reading localStorage itself throws (first visit, storage blocked)', () => {
+    const before = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
+    try {
+      expect(storedPace()).toBe(20);
+      expect(() => savePace(5)).not.toThrow();
+    } finally {
+      if (before) Object.defineProperty(globalThis, 'localStorage', before); else delete (globalThis as { localStorage?: unknown }).localStorage;
+    }
+  });
 });

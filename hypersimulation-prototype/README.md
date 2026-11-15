@@ -313,6 +313,8 @@ Each app keeps running in its own terminal. To run both, open two terminals: run
 
 `npm run build` produces a complete static website under `dist/`, including datasets, Cesium assets and the browser planner worker. Serve that directory over HTTP/HTTPS; no API, Python process, secrets or database is needed. Opening `index.html` directly as a `file://` URL is unsupported because the app loads modules, workers and data files.
 
+To serve the site below a folder (GitHub Pages serves a project at `/<repository>/`), set the folder when building: `VITE_BASE=/nasa-martian-map/ npx vite build`. Every data file, the planner worker and the Cesium files then load from under that folder. Without `VITE_BASE` the build serves from the site root, as before.
+
 FR-029 tracks setting up Cloudflare static hosting and publishing the public URL; it is not deployed by FR-028. See the [deployment plan](docs/plans/2026-11-15-demo-deployment.md) and [release instructions](docs/release.md).
 
 For a local files-only acceptance check after building:

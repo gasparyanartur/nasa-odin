@@ -16,7 +16,7 @@ AI-written (Claude, Anthropic), 2026-11-15.
 - `history-tab` - Station header, Data & history. Shows the dated records and the outlook.
 - `station-help` - Station header, the "i" beside the tabs. Opens the Station help.
 - `station-tour` - Station header, Tour, beside the help mark. Starts the guided tour.
-- `globe` - the Mars globe itself (the Cesium view). Drag to turn.
+- `globe` - the Mars globe itself (the Cesium view). Drag to turn. Carries `data-ready="true"` once the first imagery frame is drawn (or the globe reports an error); until then the globe area shows "Loading Mars…" and the tour does not invite.
 - `task-info-geology`, `task-info-safety`, `task-info-water`, `task-info-custom` - the "i" beside each task under "02 / Choose your task". Opens the task details.
 - `task-info-geology-pop`, `task-info-safety-pop`, `task-info-water-pop`, `task-info-custom-pop` - the open details label of that "i" (only while open).
 - `region-boxwork`, `region-bradbury`, `region-jezero` - left rail, "01 / Choose a region" cards. Selects the region and flies the globe to it.
@@ -43,7 +43,8 @@ AI-written (Claude, Anthropic), 2026-11-15.
 - `previous-paths` - Routes, the Previous paths panel (Load previous path only).
 - `science-walk-card` - Routes on Boxwork, the card button inside the science walk (prepared or planned). Chooses that walk.
 - `helmet-preview` - Display, the small schematic helmet preview beside the feature switches.
-- `feature-<id>` - Display, the switch of one feature, for example `feature-stops` (Science stops) or `feature-nogo`. Turns it on or off; the walk becomes Custom.
+- `helmet-preview-stop` - in the helmet preview, the stop mark with its number and short task (Science stops on and the waypoint switch on).
+- `feature-<id>` - Display, the switch of one feature, for example `feature-stops` (Science stops) or `feature-nogo`. Turns it on or off; the walk becomes Custom, and turns back into its walk choice when the switches match that choice again.
 - `mission-pick-geology`, `mission-pick-safety`, `mission-pick-water`, `mission-pick-custom` - Display, the walk choice buttons above the switches. Applies that walk's feature set.
 - `close-tablet` - tablet header, Close tablet (or Back to Station). Closes the tablet.
 - `plan-new-route` - Routes, Plan new route switch. Shows endpoints, the science walk and route planning.

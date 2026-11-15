@@ -1,4 +1,5 @@
 import raw from '../../public/boxwork/full/manifest.json';
+import { withBase } from '../assetUrl';
 
 export type ImageryMode = 'colour' | 'grey';
 export type ImagerySourceId = 'full-tiles' | 'core-half' | 'ortho';
@@ -37,7 +38,7 @@ export function tiles(m: FullManifest = FULL): Tile[] {
   const out: Tile[] = [];
   for (let row = 0; row < m.imagery.tileGrid.rows; row++)
     for (let col = 0; col < m.imagery.tileGrid.cols; col++)
-      out.push({ row, col, extent: tileExtent(row, col, m), url: { colour: m.imagery.files[`colour_${row}_${col}`].url, grey: m.imagery.files[`grey_${row}_${col}`].url } });
+      out.push({ row, col, extent: tileExtent(row, col, m), url: { colour: withBase(m.imagery.files[`colour_${row}_${col}`].url), grey: withBase(m.imagery.files[`grey_${row}_${col}`].url) } });
   return out;
 }
 
@@ -63,7 +64,7 @@ export function heightGrid(buffer: ArrayBuffer, m: FullManifest = FULL): HeightG
 }
 
 export async function loadHeightGrid(signal?: AbortSignal, m: FullManifest = FULL): Promise<HeightGrid> {
-  const r = await fetch(m.height.url, { signal });
+  const r = await fetch(withBase(m.height.url), { signal });
   if (!r.ok) throw new Error(`Full Boxwork height grid could not load (${m.height.url}).`);
   return heightGrid(await r.arrayBuffer(), m);
 }
@@ -93,6 +94,6 @@ export function pickImagerySource(loaded: LoadedImagery, mode: ImageryMode = 'co
     return { id: 'full-tiles', urls: quarter.map(t => t.url[mode]), extent: m.extentTeamM, metresPerPixel: m.imagery.pixelSizeM.north };
   const half = m.imagery.files[`${mode}_half`];
   if (loaded.half && half)
-    return { id: 'core-half', urls: [half.url], extent: m.extentTeamM, metresPerPixel: (m.extentTeamM.north - m.extentTeamM.south) / half.heightPx };
-  return { id: 'ortho', urls: [mode === 'grey' ? '/boxwork/ortho-grey.jpg' : '/boxwork/ortho.jpg'], extent: m.teamAreaM, metresPerPixel: (m.teamAreaM.north - m.teamAreaM.south) / ORTHO_PX };
+    return { id: 'core-half', urls: [withBase(half.url)], extent: m.extentTeamM, metresPerPixel: (m.extentTeamM.north - m.extentTeamM.south) / half.heightPx };
+  return { id: 'ortho', urls: [withBase(mode === 'grey' ? '/boxwork/ortho-grey.jpg' : '/boxwork/ortho.jpg')], extent: m.teamAreaM, metresPerPixel: (m.teamAreaM.north - m.teamAreaM.south) / ORTHO_PX };
 }

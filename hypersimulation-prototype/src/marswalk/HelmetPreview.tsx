@@ -23,7 +23,7 @@ export default function HelmetPreview({ setup, hud }: { setup: Setup; hud: HudSe
         {minimap && <span className="helmet-preview__map">{zones && <span className="helmet-preview__zone" style={{ backgroundImage: HATCH_SWATCH['hatch-scarp'] }} />}<b>N</b></span>}
         {clocks && <span className="helmet-preview__pill"><Icon name="sun" />12:00</span>}
       </span>}
-      {stops && <span className="helmet-preview__stop"><b>{first.id}</b><small>{first.short}</small></span>}
+      {stops && <span className="helmet-preview__stop" data-tour="helmet-preview-stop"><b>{first.id}</b><small>{first.short}</small></span>}
       <span className="helmet-preview__status">
         <span><Icon name="fine" /></span><span><Icon name="clock" /></span><span><Icon name="back" /></span>
         {zones && <span className="is-warning"><Icon name="nogo" /></span>}

@@ -328,6 +328,11 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .pause-menu button:not(.primary){background:transparent;border:1px solid var(--plinth-line);color:var(--on-wall);font-size:var(--fs-sm);border-radius:var(--radius)}
 .hud-page .hud-field-inspector{top:calc(var(--hud-top) + 6vh + 46px);left:var(--hud-side);width:min(270px,26vw);max-height:calc(100% - 260px);overflow:auto;padding:12px;background:rgba(21,20,18,.82);border:1px solid var(--hud-plate-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
 
+/* Station: quiet loading line in the globe area until the first imagery frame is drawn */
+.globe-loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;pointer-events:none}
+.globe-loading span{padding:6px 14px;border:1px solid var(--plinth-line);border-radius:var(--radius-pill);background:var(--wall-2);color:var(--on-wall-2);font:700 var(--fs-xs)/1.2 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;animation:globe-loading 1.6s var(--ease) infinite alternate}
+@keyframes globe-loading{from{opacity:.55}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.globe-loading span{animation:none}}
 /* Station: planet-view hint under the Global view button, clear of the region card, markers and footnotes */
 .planet-hint{position:absolute;top:76px;right:30px;z-index:4;display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;background:var(--wall-2);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall);font:600 var(--fs-xs)/1.3 var(--font-text);box-shadow:var(--shadow-card)}
 .planet-hint__zoom{min-height:30px;padding:0 10px;background:transparent;border:1px solid var(--brass-lo);border-radius:var(--radius);color:var(--brass-hi);font:700 var(--fs-xs)/1 var(--font-text);cursor:pointer}

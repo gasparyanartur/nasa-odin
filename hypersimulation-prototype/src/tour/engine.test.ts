@@ -175,6 +175,40 @@ describe('caption card placement', () => {
     });
   }
 
+  it('at 800 x 655 never covers the target or the preview controls, and keeps off busy context where it can', () => {
+    const view = { width: 800, height: 655 };
+    const preview = { left: 140, top: 515, width: 520, height: 125 };
+    const stop = { left: 560, top: 590, width: 80, height: 40 };
+    const p = placeCard(stop, card, view, { keep: [preview] });
+    expect(inside(p, view)).toBe(true);
+    expect(covers(p, stop)).toBe(false);
+    expect(covers(p, preview)).toBe(false);
+    const nav = { left: 0, top: 0, width: 800, height: 56 }, header = { left: 0, top: 56, width: 800, height: 60 };
+    const regionCard = { left: 20, top: 120, width: 260, height: 60 }, regionLabel = { left: 300, top: 420, width: 310, height: 200 };
+    const q = placeCard(regionCard, card, view, { busy: [nav, header, regionLabel] });
+    for (const b of [regionCard, nav, header, regionLabel]) expect(covers(q, b)).toBe(false);
+  });
+
+  it('in the helmet sits at its calm spot left middle while that spot is clear, and moves only off a kept box', () => {
+    const view = { width: 800, height: 655 }, home = { left: 24, top: (655 - card.height) / 2 };
+    const compass = { left: 280, top: 20, width: 240, height: 50 }, minimap = { left: 650, top: 60, width: 130, height: 180 };
+    const p = placeCard(compass, card, view, { keep: [minimap], home });
+    expect([p.left, p.top]).toEqual([24, home.top]);
+    const overHome = { left: 30, top: 300, width: 60, height: 40 };
+    const q = placeCard(overHome, card, view, { home });
+    expect(covers(q, overHome)).toBe(false);
+    expect(placeCard(null, card, view, { keep: [{ left: 140, top: 515, width: 520, height: 125 }], home }).top).toBe(home.top);
+  });
+
+  it('a card that cannot avoid a busy area covers as little of it as it can, never the target', () => {
+    const view = { width: 800, height: 655 };
+    const sidebarItem = { left: 12, top: 140, width: 300, height: 40 }, map = { left: 330, top: 116, width: 470, height: 480 };
+    const p = placeCard(sidebarItem, card, view, { busy: [map] });
+    expect(covers(p, sidebarItem)).toBe(false);
+    const area = (x: { left: number; top: number }) => Math.max(0, Math.min(x.left + card.width, map.left + map.width) - Math.max(x.left, map.left)) * Math.max(0, Math.min(x.top + card.height, map.top + map.height) - Math.max(x.top, map.top));
+    expect(area(p)).toBeLessThan(card.width * card.height / 2);
+  });
+
   it('without a target it sits at the bottom centre', () => {
     const p = placeCard(null, card, { width: 1000, height: 700 });
     expect(p.side).toBe('free');

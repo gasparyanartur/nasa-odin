@@ -39,6 +39,16 @@ describe('Marswalk presets in the team app', () => {
     expect(applyMission('safety', 'gale-boxwork').hist).toBe(false);
   });
 
+  it('a switch flipped and flipped back returns to the walk choice, without re-applying anything else', () => {
+    const once = toggleFeature(DEFAULT_SETUP, 'stops');
+    expect(once.mission).toBe('custom');
+    expect(once.features.stops).toBe(false);
+    const twice = toggleFeature(once, 'stops');
+    expect(twice.mission).toBe('geology');
+    expect(twice.features).toEqual(DEFAULT_SETUP.features);
+    expect(toggleFeature(toggleFeature(DEFAULT_SETUP, 'stops'), 'drill').mission).toBe('custom');
+  });
+
   it('changes features only when the user picks a mission, region or switch', () => {
     const s = pickMission(DEFAULT_SETUP, 'safety');
     expect(s.mission).toBe('safety');

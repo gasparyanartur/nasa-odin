@@ -547,7 +547,7 @@ export default function App(){
 <summary>Compare departure hours</summary>
 <p className="caption">Same round trip + stop, evaluated at every hour. Select a departure, then plan a route again. Dose: {route.roundTripDoseMicroGy.toFixed(2)} µGy at every departure (fixed rate).</p>
 <div className="departure-grid">{route.departures.map(d=>
-<button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'—'} K · {d.status}</small>
+<button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'-'} K · {d.status}</small>
 </button>)}</div>
 </details>}</>}</section>}
 
@@ -567,11 +567,11 @@ export default function App(){
         <div className="trace-legend" aria-label="Traverse map legend"><span className="trace-legend__current" style={{color:CURRENT_WALK_COLOR}}>┄ Current walk</span>{savedTraces.map(t=><span key={t.id} style={{color:t.color}}>━ {t.label}</span>)}{activeEvents.length>0&&<span className="trace-legend__hazard">● Scenario area · solar: exposed outside green shelter</span>}</div>
         <div className="inspection" aria-label="Terrain inspection">
 <span>
-<small>LOCATION</small>{geo?`${geo[1].toFixed(5)}° N / ${geo[0].toFixed(5)}° E`:'—'}</span>
+<small>LOCATION</small>{geo?`${geo[1].toFixed(5)}° N / ${geo[0].toFixed(5)}° E`:'-'}</span>
 <span>
 <small>AREOID ELEVATION</small>{measured?`${measured.elevation.toFixed(1)} m`:'Outside valid data'}</span>
 <span>
-<small>LOCAL MAX SLOPE</small>{measured?`${measured.slope.toFixed(1)}°`:'—'}</span>
+<small>LOCAL MAX SLOPE</small>{measured?`${measured.slope.toFixed(1)}°`:'-'}</span>
 
 </div>{data&&(mw.zones||mapStops||drills)&&<div className="map-overlays"><HazardLegend zones={!!mw.zones} stops={!!mapStops} drills={!!drills}/>{stopId!==undefined&&mapStops&&<StopCard id={stopId} visited={mw.visited.has(stopId)} onClose={()=>setStopId(undefined)}/>}</div>}
 

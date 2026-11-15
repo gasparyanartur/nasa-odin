@@ -172,6 +172,18 @@ export class GlobeController {
     send();
     return () => { removeEnd(); removeChange(); };
   }
+  /** Calls back once, after the first frame drawn with a basemap attached and every visible tile loaded; returns the unsubscribe. */
+  whenDrawn(done: () => void) {
+    const scene = this.viewer.scene;
+    let fired = false;
+    const remove = scene.postRender.addEventListener(() => {
+      if (fired || this.viewer.imageryLayers.length === 0 || !scene.globe.tilesLoaded) return;
+      fired = true;
+      queueMicrotask(() => { remove(); done(); });
+    });
+    scene.requestRender();
+    return () => { if (!fired) remove(); };
+  }
   home() {
     this.viewer.camera.cancelFlight();
     this.viewer.camera.setView({ destination: Cartesian3.fromDegrees(107, 8, 10_500_000, Ellipsoid.MARS) });
