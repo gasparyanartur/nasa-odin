@@ -1,0 +1,136 @@
+/* Design tokens - "Exhibit" with the helmet visor of board 06, untinted.
+   A dark gallery wall, cream wall labels, brass hairlines, one warm spot lamp, cobalt for the one primary
+   action per screen, alarm red for real alarms only. Source: the team's combined design board 14
+   (Marswalk design-systems/14-exhibit-visor.html) as adopted after the 2026-11-15 team review.
+   Imported first; every other stylesheet reads these names.
+   Faces: SIL OFL 1.1, licence texts in public/fonts/. Local files only. */
+
+@font-face {
+  font-family: "Gloock";
+  src: url("/fonts/Gloock-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Overpass";
+  src: url("/fonts/Overpass-wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Gallery wall */
+  --wall: #1D1B19;
+  --wall-2: #151412;
+  --floor: #121110;
+  --plinth: #2B2825;
+  --plinth-hi: #3A352F;
+  --plinth-line: #4A4239;
+  /* Wall label (cream card) */
+  --card: #EEE5D1;
+  --card-2: #E3D8BF;
+  --card-line: #CDBF9F;
+  --card-line-2: #D6C9AA;
+  --label-ink: #26211C;   /* 14.4:1 on card */
+  --label-ink-2: #574C42; /* 6.7:1 on card */
+  /* Text on the wall */
+  --on-wall: #ECE4D4;     /* 13.6:1 on wall */
+  --on-wall-2: #A99F8E;   /* 6.6:1 on wall */
+  /* Brass: hairlines and small accents, never body text on a card */
+  --brass: #BB955C;
+  --brass-hi: #E6CB95;
+  --brass-lo: #7A5E36;
+  /* Spot lamp: caution, at limit, a lit ring */
+  --lamp: #F4C27A;
+  --thread: #FFE4B5;
+  /* Cobalt: the one primary action per screen, focus, selection */
+  --cobalt: #2F5FD0;      /* white on cobalt 5.8:1 */
+  --cobalt-hi: #7A9DF0;
+  --cobalt-lo: #1B3C93;
+  /* Alarm red: real alarms only, always with a pictogram and a word */
+  --alarm: #C43C23;       /* white on alarm 5.2:1 */
+  --alarm-ink: #F08A70;   /* alarm word on the wall */
+  --alarm-ink-card: #9E2A14;
+  /* Helmet strokes: engraved light lines over a dark halo, real Mars colour underneath */
+  --eng: #FFF3D6;
+  --halo: rgba(14, 11, 9, 0.82);
+  --hud-plate: rgba(21, 20, 18, 0.55);
+  --hud-plate-line: rgba(187, 149, 92, 0.45);
+  --shell-lo: #C9C3B7;
+  --shell-hi: #F9F8F4;
+  /* Measured data stays blue (rover data, unchanged meaning) */
+  --data-blue: #7fb4ff;
+
+  /* Type */
+  --font-display: "Gloock", Georgia, serif;
+  --font-text: "Overpass", system-ui, sans-serif;
+  --fw-regular: 400;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heavy: 800;
+  --fs-xs: 0.75rem;    /* 12 px - the floor for any text */
+  --fs-sm: 0.8125rem;  /* 13 px */
+  --fs-sm2: 0.875rem;  /* 14 px */
+  --fs-0: 1rem;
+  --fs-md: 1.125rem;
+  --fs-1: 1.25rem;
+  --fs-2: 1.5rem;
+  --fs-3: 1.875rem;
+  --fs-4: 2.25rem;
+  --lh-tight: 1.1;
+  --lh-text: 1.5;
+  --track-caps: 0.12em;
+
+  /* Space */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+
+  /* Lines and radii */
+  --rule-wall: 1px solid var(--plinth-line);
+  --rule-card: 1px solid var(--card-line);
+  --rule-brass: 1px solid var(--brass);
+  --brass-top-inset: inset 0 3px 0 var(--brass);
+  --radius: 3px;
+  --radius-case: 4px;
+  --radius-frame: 8px;
+  --radius-pill: 999px;
+
+  /* Shadows, lit from above */
+  --shadow-card: 0 8px 18px rgba(0, 0, 0, 0.4);
+  --shadow-label: 0 18px 40px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 10px 24px rgba(0, 0, 0, 0.55);
+  --lamp-glow: radial-gradient(60% 70% at 30% 0%, rgba(244, 194, 122, 0.10), transparent 72%);
+
+  /* Targets and motion */
+  --target: 2.75rem;
+  --dur-1: 150ms;
+  --dur-2: 250ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --focus-ring: 2px solid var(--cobalt-hi);
+
+  /* Layers */
+  --z-hud: 40;
+  --z-pop: 70;
+
+  /* The teammate's shell names, mapped onto Exhibit so every existing rule follows */
+  --ui-bg: var(--wall);
+  --ui-panel: var(--wall-2);
+  --ui-raised: var(--plinth);
+  --ui-line: var(--plinth-line);
+  --ui-text: var(--on-wall);
+  --ui-muted: var(--on-wall-2);
+  --ui-accent: var(--brass-hi);
+  --ui-green: var(--brass);
+  --ui-radius: var(--radius-frame);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; }
+}

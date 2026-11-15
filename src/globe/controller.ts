@@ -44,7 +44,7 @@ export class GlobeController {
     globe.baseColor = Color.fromCssColorString('#714d3d');
     globe.showGroundAtmosphere = false;
     globe.enableLighting = false;
-    this.viewer.scene.backgroundColor = Color.fromCssColorString('#101514');
+    this.viewer.scene.backgroundColor = Color.fromCssColorString('#151412');
     this.home();
     this.removeProgress = globe.tileLoadProgressEvent.addEventListener((count: number) => report({ loading: count > 0 }));
     this.slot = new LayerSlot(async (definition) => attachWmts(this.viewer, definition, () => report({
@@ -53,7 +53,7 @@ export class GlobeController {
     const positions = REGIONS.map(region => ({ region, position: Cartesian3.fromDegrees(region.center.longitude, region.center.latitude, 50, Ellipsoid.MARS) }));
     positions.forEach(({ region, position }) => {
       this.viewer.entities.add({ id: `region-${region.id}`, position, point: { pixelSize: 12, color: Color.fromCssColorString('#f2c38c'), outlineColor: Color.BLACK, outlineWidth: 2 } });
-      if (region.terrain) this.viewer.entities.add({ id: `coverage-${region.id}`, rectangle: { coordinates: Rectangle.fromDegrees(...region.terrain.bounds), fill: false, outline: true, outlineColor: Color.fromCssColorString('#bce7ce'), height: region.terrain.outlineHeightM } });
+      if (region.terrain) this.viewer.entities.add({ id: `coverage-${region.id}`, rectangle: { coordinates: Rectangle.fromDegrees(...region.terrain.bounds), fill: false, outline: true, outlineColor: Color.fromCssColorString('#E6CB95'), height: region.terrain.outlineHeightM } });
     });
     let previous = '';
     this.removeMarkers = this.viewer.scene.postRender.addEventListener(() => {
