@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { INITIAL, MAX_SKIPS_IN_ROW, cardText, dwellMs, overlay, reduce, restorePath, type TourEvent, type TourState, type TourStep } from './engine';
+import { INITIAL, MAX_SKIPS_IN_ROW, cardText, dwellMs, inPlace, overlay, placePath, reduce, restorePath, type TourEvent, type TourState, type TourStep } from './engine';
+import { RECOVER, STEPS } from './steps';
 import { TOUR_MARKS, TOUR_NODES, sweepTour } from './dom';
 import { NEAR, placeCard } from './layout';
 import { TOUR_KEY, tourMemory } from './memory';
@@ -74,6 +75,27 @@ describe('tour engine', () => {
     expect(restorePath(helmet, recover, true)).toEqual(['tablet-tab', 'routes-tab', 'preview-route']);
   });
 
+  it('started from the open tablet, a Station step first brings the app to the Station atlas with the real controls', () => {
+    const globe = STEPS[0];
+    expect(globe.chapter).toBe('Station');
+    const tabletOpen = { present: (n: string) => ['close-tablet', 'tablet-tour', 'routes-tab'].includes(n), pressed: () => false };
+    expect(inPlace('Station', tabletOpen)).toBe(false);
+    expect(placePath(globe, RECOVER, false)).toEqual(['close-tablet', 'station-tab', 'atlas-tab']);
+    const station = { present: (n: string) => ['atlas-tab', 'globe'].includes(n), pressed: (n: string) => n === 'atlas-tab' };
+    expect(inPlace('Station', station)).toBe(true);
+    // A Tablet step from the Station opens the tablet; its own via stays for the visitor.
+    const display = STEPS.find(s => s.id === 'display')!;
+    expect(inPlace('Tablet', station)).toBe(false);
+    expect(placePath(display, RECOVER, false)).toEqual(['tablet-tab']);
+    expect(placePath(display, RECOVER, true)).toEqual(['preview-stop', 'tablet-tab']);
+    expect(inPlace('Tablet', tabletOpen)).toBe(true);
+    expect(inPlace('Helmet', { present: n => n === 'preview-controls', pressed: () => false })).toBe(true);
+    // Start and Next enter a step without the lost card: only a later detour shows it.
+    expect(started().phase).toBe('running');
+    expect(run([{ type: 'next' }], started()).phase).toBe('running');
+    expect(run([{ type: 'acted' }, { type: 'back' }], started()).phase).toBe('running');
+  });
+
   it('a step whose control cannot be brought back shows as an explanation, and Next still moves on', () => {
     const step: TourStep = { id: 'x', chapter: 'Station', target: 't', action: 'click', caption: 'Gale is the region.', doIt: 'Click Gale.' };
     expect(cardText(step, 'hands', false)).toBe('Click Gale.');
@@ -140,6 +162,19 @@ describe('tour engine', () => {
     expect(run([{ type: 'resume' }], lost)).toMatchObject({ phase: 'running', index: 0, mode: 'hands', recover: true });
     expect(run([{ type: 'show-me' }, { type: 'lost' }, { type: 'resume' }], started())).toMatchObject({ mode: 'auto', recover: true });
     expect(run([{ type: 'end' }], lost)).toMatchObject({ phase: 'off', reason: 'skipped' });
+  });
+
+  it('Skip or End from the lost card, and End from the ended card, remove the tour card at once', () => {
+    for (const lost of [run([{ type: 'lost' }], started()), run([{ type: 'show-me' }, { type: 'lost' }], started()), run([{ type: 'next' }, { type: 'lost' }], started())]) {
+      expect(lost.phase).toBe('lost');
+      const s = run([{ type: 'end' }], lost);
+      expect(s).toMatchObject({ phase: 'off', reason: 'skipped', paused: false });
+      expect(overlay(s.phase)).toEqual({ layer: false, marks: false });
+      expect(run([{ type: 'resume' }, { type: 'lost' }, { type: 'next' }], s).phase).toBe('off');
+    }
+    const ended = run([{ type: 'failed' }, { type: 'failed' }], started());
+    expect(run([{ type: 'end' }], ended)).toMatchObject({ phase: 'off', reason: 'failed' });
+    expect(run([{ type: 'end' }], INITIAL)).toBe(INITIAL);
   });
 
   const stages: TourEvent[][] = [[], [{ type: 'next', act: true }], [{ type: 'acted' }, { type: 'back' }], [{ type: 'show-me' }],

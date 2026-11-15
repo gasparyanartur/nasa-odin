@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../design/icons';
-import { INITIAL, cardText, dwellMs, overlay, reduce, restorePath, type TourEvent, type TourStep } from './engine';
+import { INITIAL, cardText, dwellMs, inPlace, overlay, placePath, reduce, restorePath, type TourEvent, type TourStep } from './engine';
 import { boxes, bringIntoView, centre, present, pressed, ready, reducedMotion, shownRect, sweepTour, visible } from './dom';
 import { placeCard } from './layout';
 import { tourMemory } from './memory';
@@ -62,6 +62,8 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   const cardGlide = useRef<{ from: { left: number; top: number }; t0: number } | null>(null);
   // The step's control could not be brought back: the card explains it, without a ring.
   const [explain, setExplain] = useState(false);
+  // True while the tour brings the app into the step's place: the card shows once it is there.
+  const hideCard = useRef(false);
   const pointerAt = useRef({ x: 0, y: 0 });
   // The element the pointer rests on between glides, so it stays on it when the window is resized.
   const pointerOn = useRef<HTMLElement | null>(null), gliding = useRef(false);
@@ -82,6 +84,7 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     previewByTour.current = false; pending.current = null; lastActed.current = performance.now();
     pointerAt.current = { x: window.innerWidth * .5, y: window.innerHeight * .72 }; pointerOn.current = null;
     cardAt.current = null; cardGoal.current = null; cardGlide.current = null; ringFor.current = null;
+    hideCard.current = false;
     setShown(-1); setExplain(false);
     send({ type: 'start' });
   }, [memory, send]);
@@ -197,12 +200,39 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     await waitFor(scope, () => present(s.target), 600);
   }
 
+  const probe = { present: (n: string) => !!present(n), pressed: (n: string) => pressed(present(n)) };
+
+  /**
+   * Start and Next: when the app is not in the place the step's chapter needs (the tablet is open for a Station step,
+   * say), the tour brings it there with the real controls. The card stays hidden until it is there.
+   */
+  async function place(scope: Scope, s: TourStep) {
+    if (inPlace(s.chapter, probe)) return;
+    hideCard.current = true;
+    const path = placePath(s, RECOVER, !!present('preview-controls'));
+    for (let i = 0; i < path.length; i++) {
+      const name = path[i];
+      if (name !== 'preview-stop' && inPlace(s.chapter, probe)) break;
+      const el = ready(name);
+      if (!el) continue;
+      if (bringIntoView(el)) await scope.sleep(reducedMotion() ? 50 : 400);
+      if (scope.disposed) return;
+      el.click();
+      if (name === 'preview-route') previewByTour.current = true;
+      if (name === 'preview-stop') previewByTour.current = false;
+      await waitFor(scope, () => (name !== 'preview-stop' && inPlace(s.chapter, probe)) || path.slice(i + 1).some(n => present(n)), 2500);
+    }
+    await waitFor(scope, () => inPlace(s.chapter, probe), 800);
+    if (!scope.disposed) hideCard.current = false;
+  }
+
   async function auto(scope: Scope, s: TourStep, index: number, recover: boolean): Promise<TourEvent> {
     // Between steps no ring shows: the previous caption stays until this step's target is found and in view.
     ringTarget.current = null; gliding.current = false;
     setExplain(false);
     await leave(scope, true);
-    if (recover) await restore(scope, s);
+    hideCard.current = false;
+    if (recover) await restore(scope, s); else await place(scope, s);
     if (scope.disposed) return { type: 'failed' };
     const withPointer = s.pointer !== false;
     showPointer(withPointer);
@@ -266,17 +296,22 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     await leave(null, false);
     if (scope.disposed) return;
     showPointer(false);
-    gliding.current = false; pointerOn.current = null;
+    gliding.current = false; pointerOn.current = null; hideCard.current = false;
     if (recover) {
       // Until the app is back in the step's state, the earlier card shows without a ring.
       ringTarget.current = null;
       setExplain(true); setShown(index);
       await restore(scope, s);
-      if (scope.disposed) return;
+    } else {
+      ringTarget.current = null;
+      await place(scope, s);
     }
+    if (scope.disposed) return;
     const reachable = () => !!present(s.target) || (s.via ?? []).some(n => !!present(n));
-    // Previous or Resume could not bring the control back: the card explains the step and Next moves on.
-    const explainOnly = recover && !reachable();
+    await waitFor(scope, reachable, 1000);
+    if (scope.disposed) return;
+    // The control could not be brought back: the card explains the step and Next moves on. Never "left the path" here.
+    const explainOnly = !reachable();
     setExplain(explainOnly);
     setShown(index);
     if (explainOnly) { ringTarget.current = null; return; }
@@ -334,7 +369,7 @@ export default function TourProvider({ children }: { children: ReactNode }) {
   // Off: React has unmounted the whole tour layer by now; the sweep removes any stray node or mark, so nothing stays lit.
   useEffect(() => {
     if (state.phase === 'running') return;
-    ringTarget.current = null; ringFor.current = null; pointerOn.current = null; gliding.current = false;
+    ringTarget.current = null; ringFor.current = null; pointerOn.current = null; gliding.current = false; hideCard.current = false;
     showPointer(false);
     if (ring.current) { ring.current.hidden = true; ring.current.classList.remove('is-in'); }
     pointer.current?.classList.remove('is-pressing');
@@ -350,6 +385,12 @@ export default function TourProvider({ children }: { children: ReactNode }) {
     if (!live && state.phase !== 'ended') return;
     const scope = createScope();
     scope.listen(window, 'pointerdown', e => { if (e.isTrusted && !(e.target as Element | null)?.closest?.('.tour-ui')) lastTouch.current = performance.now(); }, true);
+    // Skip tour and End tour: caught first, on the window, so no app handler and no re-render of the card can swallow them.
+    scope.listen(window, 'click', e => {
+      if (!(e.target as Element | null)?.closest?.('.tour-ui [data-tour-end]')) return;
+      e.preventDefault(); e.stopPropagation();
+      send({ type: 'end' });
+    }, true);
     scope.listen(window, 'keydown', e => {
       if ((e as KeyboardEvent).key !== 'Escape') return;
       e.preventDefault(); e.stopPropagation();
@@ -407,7 +448,7 @@ export default function TourProvider({ children }: { children: ReactNode }) {
           } else cardAt.current = goal;
         }
         c.style.transform = `translate(${Math.round(cardAt.current.left)}px, ${Math.round(cardAt.current.top)}px)`;
-        c.style.visibility = 'visible';
+        c.style.visibility = hideCard.current ? 'hidden' : 'visible';
       }
       const rest = pointerOn.current;
       if (rest && !gliding.current && visible(rest)) pointerAt.current = centre(rest);
@@ -450,7 +491,8 @@ export default function TourProvider({ children }: { children: ReactNode }) {
       actions = <button type="button" className="tour-primary" onClick={() => send({ type: 'close' })}>Close</button>;
     } else if (state.phase === 'lost') {
       text = 'You left the tour path. Pick up where you were, or end the tour.';
-      actions = <><button type="button" className="tour-primary" onClick={() => send({ type: 'resume' })}>Resume tour</button><button type="button" className="tour-quiet" onClick={() => send({ type: 'end' })}>End tour</button></>;
+      nav = <button type="button" className="tour-primary" onClick={() => send({ type: 'resume' })}>Resume tour</button>;
+      actions = <button type="button" className="tour-link" data-tour-end="" onClick={() => send({ type: 'end' })}>End tour</button>;
     } else {
       const previous = shownIndex > 0 && <button type="button" className="tour-quiet" onClick={() => send({ type: 'back' })}><Icon name="back" />Previous</button>;
       text = cardText(seen, state.mode, explain);
@@ -465,7 +507,7 @@ export default function TourProvider({ children }: { children: ReactNode }) {
               <button type="button" className="tour-quiet" onClick={() => send({ type: 'hands-on' })}>Let me do it</button>
               <button type="button" className="tour-quiet" aria-pressed={state.paused} onClick={() => send({ type: state.paused ? 'play' : 'pause' })}><Icon name={state.paused ? 'play' : 'pause'} />{state.paused ? 'Play' : 'Pause'}</button>
             </>}
-          <button type="button" className="tour-link" onClick={() => send({ type: 'end' })}>Skip tour</button>
+          <button type="button" className="tour-link" data-tour-end="" onClick={() => send({ type: 'end' })}>Skip tour</button>
         </>;
       }
     }

@@ -57,8 +57,8 @@ import { PREVIEW_SPEEDS, liveWalk, routeSubject, previewPose, previewProgressTex
 import { savePace, storedPace } from './mission/pace';
 import { TourStartButton } from './tour/Tour';
 import BlockedButton, { type BlockInfo } from './design/Blocked';
-import MapStatusLayer, { RouteStatusCard, type StatusState } from './mission/MapStatus';
-import { BLOCK_FIX_LABEL, OPTION_LABEL, PAUSED_TABLET, fixLabel, currentOutcome, explainFailure, planBlock, planKey, previewBlock, resultLine, resultWarning, shouldAutoPlan, slopeNeeded, stopText, surfaceTabBlock, tabletTabBlock, toolTabBlock, walkBlock, type Block, type BlockFix, type Fix, type PlanOutcome } from './mission/routeFlow';
+import { RouteStatusCard, type StatusState } from './mission/MapStatus';
+import { BLOCK_FIX_LABEL, OPTION_LABEL, PAUSED_TABLET, fixLabel, currentOutcome, explainFailure, modeAfterPick, planBlock, planKey, previewBlock, resultLine, resultWarning, shouldAutoPlan, slopeNeeded, statusWhilePicking, stopText, surfaceTabBlock, tabletTabBlock, toolTabBlock, walkBlock, type Block, type BlockFix, type Fix, type PlanOutcome } from './mission/routeFlow';
 import { SCIENCE } from './datasets/geology';
 import type { StopReason } from './mission/data';
 
@@ -217,7 +217,7 @@ export default function App(){
     if(mode==='start'){setStart(q);setPose({...q,heading:0,elapsed:0});setSession(v=>v+1);}
     if(mode==='goal'){setGoal(q);setGoalChosen(true);setTargetId(undefined);}
     if(mode==='exclude')setSettings(s=>({...s,exclusions:[...s.exclusions,{...q,radius:40}].slice(-30)}));
-    if(mode!=='exclude')setMode('inspect');
+    setMode(modeAfterPick(mode));
   }
   function updateDemoUrl(enabled:boolean){const url=new URL(window.location.href);if(enabled)url.searchParams.set('demo','yellowknife');else url.searchParams.delete('demo');window.history.replaceState(null,'',url);}
   function selectTarget(id:string){const target=targetById(id);if(!target||target.regionId!==region?.id||!data||!canPlan(region))return;const value=sample(data,target.point);
@@ -386,13 +386,13 @@ export default function App(){
   const home=data?.meta.defaultStart??HOME,startMoved=Math.hypot(start.x-home.x,start.y-home.y)>1;
   const regionTargets=SCIENCE.targets.filter(t=>t.regionId===(data?.meta.regionId??'gale-bradbury'));
   const failureDetails=(d:RouteDiagnostics|undefined)=>d&&data?<RouteFailure diagnostics={d} data={data} manualCount={settings.exclusions.length} restrictions={restrictionFields} onField={openFields}/>:undefined;
-  const status:StatusState|undefined=tabletTab!=='routes'||routeWorkflow!=='new'||science||!goalChosen||!key?undefined
+  const status:StatusState|undefined=tabletTab!=='routes'||!statusWhilePicking(mode)||routeWorkflow!=='new'||science||!goalChosen||!key?undefined
     :busy?{kind:'planning'}:failed?{kind:'failed',failure:failed.failure,details:failureDetails(failed.details)}
     :result?{kind:'done',routes:result.routes,selected,warning:resultWarning(result.routes[selected],settings)}
     :outcome?{kind:'stale'}:{kind:'planning'};
   const statusCard=(inline?:boolean)=>status&&<RouteStatusCard inline={inline} state={status} onSelect={selectOption} onFix={applyFix} onWalk={walkNow} onPreview={beginPreview}/>;
   const stepThree=science?'Science walk selected':busy?'Planning…':failed?`No route: ${failed.failure.title}`:result?`${OPTION_LABEL[result.routes[selected].mode]}: ${resultLine(result.routes[selected])}`:goalChosen?'Starts by itself':'Set a destination first';
-  const pickHint=tabletTab==='routes'||tabletTab==='explore'?(mode==='goal'||mode==='start'||mode==='exclude'?<><span>{mode==='goal'?'Click the map to set the destination':mode==='start'?'Click the map to move the start. This restarts the walk.':'Click the map to add a no-go area'}</span>{pickNote&&<small>{pickNote}</small>}<button type="button" className="text-button" onClick={()=>{setMode('inspect');setPickNote('');}}>{mode==='exclude'?'Done':'Cancel'}</button></>:pickNote?<span>{pickNote}</span>:undefined):undefined;
+  const pickHint=tabletTab==='routes'||tabletTab==='explore'?(mode==='goal'||mode==='start'||mode==='exclude'?<><span className={pickNote?'is-note':undefined} title={pickNote||undefined}>{pickNote||(mode==='goal'?'Click the map to set the destination':mode==='start'?'Click the map to move the start. This restarts the walk.':'Click the map to add a no-go area')}</span><button type="button" className="text-button" onClick={()=>{setMode('inspect');setPickNote('');}}>{mode==='exclude'?'Done':'Cancel'}</button></>:pickNote?<span className="is-note" title={pickNote}>{pickNote}</span>:undefined):undefined;
   const scienceFailure=mw.science.status==='failed'?mw.science.failure:undefined;
   const scienceView=scienceFailure&&explainFailure({...failureInput(scienceFailure.diagnostics,scienceFailure.message),names:scienceFailure.leg?[scienceFailure.leg.from,scienceFailure.leg.to]:undefined});
   const scienceFixes=scienceView?.fixes.filter(f=>f.kind!=='change-destination'&&f.kind!=='change-start')??[];
@@ -623,14 +623,16 @@ export default function App(){
       </>}</aside>
       <section className="terrain-workspace" aria-label="Local terrain map">
 <header className="map-toolbar">
-<span>{mode==='inspect'?'LOCAL MAP':mode==='start'?'CLICK MAP · SET THE START':mode==='goal'?'CLICK MAP · SET DESTINATION':'CLICK MAP · ADD NO-GO AREA'}</span>
+<span className="map-toolbar__title">LOCAL MAP</span>
 <div>
 <button className="secondary" data-tour="map-layers" aria-expanded={mapPanel==='layers'} onClick={()=>setMapPanel(mapPanel==='layers'?undefined:'layers')}><Icon name="layers"/>Layers</button><Help label="About map layers">Imagery provides visual context; elevation and slope come from numeric terrain. Opacity only changes the display. Regional environmental bins and point readings retain their source footprint.</Help>
 <button className="secondary" data-tour="inspect-data" aria-expanded={mapPanel==='evidence'} onClick={()=>setMapPanel(mapPanel==='evidence'?undefined:'evidence')}><Icon name="look"/>Inspect data</button><Help label="About data inspection">Inspect a map location to read source, units, resolution, date, coverage and uncertainty. Missing coverage stays unknown.</Help>
 <button className="secondary" data-tour="log-here" onClick={logHere}><Icon name="note"/>Log here</button>
 </div>
 </header>
+<div className="map-pick-strip" role="status" hidden={!data||!pickHint}>{pickHint}</div>
         {data?<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={science||!goalChosen?undefined:goal} routes={science?[science]:result?.routes} selected={science?0:selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onMiss={()=>setPickNote('No map data there. Click inside the mapped area.')} onInspect={setInspection} zones={mw.zones} mapStops={mapStops} drills={drills} selectedStop={stopId} onStopSelect={setStopId}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
+        <div className="map-status-dock" hidden={!data||!status}>{statusCard()}</div>
         <div className="trace-legend" aria-label="Traverse map legend"><span className="trace-legend__current" style={{color:CURRENT_WALK_COLOR}}>┄ Current walk</span>{savedTraces.map(t=><span key={t.id} style={{color:t.color}}>━ {t.label}</span>)}{activeEvents.length>0&&<span className="trace-legend__hazard">● Scenario area · solar: exposed outside green shelter</span>}</div>
         <div className="inspection" aria-label="Terrain inspection">
 <span>
@@ -641,7 +643,6 @@ export default function App(){
 <small>LOCAL MAX SLOPE</small>{measured?`${measured.slope.toFixed(1)}°`:'-'}</span>
 
 </div>{data&&(mw.zones||mapStops||drills)&&<div className="map-overlays"><HazardLegend zones={!!mw.zones} stops={!!mapStops} drills={!!drills}/>{stopId!==undefined&&mapStops&&<StopCard id={stopId} visited={mw.visited.has(stopId)} onClose={()=>setStopId(undefined)}/>}</div>}
-{data&&(pickHint||status)&&<MapStatusLayer hint={pickHint} status={statusCard()}/>}
 
 
       </section>

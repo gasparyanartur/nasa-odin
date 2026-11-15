@@ -128,7 +128,7 @@ export function reduce(s: TourState, e: TourEvent, count: number): TourState {
     }
     case 'lost': return s.phase === 'running' ? { ...s, phase: 'lost', run: s.run + 1 } : s;
     case 'resume': return s.phase === 'lost' ? { ...enter(s, s.index, s.mode, s.skips), recover: true } : s;
-    case 'end': return live(s) || s.phase === 'invite' ? { ...s, phase: 'off', reason: 'skipped', paused: false, run: s.run + 1 } : s;
+    case 'end': return s.phase !== 'off' ? { ...s, phase: 'off', reason: s.phase === 'ended' ? s.reason : 'skipped', paused: false, run: s.run + 1 } : s;
     case 'close': return s.phase === 'ended' ? { ...s, phase: 'off' } : s;
   }
 }
@@ -145,6 +145,29 @@ export function cardText(step: TourStep, mode: Mode, explainOnly: boolean): stri
  */
 export function restorePath(step: TourStep, recover: Record<Chapter, string[]>, previewRunning: boolean): string[] {
   return [...(previewRunning && step.chapter !== 'Helmet' ? ['preview-stop'] : []), ...recover[step.chapter], ...(step.via ?? [])];
+}
+
+/** What the tour can read of the page to tell where the app is. */
+export interface PlaceProbe { present: (name: string) => boolean; pressed: (name: string) => boolean }
+
+/**
+ * Whether the app is in the place a chapter needs: the Station with its atlas open, the open tablet, or the helmet
+ * with the route preview running. Read before every card (Start, Next, Previous, Resume).
+ */
+export function inPlace(chapter: Chapter, probe: PlaceProbe): boolean {
+  switch (chapter) {
+    case 'Station': return probe.present('atlas-tab') && probe.pressed('atlas-tab') && !probe.present('close-tablet');
+    case 'Tablet': return probe.present('close-tablet');
+    case 'Helmet': return probe.present('preview-controls');
+  }
+}
+
+/**
+ * Start and Next: the controls the tour clicks itself to bring the app into the step's chapter, before the card shows.
+ * Only the way into the chapter: the step's own via stays for the visitor to use by hand.
+ */
+export function placePath(step: TourStep, recover: Record<Chapter, string[]>, previewRunning: boolean): string[] {
+  return restorePath({ ...step, via: undefined }, recover, previewRunning);
 }
 
 /**

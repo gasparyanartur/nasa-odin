@@ -3,8 +3,8 @@ import { TerrainPlanner, settingsFor, type PlannerData } from './planner/core';
 import { RoutePlanningError, advanceWalk, moveBlock, type Meta, type Point, type RouteDiagnostics, type RouteResult, type Settings, type StopReason, type TerrainData } from './data';
 import { describeNotice } from './HudNotices';
 import {
-  currentOutcome, explainFailure, fixLabel, planBlock, planKey, previewBlock, resultWarning, returnBlock, shouldAutoPlan, slopeNeeded,
-  stopText, surfaceTabBlock, tabletTabBlock, toolTabBlock, walkBlock, type FailureInput, type PlanOutcome,
+  MAX_ONE_CLICK_SLOPE_DEG, currentOutcome, explainFailure, fixLabel, modeAfterPick, planBlock, planKey, previewBlock, resultWarning, returnBlock, shouldAutoPlan, slopeNeeded,
+  statusWhilePicking, stopText, surfaceTabBlock, tabletTabBlock, toolTabBlock, walkBlock, type FailureInput, type PlanOutcome,
 } from './routeFlow';
 
 const N = 21;
@@ -76,11 +76,17 @@ describe('failure code to plain reason and fix', () => {
   });
   it('destination too steep: raise the limit to the slope the planner measured there', () => {
     const d = terrain();
-    for (const [x, y] of [[5, 0], [6, 0], [5, -1], [6, -1]]) d.slopes[at(d, x, y)] = 27.4;
+    for (const [x, y] of [[5, 0], [6, 0], [5, -1], [6, -1]]) d.slopes[at(d, x, y)] = 23.4;
     const v = explainFailure({ ...base, diagnostics: diagnose(d, { x: -5, y: 0 }, { x: 5, y: 0 }) });
     expect(v.title).toBe('Destination is too steep.');
-    expect(v.reason).toBe('The ground there is 27.4°, above your 20° limit.');
-    expect(v.fixes).toContainEqual({ kind: 'raise-slope', to: 28 });
+    expect(v.reason).toBe('The ground there is 23.4°, above your 20° limit.');
+    expect(v.fixes).toContainEqual({ kind: 'raise-slope', to: 24 });
+  });
+  it('destination steeper than the one-click cap: no raise, the limits open instead', () => {
+    const d = terrain();
+    for (const [x, y] of [[5, 0], [6, 0], [5, -1], [6, -1]]) d.slopes[at(d, x, y)] = 27.4;
+    const v = explainFailure({ ...base, diagnostics: diagnose(d, { x: -5, y: 0 }, { x: 5, y: 0 }) });
+    expect(v.fixes.map(f => f.kind)).toEqual(['change-destination', 'open-limits']);
   });
   it('destination inside a hazard area, a no-go area or a field restriction', () => {
     const diagnostics = diagnose(terrain(), { x: -5, y: 0 }, { x: 5, y: 0 }, { exclusions: [{ x: 5, y: 0, radius: 5 }] });
@@ -97,16 +103,32 @@ describe('failure code to plain reason and fix', () => {
   });
   it('too steep: a slope wall closes every way; the fix raises the limit to the smallest value that opens it', () => {
     const d = terrain();
+    for (let y = -10; y <= 10; y++) d.slopes[at(d, 0, y)] = 24.2;
+    const diagnostics = diagnose(d, { x: -5, y: 0 }, { x: 5, y: 0 });
+    const needed = slopeNeeded(d, { x: -5, y: 0 }, { x: 5, y: 0 }, [], 20);
+    expect(needed).toBe(25);
+    const v = explainFailure({ ...base, diagnostics, slopeNeeded: needed });
+    expect(v.title).toBe('Too steep.');
+    expect(v.reason).toBe('Every way crosses slopes above your 20° limit.');
+    expect(v.fixes[0]).toEqual({ kind: 'raise-slope', to: 25 });
+    expect(fixLabel(v.fixes[0])).toBe('Raise slope limit to 25°');
+    expect(v.fixes.map(f => f.kind)).toContain('open-limits');
+  });
+  it(`the one-click slope fix stops at ${MAX_ONE_CLICK_SLOPE_DEG}°: above it there is no walkable way, change the destination or open the limits`, () => {
+    expect(MAX_ONE_CLICK_SLOPE_DEG).toBe(25);
+    const d = terrain();
     for (let y = -10; y <= 10; y++) d.slopes[at(d, 0, y)] = 31.2;
     const diagnostics = diagnose(d, { x: -5, y: 0 }, { x: 5, y: 0 });
     const needed = slopeNeeded(d, { x: -5, y: 0 }, { x: 5, y: 0 }, [], 20);
     expect(needed).toBe(32);
     const v = explainFailure({ ...base, diagnostics, slopeNeeded: needed });
-    expect(v.title).toBe('Too steep.');
-    expect(v.reason).toBe('Every way crosses slopes above your 20° limit.');
-    expect(v.fixes[0]).toEqual({ kind: 'raise-slope', to: 32 });
-    expect(fixLabel(v.fixes[0])).toBe('Raise slope limit to 32°');
-    expect(v.fixes.map(f => f.kind)).toContain('open-limits');
+    expect(v).toEqual({ title: 'No walkable way.', reason: 'Every way is steeper than 25°.', fixes: [{ kind: 'change-destination' }, { kind: 'open-limits' }] });
+    // A limit already set by hand above the cap: the text names that limit, and no raise is offered.
+    const hand = explainFailure({ ...base, slopeLimit: 30, diagnostics: diagnose(d, { x: -5, y: 0 }, { x: 5, y: 0 }, { maxSlopeDeg: 30 }), slopeNeeded: 32 });
+    expect(hand.reason).toBe('Every way is steeper than 30°.');
+    expect(hand.fixes.some(f => f.kind === 'raise-slope')).toBe(false);
+    // Repeated one-click fixes can never pass the cap.
+    for (const to of [26, 30, 32, 45]) expect(explainFailure({ ...base, diagnostics, slopeNeeded: to }).fixes.some(f => f.kind === 'raise-slope')).toBe(false);
   });
   it('blocked: no-go areas close every way', () => {
     const exclusions = [{ x: 0, y: -8, radius: 5 }, { x: 0, y: 0, radius: 5 }, { x: 0, y: 8, radius: 5 }];
@@ -134,6 +156,20 @@ describe('failure code to plain reason and fix', () => {
       explainFailure({ ...base, message: 'x' }),
     ].flatMap(v => [v.title, v.reason, ...v.fixes.map(fixLabel)]);
     for (const t of texts) { expect(t).not.toContain(EM_DASH); expect(t).not.toMatch(/exclusion|endpoint|corridor|diagnostic/i); }
+  });
+});
+
+describe('pick mode', () => {
+  it('hides the route status while a start or destination is picked, so nothing covers the map', () => {
+    expect(statusWhilePicking('goal')).toBe(false);
+    expect(statusWhilePicking('start')).toBe(false);
+    expect(statusWhilePicking('inspect')).toBe(true);
+    expect(statusWhilePicking('exclude')).toBe(true);
+  });
+  it('ends at once after the map click; only no-go areas stay in add mode', () => {
+    expect(modeAfterPick('goal')).toBe('inspect');
+    expect(modeAfterPick('start')).toBe('inspect');
+    expect(modeAfterPick('exclude')).toBe('exclude');
   });
 });
 

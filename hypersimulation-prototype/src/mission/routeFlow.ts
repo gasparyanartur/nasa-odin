@@ -7,6 +7,20 @@ import { TerrainPlanner, type PlannerData } from './planner/core';
 export const distanceText = (m: number) => m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
 export const durationText = (s: number) => { const m = Math.ceil(s / 60); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`; };
 export const MAX_SLOPE_SETTING = 45;
+/** The highest slope limit (degrees) a one-click fix may set. Above it the visitor sets the limit by hand under Limits. */
+export const MAX_ONE_CLICK_SLOPE_DEG = 25;
+
+// ---------- Pick mode ----------
+
+/** While the visitor picks a start or a destination on the map, no route status shows: nothing may cover the map. */
+export function statusWhilePicking(mode: string): boolean {
+  return mode !== 'start' && mode !== 'goal';
+}
+
+/** A placed point ends a start or destination pick at once; no-go areas stay in add mode until Done. */
+export function modeAfterPick<M extends string>(mode: M): M | 'inspect' {
+  return mode === 'exclude' ? mode : 'inspect';
+}
 
 // ---------- Auto-plan and the stale rule ----------
 
@@ -81,8 +95,11 @@ function nogoFixes(input: FailureInput, owners: Set<Owner>): Fix[] {
 }
 
 function raise(input: FailureInput, to: number | null | undefined): Fix[] {
-  return to != null && to > input.slopeLimit && to <= MAX_SLOPE_SETTING ? [{ kind: 'raise-slope', to }] : [];
+  return to != null && to > input.slopeLimit && to <= MAX_ONE_CLICK_SLOPE_DEG ? [{ kind: 'raise-slope', to }] : [];
 }
+
+/** True when no one-click slope fix exists: the needed limit is above the cap, or no limit up to 45 degrees is enough. */
+const beyondCap = (input: FailureInput, to: number | null | undefined) => to === null || (to !== undefined && to > MAX_ONE_CLICK_SLOPE_DEG && to > input.slopeLimit);
 
 const UNKNOWN = (input: FailureInput): FailureView => ({ title: 'No route found.', reason: input.message && !input.diagnostics ? plainMessage(input.message) : 'The planner found no way under the current limits.', fixes: [{ kind: 'change-destination' }, { kind: 'open-limits' }] });
 
@@ -118,7 +135,10 @@ export function explainFailure(input: FailureInput): FailureView {
         const field = input.fields[Math.min(...e.exclusionIndices.filter(i => ownerOf(i, input) === 'field')) - input.manual];
         return { title: `${who} is inside a saved field restriction.`, reason: 'Routes keep out of saved field restrictions.', fixes: [change, ...(field ? [{ kind: 'open-field', ...field } as Fix] : [])] };
       }
-      if (e.slopeDeg !== undefined && e.slopeDeg > limit) return { title: `${who} is too steep.`, reason: `The ground there is ${e.slopeDeg.toFixed(1)}°, above your ${limit}° limit.`, fixes: [change, ...raise(input, Math.ceil(e.slopeDeg))] };
+      if (e.slopeDeg !== undefined && e.slopeDeg > limit) {
+        const lift = raise(input, Math.ceil(e.slopeDeg));
+        return { title: `${who} is too steep.`, reason: `The ground there is ${e.slopeDeg.toFixed(1)}°, above your ${limit}° limit.`, fixes: [change, ...(lift.length ? lift : [{ kind: 'open-limits' } as Fix])] };
+      }
     }
     return UNKNOWN(input);
   }
@@ -130,6 +150,11 @@ export function explainFailure(input: FailureInput): FailureView {
   const owners = new Set<Owner>([...(input.manual ? ['nogo' as const] : []), ...(input.fields.length ? ['field' as const] : []), ...(input.hazardCircles ? ['hazard' as const] : [])]);
   const who = input.manual || input.fields.length ? (input.hazardCircles ? 'Your no-go areas and the marked hazard areas' : 'Your no-go areas') : 'The marked hazard areas';
   const needed = input.slopeNeeded;
+  if (slopeEnough && !exclusionsEnough && beyondCap(input, needed)) return {
+    title: 'No walkable way.',
+    reason: `Every way is steeper than ${needed === null ? MAX_SLOPE_SETTING : Math.max(MAX_ONE_CLICK_SLOPE_DEG, limit)}°.`,
+    fixes: [{ kind: 'change-destination' }, { kind: 'open-limits' }],
+  };
   if (slopeEnough && !exclusionsEnough) return {
     title: 'Too steep.',
     reason: `Every way crosses slopes above your ${limit}° limit.${needed === null ? ` Even ${MAX_SLOPE_SETTING}° is not enough with the current no-go areas.` : ''}`,

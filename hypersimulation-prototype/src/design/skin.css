@@ -389,9 +389,12 @@ button.is-blocked,.tablet-device button.is-blocked{color:var(--on-wall-2);cursor
 .blocked-note[hidden]{display:none}
 .blocked-note p{margin:0;color:var(--label-ink)}
 .blocked-note__actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
-.blocked-note .blocked-note__fix{background:var(--cobalt);color:#fff;border:0;border-radius:var(--radius-case);min-height:34px;padding:0 12px;font:700 var(--fs-sm)/1 var(--font-text);cursor:pointer}
-.blocked-note .blocked-note__fix:hover{background:color-mix(in srgb,var(--cobalt) 86%,#fff)}
-.blocked-note .blocked-note__more{background:none;border:0;min-height:34px;padding:0;color:var(--label-ink);text-decoration-color:var(--brass-lo)}
+/* The note sits inside the blocked control's wrapper, so tab and tool-bar button rules (caps, letter spacing, pale
+   ink, no background) reach its buttons; the doubled class outranks them all. */
+.blocked-note.blocked-note .blocked-note__actions button.blocked-note__fix{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:0;min-height:36px;padding:0 14px;background:var(--cobalt);color:#fff;border:0;border-radius:var(--radius-case);box-shadow:0 4px 10px rgba(0,0,0,.25);font:700 var(--fs-sm)/1.2 var(--font-text);letter-spacing:0;text-transform:none;text-decoration:none;white-space:normal;text-align:left;opacity:1;cursor:pointer}
+.blocked-note.blocked-note .blocked-note__actions button.blocked-note__fix:hover{background:color-mix(in srgb,var(--cobalt) 86%,#fff);color:#fff}
+.blocked-note.blocked-note .blocked-note__actions button.blocked-note__more{display:inline-flex;align-items:center;width:auto;min-width:0;min-height:36px;padding:0;background:none;color:var(--label-ink);border:0;border-radius:0;box-shadow:none;font:700 var(--fs-sm)/1.2 var(--font-text);letter-spacing:0;text-transform:none;text-decoration:underline;text-decoration-color:var(--brass-lo);text-underline-offset:.3em;opacity:1;cursor:pointer}
+.blocked-note.blocked-note .blocked-note__actions button.blocked-note__more:hover{color:var(--label-ink);background:none}
 .blocked-note button:focus-visible{outline:var(--focus-ring);outline-offset:2px}
 .region-section[data-highlight]{outline:2px solid var(--cobalt-hi);outline-offset:6px;border-radius:var(--radius-case);transition:outline-color var(--dur-2) var(--ease)}
 
@@ -435,11 +438,21 @@ button.is-blocked,.tablet-device button.is-blocked{color:var(--on-wall-2);cursor
 
 /* ---------- The local map: pick hint and route status card ---------- */
 .surface-map canvas[data-pick-mode=goal],.surface-map canvas[data-pick-mode=start],.surface-map canvas[data-pick-mode=exclude]{cursor:copy}
-.map-status-box{position:absolute;top:0;left:0;right:0;height:0;z-index:4}
-.map-hint{position:absolute;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;max-width:min(440px,90%);padding:8px 12px;background:rgba(21,20,18,.92);border:1px solid var(--cobalt-hi);border-radius:var(--radius-case);color:var(--on-wall);font:700 var(--fs-sm)/1.3 var(--font-text);box-shadow:var(--shadow-pop)}
-.map-hint small{flex-basis:100%;text-align:center;font:600 var(--fs-xs)/1.3 var(--font-text);color:var(--lamp)}
-.map-hint .text-button{min-height:28px;padding:0}
-.map-status-place{position:absolute;overflow:auto}
+.map-toolbar>.map-toolbar__title{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-pick-strip{flex:none;display:flex;align-items:center;gap:10px;min-height:30px;padding:3px 10px;background:rgba(21,20,18,.92);border:1px solid var(--cobalt-hi);border-radius:var(--radius-case);color:var(--on-wall);font:700 var(--fs-sm)/1.2 var(--font-text)}
+.map-pick-strip>span{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-pick-strip>span.is-note{color:var(--lamp)}
+.tablet-device .map-pick-strip .text-button{flex:none;min-height:24px;padding:0;white-space:nowrap}
+.map-pick-strip[hidden],.map-status-dock[hidden]{display:none}
+.map-status-dock{flex:none;max-height:40vh;overflow:auto}
+.map-status.map-status--dock{padding:8px 10px;box-shadow:none}
+.map-status.map-status--dock.is-failed{box-shadow:inset 0 3px 0 var(--lamp)}
+.map-status--dock .map-status__line{margin-top:2px}
+.map-status--dock.is-done .map-status__line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-status--dock .map-status__options{margin-top:6px;flex-wrap:nowrap}
+.tablet-device .map-status--dock .map-status__options button{display:flex;align-items:baseline;gap:6px;min-height:30px;min-width:0;padding:2px 8px;white-space:nowrap}
+.map-status--dock .map-status__actions{margin-top:6px;flex-wrap:nowrap;overflow-x:auto}
+.tablet-device .map-status--dock .map-status__actions button{flex:none;min-height:32px;white-space:nowrap}
 .map-status{padding:12px 14px;background:rgba(21,20,18,.95);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall);font:var(--fs-sm)/1.4 var(--font-text);box-shadow:var(--shadow-pop)}
 .map-status.is-done{border-color:var(--brass)}
 .map-status.is-failed{border-color:var(--lamp);box-shadow:inset 0 3px 0 var(--lamp),var(--shadow-pop)}
@@ -467,4 +480,4 @@ button.is-blocked,.tablet-device button.is-blocked{color:var(--on-wall-2);cursor
 .map-status.is-busy .pict{animation:map-status-pulse 1.2s ease-in-out infinite}
 @keyframes map-status-pulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.map-status.is-busy .pict{animation:none}}
-@media (max-width:600px){.route-status-inline{display:block;margin:0 0 8px}.map-status-box{display:none}}
+@media (max-width:600px){.route-status-inline{display:block;margin:0 0 8px}.map-status-dock{display:none}}
