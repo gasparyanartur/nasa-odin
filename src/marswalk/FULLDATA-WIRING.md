@@ -2,6 +2,13 @@
 
 AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Status: data, types and tests are ready; nothing below is wired yet. This file lists the lines a later builder changes. No existing file was edited to write it.
 
+**Wired on 2026-11-15** (the sections below keep the planning notes):
+
+- (a) Tablet map: `SurfaceMap.tsx` with `sharpImagery.ts`. The 1600 px team image up to zoom 2, `colour_half` or `grey_half` above 2, and above 4 only the 0.25 m tiles the view touches. Images the view no longer needs are let go; the map of a closed tablet holds none.
+- (b) Helmet minimap on Boxwork: a north-up window centred on the walker, 200 to 300 m across, widened toward the next stop and the next route point, drawn from the tiles it touches. The habitat and the next stop get an edge mark with direction when they are outside the window.
+- (c) Walk scene: unchanged loads, now named in `src/mission/surface/plan.ts`. Medium stays the default; it uses the 1 m height grid (`dem_core.bin`) with every second sample in the mesh; the tiles and every 1 m sample stay behind High. While the prepared science walk is followed, walking checks a 1 m grid (`preparedRoute.ts` `walkTerrain`, about 9 MiB).
+- Panorama: Look closer shows `pia26559_1024.webp`; the 4096 px file loads only when "Open full size" is pressed.
+
 ## What the full data is
 
 - **Imagery, 0.25 m per pixel:** four colour and four grey tiles of 2048 x 2048 px, webp. They already sit in `public/boxwork/detail/ortho/` (copied there by `scripts/prepare_boxwork.py`), byte-identical to the Marswalk app files. They are not duplicated into `public/boxwork/full/`; `full/manifest.json` points at them and stores their sha256. Browsers, `createImageBitmap`, the 2D canvas and three.js all take webp, so no conversion is needed.

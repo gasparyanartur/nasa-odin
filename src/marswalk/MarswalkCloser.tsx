@@ -14,6 +14,8 @@ const points = (r: { points: [number, number, number][] }): Point[] => r.points.
 
 interface Props {
   route?: Alternative; science: boolean; routeName: string; data: TerrainData; habitat: Point; boxwork: boolean;
+  /** Slope source for the route check when the route was planned on another slope map than the team 5 m grid. */
+  slopeAt?: (p: Point) => number | null;
   walks: Walk[]; walksPersistent: boolean;
   spaceWeather: boolean; storm: StormState; stormMessage: StormMessage | null;
   onRunStorm: () => void; onCancelReturn: () => void; onResumeReturn: () => void; onResetStorm: () => void; onShowStorm: () => void;
@@ -23,7 +25,7 @@ interface Props {
 export default function MarswalkCloser(p: Props) {
   const [compare, setCompare] = useState<string>();
   const path = p.route ? (p.science ? points(p.route) : [...points(p.route), ...points(p.route.returnRoute)]) : [];
-  const checks = p.route ? checkPath({ path, rover: p.habitat, durationH: p.route.roundTripS / 3600, slope: { at: q => sample(p.data, q)?.slope, stepM: p.data.meta.stepM / 2 } }) : [];
+  const checks = p.route ? checkPath({ path, rover: p.habitat, durationH: p.route.roundTripS / 3600, slope: p.slopeAt ? { at: p.slopeAt, stepM: .5 } : { at: q => sample(p.data, q)?.slope, stepM: p.data.meta.stepM / 2 } }) : [];
   const chosenWalk = p.walks.find(w => w.id === compare);
   return <section className="closer-marswalk" aria-label="Limits, saved walks and scenario">
     {p.boxwork && <GroundPanorama />}

@@ -5,6 +5,7 @@ import { canMove } from '../mission/data';
 import { distance, marswalkToTeam } from './frame';
 import { FULL, heightAt, heightGrid } from './fullData';
 import { HAZARD_ZONES, insidePolygon } from './hazards';
+import { checkPath } from './limits';
 import { ARRIVAL_M, WALK_STOPS } from './sciencewalk';
 import { PREPARED, cellSlope, hoursMinutes, kilometres, preparedAlternative, walkTerrain, type SlopeCells } from './preparedRoute';
 
@@ -72,6 +73,10 @@ describe('prepared science route', () => {
     const b = readFileSync('public/boxwork/full/height.f32'), grid = heightGrid(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
     const slope: SlopeCells = { cells: scene.core.slope_cells, sizeM: scene.core.size_m, scaleDeg: scene.slope.scale_deg, nodata: scene.slope.nodata, groundScaleX: scene.ground_scale.x, values: new Uint8Array(readFileSync('public/boxwork/detail/slope_core.bin')) };
     for (const p of route) expect(cellSlope(slope, p)!).toBeLessThanOrEqual(PREPARED.totals.slopeLimitDeg);
+    const checks = checkPath({ path: route, rover: PREPARED.base, durationH: PREPARED.totals.timeInSuitS / 3600, slope: { at: p => cellSlope(slope, p), stepM: .5 } });
+    const steep = checks.find(c => c.id === 'slope_cap')!;
+    expect(steep.value!).toBeLessThanOrEqual(PREPARED.totals.slopeLimitDeg);
+    expect(steep.status).not.toBe('over');
     const walk = walkTerrain({ meta } as TerrainData, (x, y) => heightAt(grid, x, y), slope);
     expect(walk.meta.stepM).toBe(1);
     const settings = { speedMps: .8, maxSlopeDeg: 20, exclusions: [] };

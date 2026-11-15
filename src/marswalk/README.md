@@ -33,6 +33,10 @@ Marswalk and the team Boxwork package share one origin (137.38299966521333 E, 4.
 
 **`pathlog.ts`** with `public/marswalk/curiosity-path.json` saves walked paths and compares them with a reference. Use `startWalk`, `appendSample` (ordered, finite, no repeats), `closeWalk`, `saveWalk`, `listWalks` and `deleteWalk`. Storage sits behind `WalkStore`. `localStore()` falls back to memory when the browser blocks storage or a write fails, and it reports `persistent: false`. `compareWithReference` returns the maximum and mean separation in metres from each sample to the reference line. The Curiosity reference path covers sols 4534 to 4805 (65 points, NASA/JPL MMGIS MSL waypoints, cut by Marswalk). To wire: append the HUD pose on each step, close the walk on return, then show the walk list and its separation from `curiosityLine()` or from another saved walk on the tablet. Licence line: NASA/PDS public data, no licence stated on the source page.
 
+**`preparedRoute.ts`** with `public/marswalk/science-route.json` is the eight-stop science walk planned by the Marswalk planner on the 1 m terrain grid (15 degree slope cap, the two hazard outlines as exact no-go polygons), converted to the team frame by the rule above. `scripts/export_marswalk_route.mjs <Marswalk app folder>` makes it: it runs the Marswalk `planRoute` and `buildConstraints` in node on the committed Marswalk inputs and records the commit, the per-leg distances, the time in the suit with its parts, the steepest slope and the README lines of the assumptions. The Routes tool shows it as the default science walk; "Re-plan with the route planner" still runs the team planner, which can refuse the walk because its 5 m slope check takes the steepest ground around each point.
+
+**`sharpImagery.ts`** picks and loads the sharper Boxwork images for the tablet map and the helmet minimap (see `FULLDATA-WIRING.md`).
+
 ## Tests
 
 `npx vitest run src/marswalk`. The tests read `public/boxwork/` and `public/marswalk/`.

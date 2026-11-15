@@ -102,7 +102,7 @@ export function walkTerrain(data: TerrainData, height: (x: number, y: number) =>
 }
 
 /** Loads the full 1 m height grid and the Marswalk 1 m slope cells and builds the walking grid. */
-export async function loadWalkTerrain(data: TerrainData, signal?: AbortSignal): Promise<TerrainData> {
+export async function loadWalkTerrain(data: TerrainData, signal?: AbortSignal): Promise<{ terrain: TerrainData; slope: SlopeCells }> {
   const base = data.meta.detail?.baseUrl;
   if (!base) throw new Error('The 1 m walking grid exists only where the Marswalk detail data is prepared.');
   const get = async (url: string) => { const r = await fetch(url, { signal }); if (!r.ok) throw new Error(`The 1 m walking grid could not load (${url}).`); return r; };
@@ -111,5 +111,5 @@ export async function loadWalkTerrain(data: TerrainData, signal?: AbortSignal): 
   const values = new Uint8Array(slopeBuffer);
   if (values.length !== scene.core.slope_cells ** 2) throw new Error('The Marswalk slope cells do not match scene.json.');
   const slope: SlopeCells = { cells: scene.core.slope_cells, sizeM: scene.core.size_m, scaleDeg: scene.slope.scale_deg, nodata: scene.slope.nodata, groundScaleX: scene.ground_scale.x, values };
-  return walkTerrain(data, (x, y) => heightAt(grid, x, y), slope);
+  return { terrain: walkTerrain(data, (x, y) => heightAt(grid, x, y), slope), slope };
 }

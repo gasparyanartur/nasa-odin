@@ -9,7 +9,7 @@ import { isFailure, planScienceWalk, type LegResult, type ScienceWalkFailure, ty
 import { loadSetup, saveSetup } from './setupStore';
 import { IDLE, advance, cancelReturn, dismiss, fade, message, reopen, reset as resetStorm, resumeReturn, trigger, AUTO_FADE, type StormState } from './storm';
 import { WALK_STOPS } from './sciencewalk';
-import { loadWalkTerrain } from './preparedRoute';
+import { cellSlope, loadWalkTerrain, type SlopeCells } from './preparedRoute';
 
 export type ScienceSource = 'prepared' | 'planned';
 
@@ -68,7 +68,7 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   const ends = useMemo(() => new Map((planned?.approaches ?? []).map(a => [a.stop.id, a.point])), [planned]);
 
   // The 1 m walking grid, loaded only while the prepared route is the guidance.
-  const [walkData, setWalkData] = useState<TerrainData>();
+  const [walkData, setWalkData] = useState<{ terrain: TerrainData; slope: SlopeCells }>();
   const [walkDataError, setWalkDataError] = useState('');
   const wantWalk = boxwork && scienceSelected && !planned && !!data?.meta.detail;
   useEffect(() => {
@@ -140,7 +140,9 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
     pickMission: (id: MissionId) => { const next = pickMission(setup, id); setSetup(next); return next; },
     toggle: (id: FeatureId) => { const next = toggleFeature(setup, id); setSetup(next); return next; },
     science, scienceSelected, setScienceSelected, planScience, clearScience, plan, scienceSource, choosePrepared, choosePlanned, scienceRoute,
-    walkData: wantWalk ? walkData : undefined, walkDataError: wantWalk ? walkDataError : '',
+    walkData: wantWalk ? walkData?.terrain : undefined, walkDataError: wantWalk ? walkDataError : '',
+    // The slope the prepared route was planned on, for its suit limit check in Look closer.
+    walkSlopeAt: wantWalk && walkData ? (p: Point) => cellSlope(walkData.slope, p) : undefined,
     visited, arrival, arrivalLine: arrival ? arrivalText(arrival) : undefined,
     storm, stormMessage, runStorm,
     dismissStorm: () => setStorm(dismiss), reopenStorm: () => setStorm(s => reopen(s, Date.now())),
