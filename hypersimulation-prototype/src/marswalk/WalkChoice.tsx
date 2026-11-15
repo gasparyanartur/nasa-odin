@@ -25,7 +25,7 @@ export default function WalkChoice({ setup, region, persistent, onPick }: { setu
         : words.map(w => w.state === 'on' ? <li key={w.word}>{w.word}</li> : <li key={w.word} className="is-off" title={w.note || undefined}><s>{w.word}</s> <em>{WORD_STATE_TEXT[w.state]}</em></li>)}</ul>;
       return <li key={m.id} className={`walk-row${chosen ? ' is-chosen' : ''}`}>
         <div className="walk-row__head">
-          <button type="button" className="walk-row__pick" aria-pressed={chosen} onClick={() => onPick(m.id)}>
+          <button type="button" className="walk-row__pick" data-tour={`task-${m.id}`} aria-pressed={chosen} onClick={() => onPick(m.id)}>
             <Icon name={MISSION_ICON[m.id]} />
             <strong>{m.label}</strong>
           </button>

@@ -164,6 +164,14 @@ export class GlobeController {
     this.environmentImage=this.viewer.imageryLayers.addImageryProvider(provider);this.environmentImage.alpha=opacity;this.viewer.canvas.dataset.environmentLayer=layer.id;this.viewer.scene.requestRender();
   }
   focusRegion(region: Region) { this.viewer.camera.flyTo({ destination: Cartesian3.fromDegrees(region.center.longitude, region.center.latitude, region.cameraHeightM, Ellipsoid.MARS), duration: 1.2 }); }
+  /** Reports the camera height above the surface now and whenever the camera moves; returns the unsubscribe. */
+  watchHeight(report: (heightM: number) => void) {
+    const camera = this.viewer.camera;
+    const send = () => report(Cartesian3.magnitude(camera.positionWC) - Ellipsoid.MARS.maximumRadius);
+    const removeEnd = camera.moveEnd.addEventListener(send), removeChange = camera.changed.addEventListener(send);
+    send();
+    return () => { removeEnd(); removeChange(); };
+  }
   home() {
     this.viewer.camera.cancelFlight();
     this.viewer.camera.setView({ destination: Cartesian3.fromDegrees(107, 8, 10_500_000, Ellipsoid.MARS) });

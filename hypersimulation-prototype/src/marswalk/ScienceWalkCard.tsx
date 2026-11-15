@@ -25,7 +25,7 @@ export default function ScienceWalkCard({ state, selected, isDefault, source, ha
   const far = plan?.approaches.filter(a => a.gapM > 0) ?? [];
   const t = PREPARED.totals, parts = t.parts;
   const fromHabitat = distance(PREPARED.base, habitat);
-  return <section className="science-walk" aria-label="Science walk">
+  return <section className="science-walk" data-tour="science-walk" aria-label="Science walk">
     <div className="section-label">SCIENCE WALK · BOXWORK<span className="tag">{selected ? 'SELECTED' : isDefault ? 'DEFAULT' : ''}</span></div>
     {showPlanned ? <button type="button" className={`science-walk-card${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onSelectPlanned}>
       <span>SCIENCE WALK, 8 STOPS<b>{km(plan.route.metrics.distanceM)}</b></span>

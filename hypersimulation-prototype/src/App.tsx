@@ -53,6 +53,8 @@ import MarswalkCloser from './marswalk/MarswalkCloser';
 import StormNotice from './marswalk/StormNotice';
 import MarswalkCredits from './marswalk/MarswalkCredits';
 import type { ExtraMark } from './mission/WalkingScene';
+import { PREVIEW_SPEEDS, liveWalk, previewPose, previewProgressText, previewReducer, startPreview, type PreviewState } from './mission/routePreview';
+import { savePace, storedPace } from './mission/pace';
 
 const directDemo=new URLSearchParams(window.location.search).get('demo')==='yellowknife';
 const directBoxwork=new URLSearchParams(window.location.search).get('demo')==='boxwork';
@@ -62,6 +64,7 @@ const duration=(s:number)=>`${Math.ceil(s/60)} min`;
 const distance=(m:number)=>m>=1000?`${(m/1000).toFixed(2)} km`:`${Math.round(m)} m`;
 // Canvas and WebGL strokes cannot read CSS custom properties; the legend repeats this value so it matches the drawn line.
 const CURRENT_WALK_COLOR='#72e8ed';
+const TAB_TOUR={explore:'map-tab',routes:'routes-tab',field:'field-tab',setup:'display-tab',events:'events-tab',closer:'closer-tab'} as const;
 const TAB_TITLES={explore:'Inspect local terrain, layers and data provenance.',routes:'Plan terrain routes; save and compare actual walks.',field:'Create, inspect and edit shared location-linked records.',setup:'Configure visor cues, clocks, graphics and simulation pace.',events:'Inspect warnings and schedule simulated expedition hazards.',closer:'Read the full values behind the helmet symbols.'};
 
 export default function App(){
@@ -78,6 +81,8 @@ export default function App(){
   const [routeWorkflow,setRouteWorkflow]=useState<'new'|'saved'>('new');
   const [mapPanel,setMapPanel]=useState<'layers'|'evidence'|undefined>();
   const [pauseMenu,setPauseMenu]=useState(false);
+  const [preview,setPreview]=useState<PreviewState>();
+  const walkLive=liveWalk(view,pauseMenu,preview),previewing=!!preview;
   const [session,setSession]=useState(0);
   const [sceneFailed,setSceneFailed]=useState(false),[rendererRetry,setRendererRetry]=useState(0);
   const environmental=useEnvironmentCatalog(),[environmentSelection,setEnvironmentSelection]=useState(DEFAULT_ENVIRONMENT),[environmentNotice,setEnvironmentNotice]=useState('');
@@ -97,11 +102,12 @@ export default function App(){
   const [hud,setHud]=useState(DEFAULT_HUD),[stationTab,setStationTab]=useState<'atlas'|'history'>('atlas'),[tabletTab,setTabletTab]=useState<'explore'|'routes'|'setup'|'field'|'events'|'closer'>(directDemo?'routes':'explore');
   const [noticeList,setNoticeList]=useState(false);
   const visor=hud.visor;
-  const [timeScale,setTimeScale]=useState(1);
+  const [timeScale,setTimeScale]=useState(storedPace);
+  function changePace(value:number){setTimeScale(value);savePace(value);}
   const [pose,setPose]=useState<Pose>({...HOME,heading:0,elapsed:0}),[blocked,setBlocked]=useState(false),[back,setBack]=useState<ReturnResult>(),[returnError,setReturnError]=useState('');
   const [returnRetry,setReturnRetry]=useState(0);
   const request=useRef<AbortController|null>(null),returnRequest=useRef<AbortController|null>(null),lastReturn=useRef<Point & {elapsed?:number}>({x:Infinity,y:Infinity});
-  const mw=useMarswalk({regionId:selectedRegionId,data,pose,walking:view==='walk'&&!pauseMenu,session});
+  const mw=useMarswalk({regionId:selectedRegionId,data,pose,walking:walkLive,session});
   const prepared=useMemo(()=>mw.boxwork&&data?preparedAlternative(data.meta,settings):undefined,[mw.boxwork,data,settings.doseRateMicroGyH]);
   const science=mw.scienceRoute(prepared),preparedActive=!!science&&science===prepared;
   const route=science??result?.routes[selected];
@@ -128,7 +134,7 @@ export default function App(){
   const guidance=returning?back?.route??undefined:route;
   const savedPaths=useMemo(()=>data?[...pathLibrary.paths,...recordedPaths(traverses.records,data)]:[],[data,pathLibrary.paths,traverses.records]);
   const savedTraces=useMemo(()=>savedPaths.map((p,i)=>({...p,label:p.name,color:PATH_COLORS[i%PATH_COLORS.length],dashed:p.kind==='rover'})).filter(pathLibrary.show),[savedPaths,pathLibrary.visibility]);
-  const mapTraces=[{id:'current',label:'Current walk',points:traverses.samples,color:CURRENT_WALK_COLOR},...savedTraces,...(returning&&back?.route?[{id:'return',label:'Return guidance',points:back.route.points.map(([x,y])=>({x,y})),color:'#79f0da'}]:[])];
+  const mapTraces=[{id:'current',label:'Current walk',points:traverses.samples,color:CURRENT_WALK_COLOR},...savedTraces,...(returning&&back?.route?[{id:'return',label:'Return guidance',points:back.route.points.map(([x,y])=>({x,y})),color:'#79f0da'}]:[]),...(preview?[{id:'preview',label:'Route preview',points:preview.path.points,color:'#ffe4a3'}]:[])];
   function openEvents(){setTabletTab('events');setMapPanel(undefined);setView('plan');}
   function addEvent(kind:EventKind,delay:number){if(events.length>=30)return;setEvents(v=>[...v,{id:crypto.randomUUID(),kind,createdS:pose.elapsed,atS:pose.elapsed+delay,center:{x:pose.x,y:pose.y},radiusM:kind==='solar'?35:60,acknowledged:false}]);}
   function updateEvent(id:string,action:'acknowledge'|'end'|'cancel'){setEvents(v=>action==='cancel'?v.filter(e=>e.id!==id):v.map(e=>e.id===id?{...e,...(action==='acknowledge'?{acknowledged:true}:{endedS:pose.elapsed})}:e));}
@@ -168,7 +174,7 @@ export default function App(){
   function invalidate(){mw.clearScience();setReturning(false);setProfileEdge(undefined);request.current?.abort();returnRequest.current?.abort();setBusy(false);request.current=null;returnRequest.current=null;setResult(undefined);setBack(undefined);setError('');setRouteFailure(undefined);setReturnError('');}
   function changeRegion(id?:RegionId){
     if(id===selectedRegionId)return;setMapPanel(undefined);setPauseMenu(false);setSession(v=>v+1);setStopId(undefined);
-    invalidate();setSelectedField(undefined);setFieldDraft(undefined);setFieldNotice('');setTargetId(undefined);setGeologySelection(undefined);setGuide(false);updateDemoUrl(false);setData(undefined);setSelectedRegionId(id);setStart(HOME);setGoal(GOAL);setSelected(0);setSettings(defaults);setPlaying(false);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(1);lastReturn.current={x:Infinity,y:Infinity};setView('globe');
+    invalidate();setSelectedField(undefined);setFieldDraft(undefined);setFieldNotice('');setTargetId(undefined);setGeologySelection(undefined);setGuide(false);updateDemoUrl(false);setData(undefined);setSelectedRegionId(id);setStart(HOME);setGoal(GOAL);setSelected(0);setSettings(defaults);setPlaying(false);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setView('globe');
   }
   function changeHour(hour:number){setPlaying(false);restartScenario(hour);}
   useEffect(()=>{
@@ -199,7 +205,7 @@ export default function App(){
   }
   function updateDemoUrl(enabled:boolean){const url=new URL(window.location.href);if(enabled)url.searchParams.set('demo','yellowknife');else url.searchParams.delete('demo');window.history.replaceState(null,'',url);}
   function selectTarget(id:string){const target=targetById(id);if(!target||target.regionId!==region?.id||!data||!canPlan(region))return;const value=sample(data,target.point);if(!value||value.slope>settings.maxSlopeDeg||missionSettings.exclusions.some(e=>Math.hypot(e.x-target.point.x,e.y-target.point.y)<=e.radius+data.meta.stepM/Math.sqrt(2)))return;invalidate();setTargetId(id);setGoal(target.point);setInspection(target.point);setMode('inspect');setGeology(g=>({...g,visible:true}));const unit=unitAt(target.regionId,target.longitude,target.latitude);if(unit)setGeologySelection({kind:'unit',id:unit.id});}
-  function startDemo(){if(selectedRegionId!=='gale-bradbury')changeRegion('gale-bradbury');invalidate();setPlaying(false);setStart(HOME);setGoal(targetById('yellowknife')!.point);setTargetId('yellowknife');setGuide(true);setMode('inspect');setInspection(targetById('yellowknife')!.point);setSettings({...defaults,dwellMin:10,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH});setGeology({visible:true,opacity:.35,contacts:true});setOverlays({...defaultOverlays(),slope:{visible:true,opacity:.25}});setPose({...HOME,heading:0,elapsed:0});setTimeScale(1);setBlocked(false);lastReturn.current={x:Infinity,y:Infinity};updateDemoUrl(true);setTabletTab('routes');setSession(v=>v+1);setView('plan');}
+  function startDemo(){if(selectedRegionId!=='gale-bradbury')changeRegion('gale-bradbury');invalidate();setPlaying(false);setStart(HOME);setGoal(targetById('yellowknife')!.point);setTargetId('yellowknife');setGuide(true);setMode('inspect');setInspection(targetById('yellowknife')!.point);setSettings({...defaults,dwellMin:10,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH});setGeology({visible:true,opacity:.35,contacts:true});setOverlays({...defaultOverlays(),slope:{visible:true,opacity:.25}});setPose({...HOME,heading:0,elapsed:0});setTimeScale(storedPace());setBlocked(false);lastReturn.current={x:Infinity,y:Infinity};updateDemoUrl(true);setTabletTab('routes');setSession(v=>v+1);setView('plan');}
   function openSuggested(){if(selectedRegionId!==SUGGESTED_REGION_ID)changeRegion(SUGGESTED_REGION_ID);setTabletTab('routes');setView('plan');}
   async function plan(){
     if(!data||!planner||!canPlan(region))return;setPlaying(false);request.current?.abort();const c=new AbortController();request.current=c;setBusy(true);setError('');setRouteFailure(undefined);setResult(undefined);setBack(undefined);
@@ -211,14 +217,14 @@ export default function App(){
   }
   const updatePose=useCallback((p:Pose)=>setPose(p),[]);
   useEffect(()=>{
-    if(view!=='walk'||!data||!planner)return;
+    if(view!=='walk'||previewing||!data||!planner)return;
     if(Math.hypot(pose.x-lastReturn.current.x,pose.y-lastReturn.current.y)<(back?.atHabitat?5:25)&&pose.elapsed-(lastReturn.current.elapsed??-Infinity)<60)return;
     lastReturn.current={x:pose.x,y:pose.y,elapsed:pose.elapsed};returnRequest.current?.abort();const c=new AbortController();returnRequest.current=c;
     setBack(undefined);setReturnError('');
     planner.returnToHabitat({start:{x:pose.x,y:pose.y},goal:start,settings:missionSettings,mode:route?.mode??'shortest',elapsedS:pose.elapsed},c.signal)
       .then(r=>{if(returnRequest.current===c&&!c.signal.aborted)setBack(r);}).catch(e=>{if(returnRequest.current===c&&e.name!=='AbortError')setReturnError(e.message);});
-  },[view,route,data,planner,pose,start,missionSettings,returnRetry]);
-  function reset(){setSession(v=>v+1);setPauseMenu(false);const HOME=data?.meta.defaultStart??{x:0,y:0},GOAL=data?.meta.defaultGoal??{x:600,y:450};setTargetId(undefined);setGuide(false);updateDemoUrl(false);setPlaying(false);invalidate();setStart(HOME);setGoal(GOAL);setSelected(0);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(1);lastReturn.current={x:Infinity,y:Infinity};setTabletTab('explore');setView('plan');const weather=data?.environment.weather.find(w=>w.hour>=12&&w.temperatureK!==null);setSettings({...defaults,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH,temperatureK:weather?.temperatureK??defaults.temperatureK,windMps:weather?.windMps??defaults.windMps});}
+  },[view,previewing,route,data,planner,pose,start,missionSettings,returnRetry]);
+  function reset(){setSession(v=>v+1);setPauseMenu(false);const HOME=data?.meta.defaultStart??{x:0,y:0},GOAL=data?.meta.defaultGoal??{x:600,y:450};setTargetId(undefined);setGuide(false);updateDemoUrl(false);setPlaying(false);invalidate();setStart(HOME);setGoal(GOAL);setSelected(0);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setTabletTab('explore');setView('plan');const weather=data?.environment.weather.find(w=>w.hour>=12&&w.temperatureK!==null);setSettings({...defaults,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH,temperatureK:weather?.temperatureK??defaults.temperatureK,windMps:weather?.windMps??defaults.windMps});}
   useEffect(()=>{
     if(!result||tabletTab!=='routes'||mapPanel)return;
     const panel=document.querySelector<HTMLElement>('.mission-sidebar'),options=panel?.querySelector<HTMLElement>('.route-options');
@@ -230,6 +236,7 @@ export default function App(){
   const measured=data&&sample(data,inspection),local=data&&sample(data,pose),geo=data&&localToGeo(data.meta,inspection);
   const scienceTarget=targetById(targetId);
   const progress=guidance?routeProgress(guidance,pose):null;
+  const shownPose=preview?previewPose(preview.path,preview.doneM,pose):pose;
   const totalReturn=pose.elapsed+(back?.route?.metrics.durationS??0);
   const reached=!returning&&route&&(science?mw.visited.size===WALK_STOPS.length&&(Math.hypot(pose.x-start.x,pose.y-start.y)<8||(preparedActive&&Math.hypot(pose.x-preparedEnd().x,pose.y-preparedEnd().y)<8)):Math.hypot(pose.x-goal.x,pose.y-goal.y)<8);
   const alerts=[...(!returning?route?.warnings??[]:[]),...(back?.warnings??[])];
@@ -265,8 +272,32 @@ export default function App(){
   // Before the first step the walker turns to face Stop 1, so the helmet shows the next stop mark; a walk under way keeps its heading.
   function startPrepared(){mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};if(pose.elapsed===0){const first=WALK_STOPS[0];setPose(p=>({...p,heading:Math.atan2(first.x-p.x,first.y-p.y)}));setSession(v=>v+1);}}
   function openTablet(tab:typeof tabletTab='explore'){setMapPanel(undefined);setTabletTab(tab);setView('plan');}
+  // Previous paths: the first path shown on the map. Otherwise the selected route, or the prepared walk that Walk this route starts.
+  const shownPath=routeWorkflow==='saved'?savedTraces[0]:undefined;
+  const previewRoute=route??prepared;
+  const previewSource=shownPath?{name:shownPath.label,points:shownPath.points}:previewRoute?{name:science||!route?PREPARED_NAME:route.mode==='shortest'?'Shortest permitted route':'Gentler terrain route',points:previewRoute.points.map(([x,y])=>({x,y}))}:undefined;
+  function beginPreview(){if(!previewSource)return;const next=startPreview(previewSource.name,previewSource.points);if(!next)return;setPauseMenu(false);setMapPanel(undefined);setPreview(next);setView('walk');}
+  function stopPreview(){setPreview(undefined);setView('plan');}
+  const previewPlay=useRef<HTMLButtonElement>(null);
+  useEffect(()=>{if(previewing)previewPlay.current?.focus();},[previewing]);
+  useEffect(()=>{if(previewing&&view!=='walk')setPreview(undefined);},[view,previewing]);
+  useEffect(()=>{if(preview?.phase==='ended')stopPreview();},[preview?.phase]);
   useEffect(()=>{
-    if(view!=='walk')return;
+    if(view!=='walk'||!preview)return;
+    const key=(e:KeyboardEvent)=>{
+      if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;
+      const target=e.target as HTMLElement|null;
+      if(target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+      if(e.key==='Escape'){e.preventDefault();stopPreview();}
+      else if(e.key===' '&&!target?.closest?.('button')){e.preventDefault();setPreview(s=>s&&previewReducer(s,{type:'toggle'}));}
+      else if(e.key.toLowerCase()==='n'){e.preventDefault();setNoticeList(v=>!v);}
+      else if(e.key.toLowerCase()==='x'){e.preventDefault();hudNotices.dismiss();}
+    };
+    window.addEventListener('keydown',key);
+    return()=>window.removeEventListener('keydown',key);
+  });
+  useEffect(()=>{
+    if(view!=='walk'||preview)return;
     // Helmet controls also work from the keyboard: a helmet cannot click, and pointer lock hides the cursor while walking.
     const key=(e:KeyboardEvent)=>{
       if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;
@@ -291,9 +322,9 @@ export default function App(){
 <a className="nav-brand" href="#" onClick={e=>{e.preventDefault();setView('globe');}}>◉ <span>MARTIAN MAP</span>
 </a>
 <div className="view-tabs">
-<button title="Explore global Mars datasets and dated observations. Mission time pauses at Station." aria-current={view==='globe'?'page':undefined} onClick={()=>setView('globe')}>Station</button>
-<button title="Open local Map, Routes, Field data, Display and Events over the paused surface." aria-current={view==='plan'?'page':undefined} disabled={!region} onClick={()=>setView('plan')}>Tablet</button>
-<button title="Enter the surface; click terrain to resume walking. A route is optional." aria-current={view==='walk'?'page':undefined} disabled={!data||!canPlan(region)} onClick={()=>setView('walk')}>HUD · Surface</button>
+<button data-tour="station-tab" title="Explore global Mars datasets and dated observations. Mission time pauses at Station." aria-current={view==='globe'?'page':undefined} onClick={()=>setView('globe')}>Station</button>
+<button data-tour="tablet-tab" title="Open local Map, Routes, Field data, Display and Events over the paused surface." aria-current={view==='plan'?'page':undefined} disabled={!region} onClick={()=>setView('plan')}>Tablet</button>
+<button data-tour="hud-tab" title="Enter the surface; click terrain to resume walking. A route is optional." aria-current={view==='walk'?'page':undefined} disabled={!data||!canPlan(region)} onClick={()=>setView('walk')}>HUD · Surface</button>
 </div>
 <span className="nav-site">{region?.shortName??'Choose a region'} <span className="live-dot"/> LAPTOP SIMULATION</span>
 </nav>
@@ -303,8 +334,8 @@ export default function App(){
 <span>Explore Mars. Choose your next excursion.</span>
 </div>
 <div className="context-tabs">
-<button title="Inspect global map layers, coverage and available excursion regions." aria-pressed={stationTab==='atlas'} onClick={()=>setStationTab('atlas')}>Planetary atlas</button>
-<button title="Inspect dated environmental records and the labeled simulated outlook." aria-pressed={stationTab==='history'} onClick={()=>setStationTab('history')}>Data & history</button><Help label="About Station tools">The atlas selects datasets and sites. Data &amp; history compares dated observations and simulated outlooks. Local walking/planning requires prepared terrain. Use Tablet for local map, route history and expedition events.</Help>
+<button data-tour="atlas-tab" title="Inspect global map layers, coverage and available excursion regions." aria-pressed={stationTab==='atlas'} onClick={()=>setStationTab('atlas')}>Planetary atlas</button>
+<button data-tour="history-tab" title="Inspect dated environmental records and the labeled simulated outlook." aria-pressed={stationTab==='history'} onClick={()=>setStationTab('history')}>Data & history</button><Help tour="station-help" label="About Station tools">The atlas selects datasets and sites. Data &amp; history compares dated observations and simulated outlooks. Local walking/planning requires prepared terrain. Use Tablet for local map, route history and expedition events.</Help>
 </div>
 </header>}
     {view==='globe'&&stationTab==='history'&&<div className="station-analysis">
@@ -315,22 +346,22 @@ export default function App(){
     {dataError&&view!=='plan'&&<div className="data-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
     <div style={{display:view==='globe'&&stationTab==='atlas'?'block':'none'}}>
-<GlobeExplorer onSuggested={openSuggested} environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible} walkChoice={region&&<WalkChoice setup={mw.setup} region={region.id} persistent={mw.persistent} onPick={id=>applySetup(mw.pickMission(id))}/>}/>
+<GlobeExplorer onSuggested={openSuggested} environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible} hasPlan={!!route} onPlanRoute={()=>{if(canPlan(region)){setRouteWorkflow('new');openTablet('routes');}}} walkChoice={region&&<WalkChoice setup={mw.setup} region={region.id} persistent={mw.persistent} onPick={id=>applySetup(mw.pickMission(id))}/>}/>
 </div>
     {context==='surface'&&data&&canPlan(region)&&<main aria-hidden={tabletOpen||undefined} className={`hud-page ${tabletOpen||pauseMenu?'surface-paused':''} ${visor?'visor-enabled':''}`}>
 <Suspense fallback={<div className="loading-data">Opening the surface HUD…</div>}>
-<WalkingScene paths={savedTraces} events={activeEvents} returning={returning} key={`${session}-${rendererRetry}-${quality}-${imagery}`} active={view==='walk'&&!pauseMenu} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={science?{...hud,destination:false}:hud} extra={stopMarks} zones={mw.zones} wayBack={wayBack} start={start} goal={returning?start:goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} walkData={mw.walkData} route={guidance} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
-</Suspense>{!tabletOpen&&<>{visor&&<Visor waypoints={!!progress&&hud.waypoints&&hud.next} pose={pose} target={progress?{x:progress.target[0],y:progress.target[1]}:undefined}/>}<header className="hud-heading">
-<Icon name={returning?'back':reached?'check':route?'route':'compass'}/>
+<WalkingScene preview={preview&&{path:preview.path,playing:preview.phase==='playing',speed:preview.speed}} onPreview={doneM=>setPreview(s=>s&&previewReducer(s,{type:'progress',doneM}))} paths={savedTraces} events={activeEvents} returning={returning} key={`${session}-${rendererRetry}-${quality}-${imagery}`} active={walkLive} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={science?{...hud,destination:false}:hud} extra={stopMarks} zones={mw.zones} wayBack={wayBack} start={start} goal={returning?start:goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} walkData={mw.walkData} route={guidance} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
+</Suspense>{!tabletOpen&&<>{visor&&<Visor waypoints={!preview&&!!progress&&hud.waypoints&&hud.next} pose={shownPose} target={!preview&&progress?{x:progress.target[0],y:progress.target[1]}:undefined}/>}<header className="hud-heading">
+<Icon name={preview?'route':returning?'back':reached?'check':route?'route':'compass'}/>
 <div>
 <span className="eyebrow sr-only">{region?.shortName.toUpperCase()} / SURFACE EXCURSION</span>
-<h2>{returning?(back?.atHabitat?'Habitat reached':'Returning to habitat'):reached?(science?'Science walk complete.':'Destination reached.'):!route?'Free exploration':science?'On the science walk.':route.mode==='shortest'?'On the shortest traverse.':'Taking the gentler path.'}</h2>
+<h2>{preview?'Route preview':returning?(back?.atHabitat?'Habitat reached':'Returning to habitat'):reached?(science?'Science walk complete.':'Destination reached.'):!route?'Free exploration':science?'On the science walk.':route.mode==='shortest'?'On the shortest traverse.':'Taking the gentler path.'}</h2>
 <span className="sr-only">{scienceTarget&&route?`Science destination: ${scienceTarget.name} · simulated position`:'Simulated position · mission clock pauses with Esc'}</span>
 </div>
 </header>
 {mw.stormMessage&&mw.storm.warning==='shown'?<div className="hud-alerts" aria-live="polite"><StormNotice storm={mw.storm} msg={mw.stormMessage} onDismiss={mw.dismissStorm} onCancel={mw.cancelReturn} onResume={mw.resumeReturn}/></div>:<HudToast toasts={hudNotices.toasts} onDismiss={hudNotices.dismiss}/>}
 <div className="hud-corner">{hud.minimap&&<aside className="hud-map">
-<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={pose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mapStops={mw.boxwork?mapStops:undefined} follow={mw.boxwork?{keep:[...(next?[next]:[]),...(progress?[{x:progress.target[0],y:progress.target[1]}]:[])],marks:[{...start,label:'H'},...(next?[{x:next.x,y:next.y,label:String(next.id)}]:[])]}:undefined} mini/>
+<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={shownPose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mapStops={mw.boxwork?mapStops:undefined} follow={mw.boxwork?{keep:[...(next?[next]:[]),...(progress?[{x:progress.target[0],y:progress.target[1]}]:[])],marks:[{...start,label:'H'},...(next?[{x:next.x,y:next.y,label:String(next.id)}]:[])]}:undefined} mini/>
 <span className="hud-map__north" aria-hidden="true">N</span>
 <div className="sr-only">
 <span>H HABITAT</span>{route&&<span>D DESTINATION</span>}</div>
@@ -339,7 +370,15 @@ export default function App(){
 </div>
 <HudNoticeList log={hudNotices.log} open={noticeList} onToggle={()=>setNoticeList(v=>!v)} onDetails={()=>openTablet('closer')}/>
 </div>
-<div className="hud-bottom" role="group" aria-label="Helmet status">
+{preview?<section className="route-preview" aria-label="Route preview" data-tour="preview-controls">
+<div className="route-preview__line"><strong>{preview.name}</strong><span data-tour="preview-progress">{previewProgressText(preview.doneM,preview.path.totalM)}</span></div>
+<div className="route-preview__track" role="progressbar" aria-label="Preview progress" aria-valuemin={0} aria-valuemax={Math.round(preview.path.totalM)} aria-valuenow={Math.round(preview.doneM)} aria-valuetext={previewProgressText(preview.doneM,preview.path.totalM)}><span style={{width:`${Math.min(100,preview.doneM/preview.path.totalM*100)}%`}}/></div>
+<div className="route-preview__controls">
+<button ref={previewPlay} type="button" className="primary" data-tour="preview-play" onClick={()=>setPreview(s=>s&&previewReducer(s,{type:'toggle'}))}><Icon name={preview.phase==='playing'?'pause':'play'}/>{preview.phase==='playing'?'Pause':'Play'}<kbd aria-hidden="true">Space</kbd></button>
+<div className="route-preview__speed" role="group" aria-label="Preview speed" data-tour="preview-speed">{PREVIEW_SPEEDS.map(s=><button key={s} type="button" className="secondary" aria-pressed={preview.speed===s} onClick={()=>setPreview(v=>v&&previewReducer(v,{type:'speed',speed:s}))}>{s}×</button>)}</div>
+<button type="button" className="secondary" data-tour="preview-stop" onClick={stopPreview}><Icon name="halt"/>Stop<kbd aria-hidden="true">Esc</kbd></button>
+</div>
+</section>:<><div className="hud-bottom" role="group" aria-label="Helmet status">
 <div className={`hud-chip ${alertCount?'is-warning':''}`}>
 <Icon name={alertCount?'warning':'fine'}/>
 <small className="sr-only">ALERTS</small>
@@ -366,10 +405,10 @@ export default function App(){
 <strong>{returnValue}</strong>{returnError&&<button type="button" className="hud-chip__act" aria-label="Retry return estimate" onClick={retryReturn}>Retry<kbd aria-hidden="true">R</kbd></button>}</div>
 </div>
 <div className="hud-actions">
-<button className="primary" aria-label="Open tablet" onClick={()=>openTablet('explore')}><Icon name="tablet"/>Tablet<kbd aria-hidden="true">T</kbd></button>
-<button className="secondary" aria-label="Log here" onClick={logHere}><Icon name="note"/>Log<kbd aria-hidden="true">L</kbd></button>
-<button className="secondary" aria-label="Pause / menu" aria-expanded={pauseMenu} onClick={()=>setPauseMenu(v=>!v)}><Icon name="pause"/>Pause<kbd aria-hidden="true">M</kbd></button>
-</div>
+<button className="primary" data-tour="hud-tablet" aria-label="Open tablet" onClick={()=>openTablet('explore')}><Icon name="tablet"/>Tablet<kbd aria-hidden="true">T</kbd></button>
+<button className="secondary" data-tour="hud-log" aria-label="Log here" onClick={logHere}><Icon name="note"/>Log<kbd aria-hidden="true">L</kbd></button>
+<button className="secondary" data-tour="hud-pause" aria-label="Pause / menu" aria-expanded={pauseMenu} onClick={()=>setPauseMenu(v=>!v)}><Icon name="pause"/>Pause<kbd aria-hidden="true">M</kbd></button>
+</div></>}
       {pauseMenu&&<section className="pause-menu" aria-label="Simulation menu">
 <h2>Excursion paused</h2>
 <p>Click Resume, then click the terrain to walk.</p>
@@ -392,11 +431,11 @@ export default function App(){
 <h1>{region?.shortName??'Local exploration'}</h1>
 </div>
 <span className="tablet-paused">Ⅱ Surface paused</span>
-<button className="secondary" onClick={()=>setView(canPlan(region)&&data?'walk':'globe')}>{canPlan(region)&&data?'Close tablet':'Back to Station'} <kbd>Esc</kbd>
+<button className="secondary" data-tour="close-tablet" onClick={()=>setView(canPlan(region)&&data?'walk':'globe')}>{canPlan(region)&&data?'Close tablet':'Back to Station'} <kbd>Esc</kbd>
 </button>
 </header>
       <nav className="tablet-tabs" aria-label="Tablet tools">{([['explore','Map','area'],['routes','Routes','route'],['field','Field data','note'],['setup','Display','helmet'],['events','Events','warning'],['closer','Look closer','look']] as const).map(([id,label,icon])=>
-<button key={id} title={TAB_TITLES[id]} aria-label={label} disabled={id!=='explore'&&!canPlan(region)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</button>)}<Help label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume.</Help>
+<button key={id} data-tour={TAB_TOUR[id]} title={TAB_TITLES[id]} aria-label={label} disabled={id!=='explore'&&!canPlan(region)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</button>)}<Help tour="tablet-help" label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume.</Help>
 </nav>
       {tabletTab!=='closer'&&<ContextGuide key={tabletTab} topic={tabletTab}/>}{fieldNotice&&<p className="field-notice" role="status">{fieldNotice}</p>}{dataError&&<div className="tablet-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
@@ -409,8 +448,8 @@ export default function App(){
       <div className={`tablet-main ${tabletTab==='routes'?'with-routes':''} ${mapPanel?'with-map-panel':''}`} style={{display:tabletTab==='explore'||tabletTab==='routes'?undefined:'none'}}>
       <aside className="mission-sidebar" aria-label="Routes">
 <div className="route-workflow"><div className="eyebrow">ROUTES</div><div className="route-workflow-switch" role="group" aria-label="Route workflow">
-<button aria-pressed={routeWorkflow==='new'} onClick={()=>{setRouteWorkflow('new');setMapPanel(undefined);}}>Plan new route</button>
-<button aria-pressed={routeWorkflow==='saved'} onClick={()=>{setRouteWorkflow('saved');setMapPanel(undefined);setMode('inspect');}}>Load previous path</button>
+<button data-tour="plan-new-route" aria-pressed={routeWorkflow==='new'} onClick={()=>{setRouteWorkflow('new');setMapPanel(undefined);}}>Plan new route</button>
+<button data-tour="load-previous-path" aria-pressed={routeWorkflow==='saved'} onClick={()=>{setRouteWorkflow('saved');setMapPanel(undefined);setMode('inspect');}}>Load previous path</button>
 </div></div>
 {routeWorkflow==='saved'?<section aria-label="Previous paths panel"><h1>Previous paths</h1>{data&&<TraverseHistory store={traverses} library={pathLibrary} data={data} onSave={name=>{const id=traverses.save(name,missionSettings,start,goal,!!reached,route?.mode);if(id)pathLibrary.toggle(id,true);}}/>}</section>:<>{guide&&<section className="science-guide" aria-label="Guided science example">
 <details>
@@ -518,9 +557,9 @@ export default function App(){
 <header className="map-toolbar">
 <span>{mode==='inspect'?'LOCAL MAP':mode==='start'?'CLICK MAP · RESTART AT NEW HABITAT':mode==='goal'?'CLICK MAP · SET DESTINATION':'CLICK MAP · ADD EXCLUSION'}</span>
 <div>
-<button className="secondary" aria-expanded={mapPanel==='layers'} onClick={()=>setMapPanel(mapPanel==='layers'?undefined:'layers')}><Icon name="layers"/>Layers</button><Help label="About map layers">Imagery provides visual context; elevation and slope come from numeric terrain. Opacity only changes the display. Regional environmental bins and point readings retain their source footprint.</Help>
-<button className="secondary" aria-expanded={mapPanel==='evidence'} onClick={()=>setMapPanel(mapPanel==='evidence'?undefined:'evidence')}><Icon name="look"/>Inspect data</button><Help label="About data inspection">Inspect a map location to read source, units, resolution, date, coverage and uncertainty. Missing coverage stays unknown.</Help>
-<button className="secondary" onClick={logHere}><Icon name="note"/>Log here</button>
+<button className="secondary" data-tour="map-layers" aria-expanded={mapPanel==='layers'} onClick={()=>setMapPanel(mapPanel==='layers'?undefined:'layers')}><Icon name="layers"/>Layers</button><Help label="About map layers">Imagery provides visual context; elevation and slope come from numeric terrain. Opacity only changes the display. Regional environmental bins and point readings retain their source footprint.</Help>
+<button className="secondary" data-tour="inspect-data" aria-expanded={mapPanel==='evidence'} onClick={()=>setMapPanel(mapPanel==='evidence'?undefined:'evidence')}><Icon name="look"/>Inspect data</button><Help label="About data inspection">Inspect a map location to read source, units, resolution, date, coverage and uncertainty. Missing coverage stays unknown.</Help>
+<button className="secondary" data-tour="log-here" onClick={logHere}><Icon name="note"/>Log here</button>
 </div>
 </header>
         {data?<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={science?undefined:goal} routes={science?[science]:result?.routes} selected={science?0:selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onInspect={setInspection} zones={mw.zones} mapStops={mapStops} drills={drills} selectedStop={stopId} onStopSelect={setStopId}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
@@ -583,13 +622,13 @@ export default function App(){
     {view==='plan'&&tabletTab==='setup'&&<main className="tablet-setup">
 <div className="setup-stack">
 <FeatureSwitches setup={mw.setup} hud={hud} onToggle={id=>applySetup(mw.toggle(id),id)} onMission={id=>applySetup(mw.pickMission(id))}/>
-<HudConfiguration data={data} regionId={selectedRegionId} sol={data?.environment.sol??10} value={hud} onChange={setHud} quality={quality} onQuality={setQuality} timeScale={timeScale} onTimeScale={setTimeScale}/>
+<HudConfiguration data={data} regionId={selectedRegionId} sol={data?.environment.sol??10} value={hud} onChange={setHud} quality={quality} onQuality={setQuality} timeScale={timeScale} onTimeScale={changePace}/>
 </div>
 <aside className="mission-snapshot">
 <span className="eyebrow">SHARED MISSION</span>
 <h2>{region?.shortName}</h2>
 <p>{scienceTarget?.name??'Custom destination'} · {route?`${distance(route.metrics.distanceM)} planned`:'Free exploration · no route required'}</p>
-<p data-testid="tablet-position">E {pose.x.toFixed(1)} / N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</p>{canPlan(region)&&<MissionClocks sol={data?.environment.sol??10} hour={scenarioHour} historical={settings.conditionsMode==='historical'}/>}<button className="primary full" disabled={!data} onClick={()=>setView('walk')}>Close tablet · return to surface</button>
+<p data-testid="tablet-position">E {pose.x.toFixed(1)} / N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</p>{canPlan(region)&&<MissionClocks sol={data?.environment.sol??10} hour={scenarioHour} historical={settings.conditionsMode==='historical'}/>}<button className="primary full" data-tour="display-return" disabled={!data} onClick={()=>setView('walk')}>Close tablet · return to surface</button>
 <button className="secondary full" onClick={()=>setTabletTab('explore')}>Explore local map →</button>
 <p className="caption">Walking pauses here. Display settings do not reset the excursion.</p>
 </aside>
@@ -621,9 +660,9 @@ export default function App(){
 <div>
 <span data-testid="tablet-explore-position">E {pose.x.toFixed(1)} · N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</span>
 <span className="restriction-summary">{missionSettings.exclusions.length} active restrictions · {route?'Route selected':'Free exploration'}</span>
-</div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}{routeWorkflow==='new'&&<button className="secondary plan-route-button" title="Calculate terrain route alternatives from habitat to destination using your current mission constraints." disabled={!data||busy} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</button>}
-<button className="primary" disabled={!data} onClick={()=>{if(!route&&prepared)startPrepared();setView('walk');}}>{science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
-</>:<button className="primary" disabled={!data} onClick={()=>setView('walk')}>Return to surface</button>}</footer>
+</div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}{routeWorkflow==='new'&&<button className="secondary plan-route-button" data-tour="plan-route" title="Calculate terrain route alternatives from habitat to destination using your current mission constraints." disabled={!data||busy} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</button>}{previewSource&&<button className="secondary" data-tour="preview-route" title={`Watch ${previewSource.name} from start to end in about one minute. Nothing is walked or saved.`} disabled={!data} onClick={beginPreview}><Icon name="play"/>Preview route</button>}
+<button className="primary" data-tour="walk-route" disabled={!data} onClick={()=>{if(!route&&prepared)startPrepared();setView('walk');}}>{science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
+</>:<button className="primary" data-tour="return-to-surface" disabled={!data} onClick={()=>setView('walk')}>Return to surface</button>}</footer>
     </TabletShell>
   </>;
 }

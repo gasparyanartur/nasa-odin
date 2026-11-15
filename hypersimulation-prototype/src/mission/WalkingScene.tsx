@@ -7,6 +7,7 @@ import { advanceWalk, type Route, type Point, type Pose, type Settings, type Ter
 import type { GraphicsQuality } from './conditions';
 import { createSurface, type SurfaceEngine } from './surface/renderer';
 import type { HazardZone } from '../marswalk/hazards';
+import { advancePreview, headingAt, pointAt, turnTowards, type PreviewPath } from './routePreview';
 
 export interface ExtraMark extends Point { id:string; label:string; mark?:string; compact?:boolean }
 
@@ -15,6 +16,8 @@ interface Props {
   start:Point;goal:Point;next?:Point;data:TerrainData;walkData?:TerrainData;route?:Route;settings:Settings;initialPose:Pose;
   timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;
   extra?:ExtraMark[];zones?:HazardZone[];wayBack?:Point[];
+  /** Route preview: moves the camera only. The walk pose, its clock and every walk record stay where they were. */
+  preview?:{path:PreviewPath;playing:boolean;speed:number};onPreview?:(doneM:number)=>void;
 }
 export default function WalkingScene(p:Props){
   const canvas=useRef<HTMLCanvasElement>(null),engine=useRef<SurfaceEngine|null>(null),latest=useRef(p);latest.current=p;
@@ -35,7 +38,8 @@ export default function WalkingScene(p:Props){
     let pose={...latest.current.initialPose};const keys=new Set<string>();
     const isLocked=()=>document.pointerLockElement===el;
     // A final mouse delta can arrive between frames: retain the same view when pausing.
-    const flushPose=()=>{if(!disposed){engine.current?.eye(pose);latest.current.onPose({...pose});}};
+    const flushPose=()=>{if(!disposed&&!latest.current.preview){engine.current?.eye(pose);latest.current.onPose({...pose});}};
+    let previewOf:PreviewPath|null=null,previewDone=0,previewHeading=0,previewSent=0;
     const unlock=()=>{flushPose();active=false;keys.clear();if(isLocked())document.exitPointerLock();};
     const changed=()=>{if(!isLocked())flushPose();active=isLocked();setLocked(active);keys.clear();previous=performance.now();ignoreMove=isLocked();};
     const move=(e:MouseEvent)=>{if(!active||!isLocked())return;if(ignoreMove){ignoreMove=false;return;}pose.heading+=e.movementX*.002;pose.pitch=Math.max(-Math.PI/2+.01,Math.min(Math.PI/2-.01,(pose.pitch??-.12)-e.movementY*.002));};
@@ -59,6 +63,17 @@ export default function WalkingScene(p:Props){
           send+=dt;if(send>.1){send=0;current.onPose({...pose});current.onBlocked(advanced.blocked);}
           view.eye(pose);
         }
+        const preview=current.preview;
+        if(preview){
+          const real=Math.max(0,(now-previous)/1000);
+          if(previewOf!==preview.path){previewOf=preview.path;previewDone=0;previewSent=0;previewHeading=headingAt(preview.path,0);}
+          else if(preview.playing&&previewDone<preview.path.totalM){
+            previewDone=advancePreview(previewDone,preview.path.totalM,real,preview.speed);
+            previewSent+=real;if(previewSent>.1||previewDone>=preview.path.totalM){previewSent=0;current.onPreview?.(previewDone);}
+          }
+          previewHeading=turnTowards(previewHeading,headingAt(preview.path,previewDone),1-Math.exp(-Math.min(.1,real)*5));
+          view.eye({...pose,...pointAt(preview.path,previewDone),heading:previewHeading});
+        }else if(previewOf){previewOf=null;view.eye(pose);}
         previous=now;
         // Caption placement is independent of each real projected diamond.
         const placed:{x:number;y:number}[]=[];
@@ -98,8 +113,9 @@ export default function WalkingScene(p:Props){
     // Hazard areas as ground hatch: scarp on the cased grid channel, loose ground on the crossed diagonals.
     for(const z of p.zones??[]){const id=`zone-${z.id}`;ids.push(id);view.overlay(id,'polygon',z.polygon.map(([x,y])=>({x,y})),'#FFF3D6',z.hatch==='hatch-scarp'?'hatch-nogo':'cross');}
     if(p.wayBack&&p.wayBack.length>1)overlay('way-back','line',p.wayBack,'#7A9DF0');
+    if(p.preview)overlay('preview','line',p.preview.path.points,'#ffe4a3');
     return()=>ids.forEach(id=>view.remove(id));
-  },[ready,p.route,p.fields,p.settings.exclusions,p.events,p.start,p.returning,p.paths,p.zones,p.wayBack]);
+  },[ready,p.route,p.fields,p.settings.exclusions,p.events,p.start,p.returning,p.paths,p.zones,p.wayBack,p.preview?.path]);
   return <div className="walking-scene">
     <canvas className="surface-canvas" ref={canvas} aria-label="Measured surface simulator"/>
     {status&&<div className="surface-status" role="status" title={status}>{status}</div>}

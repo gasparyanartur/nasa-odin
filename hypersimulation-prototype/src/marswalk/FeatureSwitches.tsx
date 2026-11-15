@@ -8,7 +8,7 @@ import { FEATURE_ICON, MISSION_ICON, stateWord } from './ui';
 /** The Display tool's "infographic toggles": every preset feature as a labelled switch, grouped, with a live helmet preview. */
 export default function FeatureSwitches({ setup, hud, onToggle, onMission }: { setup: Setup; hud: HudSettings; onToggle: (id: FeatureId) => void; onMission: (id: MissionId) => void }) {
   const on = effective(setup);
-  return <section className="mission-features" aria-label="Mission features">
+  return <section className="mission-features" data-tour="display-features" aria-label="Mission features">
     <div className="mission-features__main">
       <div className="mission-features__top">
         <span className="eyebrow">TABLET / MISSION FEATURES</span>

@@ -31,7 +31,7 @@
 .info-pop .walk-row__words li.is-off{color:inherit;opacity:.75}
 .walk-choice__note{margin:10px 0 0}
 
-/* The region card on the picture stays small: name, the blue Enter surface bar and Open tablet. */
+/* The region card on the picture stays small: name, the blue Open tablet bar and Enter surface. */
 .map-region-context{gap:6px;padding:12px 14px;width:290px}
 .map-region-context .eyebrow{font-size:11px}
 .map-region-context strong{font-size:19px}

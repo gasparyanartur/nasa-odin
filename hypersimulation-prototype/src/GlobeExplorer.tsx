@@ -5,6 +5,7 @@ import { parseDataset, type DatasetDefinition } from './datasets/definition';
 import { BASEMAPS, REGIONS, SUGGESTED_REGION_ID, canPlan, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
 import { layoutMarkers } from './globe/marker-layout';
 import { GlobeController, type RegionMarker } from './globe/controller';
+import { globalLayerShown, layerKey, planetHint, surfaceGuard, zoomedIn } from './globe/stationRules';
 import RegionalLayers from './RegionalLayers';
 import InfoMark from './design/InfoMark';
 import { Icon } from './design/icons';
@@ -26,7 +27,10 @@ interface Props {
   overlays:OverlaySettings; onOverlayChange:(id:OverlayId,patch:Partial<OverlaySettings[OverlayId]>)=>void;
   conditionsHour:number; conditionsVisible:boolean; onConditionsChange:(visible:boolean)=>void;
   walkChoice?:ReactNode;
+  /** A route is planned or chosen; Enter surface then needs no confirm. */
+  hasPlan:boolean; onPlanRoute:()=>void;
 }
+const tourSlug=(id:RegionId)=>id.replace(/^gale-/,'');
 
 export default function GlobeExplorer(p:Props) {
   const container=useRef<HTMLDivElement>(null),controller=useRef<GlobeController|null>(null);
@@ -39,6 +43,9 @@ export default function GlobeExplorer(p:Props) {
   const [pending,setPending]=useState(false),[tilesLoading,setTilesLoading]=useState(false),[fatal,setFatal]=useState(false);
   const [error,setError]=useState(''),[localError,setLocalError]=useState(''),[localRetry,setLocalRetry]=useState(0);
   const [markers,setMarkers]=useState<RegionMarker[]>([]);
+  const [cameraHeight,setCameraHeight]=useState(Infinity),[hint,setHint]=useState(false),[confirm,setConfirm]=useState(false);
+  const confirmAction=useRef<HTMLButtonElement>(null);
+  useEffect(()=>{if(confirm)confirmAction.current?.focus();},[confirm]);
   const region=getRegion(p.selectedRegionId);
   const [area,setArea]=useState({width:0,height:0});
   const positionedMarkers=layoutMarkers(markers,area.width,area.height);
@@ -56,8 +63,16 @@ export default function GlobeExplorer(p:Props) {
     try {
       controller.current=new GlobeController(container.current!,status=>{setTilesLoading(status.loading);if(status.error)setError(status.error);},id=>onSelect.current(id),setMarkers,selection=>onGeology.current(selection),sample=>{if(environmentSelection.current)onEnvironment.current?.({...environmentSelection.current,sampleId:sample});});
     } catch {setFatal(true);setError('The globe could not start. Use a browser with WebGL enabled and reload this page.');}
-    return()=>{sequence.current++;importSequence.current++;controller.current?.dispose();controller.current=null;};
+    const unwatch=controller.current?.watchHeight(setCameraHeight);
+    return()=>{sequence.current++;importSequence.current++;unwatch?.();controller.current?.dispose();controller.current=null;};
   },[]);
+  const zoomed=zoomedIn(cameraHeight);
+  const layers={basemapId:p.basemap.id,basemapVisible:p.visible,basemapOpacity:p.opacity,environmentLayer:p.environmentSelection?.layerId??'none',environmentOpacity:p.environmentSelection?.opacity??0};
+  const key=layerKey(layers),lastKey=useRef(key);
+  useEffect(()=>{if(lastKey.current===key)return;lastKey.current=key;setHint(h=>planetHint(h,{type:'layer',zoomedIn:zoomed,shown:globalLayerShown(layers)}));},[key]);
+  useEffect(()=>{setHint(h=>planetHint(h,{type:'zoom',zoomedIn:zoomed}));},[zoomed]);
+  useEffect(()=>{setConfirm(false);},[p.selectedRegionId]);
+  function enterSurface(){if(surfaceGuard(p.hasPlan)==='enter')p.onSurface();else setConfirm(true);}
   useEffect(()=>{
     const el=container.current;if(!el)return;
     const measure=()=>setArea(a=>a.width===el.clientWidth&&a.height===el.clientHeight?a:{width:el.clientWidth,height:el.clientHeight});
@@ -89,18 +104,18 @@ export default function GlobeExplorer(p:Props) {
       {fatal&&<p className="error" role="alert">{error}</p>}<section className="intro"><div className="eyebrow">PLANETARY ATLAS</div><h1>Your next<br/>horizon.</h1><p>Choose a site. Step onto the surface.</p></section>
       <ContextGuide topic="station"/><section className="region-section" aria-label="Regions">
         <div className="section-label">01 / CHOOSE A REGION <Help label="About regions">Select a site to focus the globe. Bradbury and Boxwork have different prepared terrain and historical scenarios. Jezero is orbital exploration only. Changing site restarts the active excursion; saved observations and traverses are retained.</Help><span className="tag">{REGIONS.length} REGIONS</span></div>
-        <div className="region-list">{REGIONS.map(r=><button key={r.id} title={`${r.shortName}: ${canPlan(r)?"local map, route planning and walkable terrain":"orbital exploration only"}. Changing region starts a fresh excursion.`} className="region-card" aria-pressed={r.id===p.selectedRegionId} onClick={()=>selectRegion(r.id)}><strong>{r.shortName}<span>↗</span></strong><small>{r.id===SUGGESTED_REGION_ID?'Suggested · Detailed terrain & colour imagery':canPlan(r)?'Explore · Plan · Walk':'Orbital exploration'}</small></button>)}</div>
+        <div className="region-list">{REGIONS.map(r=><button key={r.id} title={`${r.shortName}: ${canPlan(r)?"local map, route planning and walkable terrain":"orbital exploration only"}. Changing region starts a fresh excursion.`} className="region-card" data-tour={`region-${tourSlug(r.id)}`} aria-pressed={r.id===p.selectedRegionId} onClick={()=>selectRegion(r.id)}><strong>{r.shortName}<span>↗</span></strong><small>{r.id===SUGGESTED_REGION_ID?'Suggested · Detailed terrain & colour imagery':canPlan(r)?'Explore · Plan · Walk':'Orbital exploration'}</small></button>)}</div>
         {!region&&<p className="caption">Select a marker on the globe or a region above to get started.</p>}
       </section>
       {region&&canPlan(region)&&p.walkChoice}
       {region&&<section className="region-details" aria-label="Selected region">
         <div className="eyebrow">SELECTED REGION</div><h2>{region.name}</h2><p className="description">{region.description}</p>
         <p className="region-coordinates">{Math.abs(region.center.latitude).toFixed(4)}° {region.center.latitude<0?'S':'N'} · {region.center.longitude.toFixed(4)}° E</p>
-        {canPlan(region)?<><span className="capability">{region?.id==='gale-boxwork'?'1 KM PLANNING / 1 M SOURCE POSTS':'2 × 2 KM PREPARED / 5 M TERRAIN GRID'}</span><button className="primary full" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open tablet':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available at the prepared Gale sites.</p></div>}
+        {canPlan(region)?<><span className="capability">{region?.id==='gale-boxwork'?'1 KM PLANNING / 1 M SOURCE POSTS':'2 × 2 KM PREPARED / 5 M TERRAIN GRID'}</span><button className="primary full" data-tour="region-open-tablet" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open tablet':p.dataError?'Regional terrain unavailable':'Loading regional terrain…'}</button><p className="caption">Plan and walk inside the outlined prepared area.</p></>:<div className="coverage-note"><strong>Orbital exploration available</strong><p>Local numeric terrain is not prepared here. Excursion planning and walking are available at the prepared Gale sites.</p></div>}
         <details className="region-source"><summary>Location and coverage</summary><p>{region.locationNote}</p><a href={region.sourceUrl} target="_blank" rel="noreferrer">Location source ↗</a></details>
       </section>}
-      <div className="demo-entry suggested-example"><span className="data-kind">SUGGESTED / MOUNT SHARP BOXWORK</span><h3>Walk the ridges.</h3><p>Detailed colour terrain, Curiosity’s saved traverse and a prepared example route. Choose Routes → Load previous path to load them.</p><button className="primary full" onClick={p.onSuggested}>Explore Boxwork →</button><a href="?demo=boxwork">Direct Boxwork example ↗</a></div><div className="demo-entry"><span className="data-kind">CURATED SCIENCE EXCURSION</span><h3>Read a landscape. Choose a question.</h3><p>Explore Yellowknife Bay’s geological context, compare routes and enter the surface view.</p><button className="primary full" onClick={p.onDemo}>Start guided Gale example →</button><a href="?demo=yellowknife">Direct example link ↗</a></div>
-      <details className="station-data"><summary>Datasets & map layers {error&&<span className="error-badge"> · needs attention</span>}</summary>
+      <div className="demo-entry suggested-example"><span className="data-kind">SUGGESTED / MOUNT SHARP BOXWORK</span><h3>Walk the ridges.</h3><p>Detailed colour terrain, Curiosity’s saved traverse and a prepared example route. Choose Routes → Load previous path to load them.</p><button className="primary full" data-tour="explore-boxwork" onClick={p.onSuggested}>Explore Boxwork →</button><a href="?demo=boxwork">Direct Boxwork example ↗</a></div><div className="demo-entry"><span className="data-kind">CURATED SCIENCE EXCURSION</span><h3>Read a landscape. Choose a question.</h3><p>Explore Yellowknife Bay’s geological context, compare routes and enter the surface view.</p><button className="primary full" data-tour="guided-example" onClick={p.onDemo}>Start guided Gale example →</button><a href="?demo=yellowknife">Direct example link ↗</a></div>
+      <details className="station-data" data-tour="station-layers"><summary>Datasets & map layers {error&&<span className="error-badge"> · needs attention</span>}</summary>
       {region&&<GeologyPanel regionId={region.id} settings={p.geology} selection={p.geologySelection} onSettings={p.onGeologySettings} onSelect={p.onGeologySelect} onContext={()=>controller.current?.focusGeology(region.id)}/>}
       {p.environmentCatalog&&p.environmentSelection&&p.onEnvironmentChange&&<EnvironmentControls catalog={p.environmentCatalog} selection={p.environmentSelection} onChange={p.onEnvironmentChange} prefix="Atlas "/>}
       <section className="dataset-section">
@@ -121,9 +136,10 @@ export default function GlobeExplorer(p:Props) {
     </aside>
     <section className="map-panel" aria-label="Interactive Mars globe">
       <div ref={container} className="globe"/>
-      <div className="region-markers"><svg aria-hidden="true" className="marker-leaders">{positionedMarkers.filter(m=>m.left!==m.x||m.top!==m.y).map(m=><line key={m.id} x1={m.x} y1={m.y} x2={m.left} y2={m.top}/>)}</svg>{positionedMarkers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.left,top:m.top}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
-      <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
-      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<div className="surface-entry"><button title="Enter free exploration on measured terrain. Click terrain, then use WASD and mouse. No route required." className="primary" disabled={!p.data} onClick={p.onSurface}>{p.data?'Enter surface':'Loading terrain…'}</button><button title="Open local Map, Routes, Field data, Display and Events. The surface pauses while Tablet is open." className="secondary" disabled={!p.data} onClick={p.onExplore}>Open tablet</button><small>No route required · WASD + mouse</small></div>}</div>}
+      <div className="region-markers"><svg aria-hidden="true" className="marker-leaders">{positionedMarkers.filter(m=>m.left!==m.x||m.top!==m.y).map(m=><line key={m.id} x1={m.x} y1={m.y} x2={m.left} y2={m.top}/>)}</svg>{positionedMarkers.map(m=><button key={m.id} className="region-marker" data-tour={`region-marker-${tourSlug(m.id)}`} aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.left,top:m.top}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
+      <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" data-tour="global-view" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
+      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&(confirm?<div className="surface-confirm" role="alertdialog" aria-labelledby="surface-confirm-title" aria-describedby="surface-confirm-text" onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();setConfirm(false);}}}><strong id="surface-confirm-title">No excursion planned</strong><p id="surface-confirm-text">Open the tablet to plan a route first. Without a plan you walk in free exploration.</p><div className="surface-entry"><button ref={confirmAction} className="primary" data-tour="confirm-open-tablet" onClick={()=>{setConfirm(false);p.onPlanRoute();}}>Open tablet</button><button className="secondary" data-tour="explore-freely" onClick={()=>{setConfirm(false);p.onSurface();}}>I am sure, explore freely</button></div></div>:<div className="surface-entry"><button title="Open local Map, Routes, Field data, Display and Events. The surface pauses while Tablet is open." className="primary" data-tour="open-tablet" disabled={!p.data} onClick={p.onExplore}>{p.data?'Open tablet':'Loading terrain…'}</button><button title="Enter the surface. Without a planned route you walk in free exploration: click terrain, then WASD and mouse." className="secondary" data-tour="enter-surface" disabled={!p.data} onClick={enterSurface}>Enter surface</button><small>No route required · WASD + mouse</small></div>)}</div>}
+      {hint&&<div className="planet-hint" role="status" data-tour="planet-hint"><span>Zoom out to see the planet view</span><button type="button" className="planet-hint__zoom" data-tour="planet-hint-zoom" onClick={()=>{controller.current?.home();setHint(false);}}>Zoom out</button><button type="button" className="planet-hint__close" aria-label="Dismiss" data-tour="planet-hint-dismiss" onClick={()=>setHint(h=>planetHint(h,{type:'dismiss'}))}><Icon name="close"/></button></div>}
       <div className="map-guide"><span>DRAG TO ROTATE</span><i/><span>SCROLL TO ZOOM</span><i/><span>SELECT A REGION TO EXPLORE</span></div>
       <div className="map-footnote">Global context is a sphere.<br/>Gale relief is relative to the patch minimum.</div>
     </section>

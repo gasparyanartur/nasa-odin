@@ -78,7 +78,7 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 
 ## Tests
 
-- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 35 test files, 170 tests, all passed on 2026-11-15 after the browser planner, saved paths and events came over from the root app.
+- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 38 test files, 191 tests, all passed on 2026-11-15 after the route preview, the planet-view hint, the Enter surface confirm and the 20x default pace were added.
 - The server tests (`npm run test:api`), the planner reference check (`npm run test:planner:reference`) and the full browser suite (`npm run test:browser`) were not re-run after that port.
 
 ## Known limits

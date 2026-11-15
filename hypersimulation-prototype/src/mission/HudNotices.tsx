@@ -74,7 +74,7 @@ export function HudToast({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: ()
 export function HudNoticeList({ log, open, onToggle, onDetails }: { log: Entry[]; open: boolean; onToggle: () => void; onDetails: () => void }) {
   const activeCount = log.filter(e => e.active && e.kind === 'warning').length;
   return <div className="hud-notices">
-      <button type="button" className={`hud-notices__toggle ${activeCount ? 'is-warning' : ''}`} aria-expanded={open} aria-controls="hud-notice-list" aria-label={`Notices, ${activeCount} active`} onClick={onToggle}>
+      <button type="button" className={`hud-notices__toggle ${activeCount ? 'is-warning' : ''}`} data-tour="hud-notices" aria-expanded={open} aria-controls="hud-notice-list" aria-label={`Notices, ${activeCount} active`} onClick={onToggle}>
         <Icon name={activeCount ? 'warning' : 'bell'} /><span aria-hidden="true">{activeCount}</span><kbd aria-hidden="true">N</kbd>
       </button>
       {open && <section id="hud-notice-list" className="hud-notices__list" aria-label="Notice list">

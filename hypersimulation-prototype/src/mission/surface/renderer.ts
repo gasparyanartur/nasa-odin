@@ -36,14 +36,14 @@ export async function createSurface(canvas:HTMLCanvasElement,data:TerrainData,si
       overview=await image(`${data.baseUrl}/ortho.jpg`);
     }
     if(signal.aborted)throw new DOMException('Aborted','AbortError');
-    native=createScene3d(canvas,{scene,terrain,textures:{overview},sky:'#c6a58a',background:'#17231f',maxPixelRatio:2,adaptiveDisplay:!!data.meta.detail,lowDetail:surfacePlan(quality,!!data.meta.detail).lowDetail});
+    native=createScene3d(canvas,{scene,terrain,textures:{overview},sky:'#c6a58a',background:'#151412',maxPixelRatio:2,adaptiveDisplay:!!data.meta.detail,lowDetail:surfacePlan(quality,!!data.meta.detail).lowDetail});
     const renderer=native;
     renderer.setView('walk');renderer.setHillshade(true);renderer.setDrawingRatio(drawingRatio(quality,devicePixelRatio||1));
     let disposed=false;
     const engine:SurfaceEngine={
       eye(p){const q=projectedPoint(p,scale);renderer.setEye({...q,heading_deg:p.heading*180/Math.PI,pitch_deg:(p.pitch??-.12)*180/Math.PI});},
       project(p){const q=projectedPoint(p,scale);return renderer.projectNavigation(q.x,q.y);},
-      overlay(id,kind,points,color,pattern='diagonal'){renderer.setOverlay(id,{kind,coords:points.map(p=>{const q=projectedPoint(p,scale);return[q.x,q.y];}),style:{color,casing:'#17231f',casing_px:0,width_px:2,size_px:7,pattern,hatch_color:color}});},
+      overlay(id,kind,points,color,pattern='diagonal'){renderer.setOverlay(id,{kind,coords:points.map(p=>{const q=projectedPoint(p,scale);return[q.x,q.y];}),style:{color,casing:'#151412',casing_px:0,width_px:2,size_px:7,pattern,hatch_color:color}});},
       remove:id=>renderer.setOverlay(id,null),
       quality:q=>renderer.setDrawingRatio(drawingRatio(q,devicePixelRatio||1)),
       onLost:fn=>renderer.onContextLost(fn),stats:()=>renderer.getStats(),
