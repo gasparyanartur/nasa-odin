@@ -1,0 +1,39 @@
+{
+  "id": "mola-global-relief",
+  "name": "MOLA · Global relief",
+  "description": "Global colour shaded relief from the Mars Orbiter Laser Altimeter. Elevation colours and shaded landforms reveal the shape of the Martian surface.",
+  "source": "NASA / Mars Global Surveyor · MOLA",
+  "sourceUrl": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/WMTSCapabilities.xml",
+  "attribution": "NASA / JPL-Caltech / USGS · Mars Trek",
+  "resolution": "Approximately 463 m/pixel",
+  "reference": "EPSG:104905",
+  "bounds": [
+    -180,
+    -89.9991635,
+    179.9983271,
+    90
+  ],
+  "legend": "Colour shaded relief. Colours represent relative elevation; this image service does not expose numeric elevation values.",
+  "provider": {
+    "type": "wmts",
+    "url": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{TileMatrix}/{TileRow}/{TileCol}.jpg",
+    "layer": "Mars_MGS_MOLA_ClrShade_merge_global_463m",
+    "style": "default",
+    "format": "image/jpeg",
+    "tileMatrixSetID": "default028mm",
+    "tileMatrixLabels": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "tileWidth": 256,
+    "tileHeight": 256
+  },
+  "dataKind": "derived",
+  "acquisitionNote": "Composite orbital display product. This tile service does not expose per-pixel acquisition time; it is not a current surface survey."
+}

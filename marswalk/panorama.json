@@ -1,0 +1,42 @@
+{
+  "schema": "marswalk-panorama",
+  "version": 1,
+  "shows": "Curiosity ground panorama, a 360-degree view of the boxwork ridges and hollows taken by the rover Mastcam at the Boxwork site. Ground photo, not georeferenced to the orbital grid.",
+  "credit": "NASA/JPL-Caltech/MSSS",
+  "licenceNote": "NASA image, resized only. No NASA logo, flag or mission patch is used; NASA does not endorse this project.",
+  "derivedFrom": "Copied byte for byte from the Marswalk app public/media/ by scripts/prepare_boxwork_full.py.",
+  "files": [
+    {
+      "file": "pia26559_4096.webp",
+      "title": "PIA26559 Curiosity's First 360-Degree View of Boxwork Patterns",
+      "credit": "NASA/JPL-Caltech/MSSS",
+      "page_url": "https://science.nasa.gov/photojournal/curiositys-first-360-degree-view-of-boxwork-patterns/",
+      "source_url": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia26/pia26559/PIA26559.jpg",
+      "change": "resized",
+      "width_px": 4096,
+      "height_px": 1083,
+      "note": "Resized only, no other change. NASA does not endorse this project.",
+      "url": "/marswalk/pia26559_4096.webp",
+      "widthPx": 4096,
+      "heightPx": 1083,
+      "bytes": 792506,
+      "sha256": "48afc8eee832aa03df578fdabbb6ccd76773f65d59b3a195e7376ea69f5eef99"
+    },
+    {
+      "file": "pia26559_1024.webp",
+      "title": "PIA26559 Curiosity's First 360-Degree View of Boxwork Patterns",
+      "credit": "NASA/JPL-Caltech/MSSS",
+      "page_url": "https://science.nasa.gov/photojournal/curiositys-first-360-degree-view-of-boxwork-patterns/",
+      "source_url": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia26/pia26559/PIA26559.jpg",
+      "change": "resized",
+      "width_px": 1024,
+      "height_px": 271,
+      "note": "Resized only, no other change. NASA does not endorse this project.",
+      "url": "/marswalk/pia26559_1024.webp",
+      "widthPx": 1024,
+      "heightPx": 271,
+      "bytes": 45108,
+      "sha256": "a721cc8623daf345558461ae7cf4dc6bdce9357a006cdd7c07f60d141b49390d"
+    }
+  ]
+}

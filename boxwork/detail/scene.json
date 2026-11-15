@@ -1,0 +1,136 @@
+{
+ "origin": {
+  "lon": 137.38299966521333,
+  "lat": -4.802997938337184
+ },
+ "origin_projected_m": {
+  "x": 8143335.75,
+  "y": -284696.25
+ },
+ "metres_per_degree": {
+  "lon": 59274.69752330622,
+  "lat": 59274.69752330622
+ },
+ "ground_scale": {
+  "x": 0.9964884795347444,
+  "y": 1.0
+ },
+ "lat_type": "planetocentric",
+ "lon_direction": "east_positive",
+ "projection": {
+  "name": "equirectangular",
+  "radius_m": 3396190.0,
+  "standard_parallel": 0.0,
+  "central_lon": 0.0
+ },
+ "core": {
+  "size_m": 1024,
+  "image_m_per_px": 0.25,
+  "dem_m_per_px": 1,
+  "tiles": [
+   [
+    "ortho/colour_core_0_0.webp",
+    "ortho/colour_core_0_1.webp"
+   ],
+   [
+    "ortho/colour_core_1_0.webp",
+    "ortho/colour_core_1_1.webp"
+   ]
+  ],
+  "tile_px": 2048,
+  "half_res": "ortho/colour_core_half.webp",
+  "dem": "dem_core.bin",
+  "dem_samples": 1025,
+  "slope": "slope_core.bin",
+  "slope_cells": 1024
+ },
+ "surround": {
+  "size_m": 2048,
+  "image": "ortho/colour_surround.webp",
+  "image_m_per_px": 1,
+  "dem": "dem_surround.bin",
+  "dem_samples": 513,
+  "dem_m_per_px": 4
+ },
+ "overview": "ortho/colour_overview.webp",
+ "imagery": {
+  "default": "colour",
+  "colour": {
+   "label": "HiRISE colour mosaic (USGS, July 2025)",
+   "note": "Colour strips fused to the HiRISE RED mosaic and slightly sharpened by the authors. USGS does not state the band mix; this is not a true-colour claim.",
+   "source_id": "usgs_gale_colour_2025",
+   "tiles": [
+    [
+     "ortho/colour_core_0_0.webp",
+     "ortho/colour_core_0_1.webp"
+    ],
+    [
+     "ortho/colour_core_1_0.webp",
+     "ortho/colour_core_1_1.webp"
+    ]
+   ],
+   "half_res": "ortho/colour_core_half.webp",
+   "surround": "ortho/colour_surround.webp",
+   "overview": "ortho/colour_overview.webp"
+  },
+  "grey": {
+   "label": "HiRISE RED mosaic, greyscale",
+   "source_id": "image_25cm",
+   "tiles": [
+    [
+     "ortho/grey_core_0_0.webp",
+     "ortho/grey_core_0_1.webp"
+    ],
+    [
+     "ortho/grey_core_1_0.webp",
+     "ortho/grey_core_1_1.webp"
+    ]
+   ],
+   "half_res": "ortho/grey_core_half.webp",
+   "surround": "ortho/grey_surround.webp",
+   "overview": "ortho/grey_overview.webp"
+  }
+ },
+ "height": {
+  "offset_m": -3897.0,
+  "scale_m": 0.01,
+  "nodata": 65535
+ },
+ "slope": {
+  "scale_deg": 0.25,
+  "nodata": 255,
+  "baseline_m": 5,
+  "method": "Horn's method on the 1 m terrain block-averaged to 5 m (no-data skipped), with true ground spacing, then bilinear back to the 1 m cell centres."
+ },
+ "sources": [
+  "usgs_gale_colour_2025",
+  "image_25cm",
+  "dem_1m",
+  "hrsc"
+ ],
+ "files": {
+  "conditions.json": 11062,
+  "dem_core.bin": 2101250,
+  "dem_surround.bin": 526338,
+  "dose.json": 4353,
+  "ortho/colour_core_0_0.webp": 1181780,
+  "ortho/colour_core_0_1.webp": 1211836,
+  "ortho/colour_core_1_0.webp": 1257606,
+  "ortho/colour_core_1_1.webp": 1278910,
+  "ortho/colour_core_half.webp": 1443572,
+  "ortho/colour_overview.webp": 63424,
+  "ortho/colour_surround.webp": 1402534,
+  "ortho/grey_core_0_0.webp": 889548,
+  "ortho/grey_core_0_1.webp": 927548,
+  "ortho/grey_core_1_0.webp": 937480,
+  "ortho/grey_core_1_1.webp": 938818,
+  "ortho/grey_core_half.webp": 1089604,
+  "ortho/grey_overview.webp": 68930,
+  "ortho/grey_surround.webp": 1168966,
+  "sep-event.json": 908,
+  "slope_core.bin": 1048576,
+  "team-inputs.default.json": 6067,
+  "team-inputs.json": 6067,
+  "waypoints.json": 56611
+ }
+}
