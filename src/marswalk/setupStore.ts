@@ -17,6 +17,14 @@ export function loadSetup(get: GetStorage = () => globalThis.localStorage): Setu
   catch { return DEFAULT_SETUP; }
 }
 
+/** The walk choice stored by an earlier visit, or null when none is stored (then nothing is re-applied on load). */
+export function savedSetup(get: GetStorage = () => globalThis.localStorage): Setup | null {
+  const s = storage(get);
+  if (!s) return null;
+  try { const raw = s.getItem(SETUP_KEY); return raw ? normal(JSON.parse(raw)) : null; }
+  catch { return null; }
+}
+
 /** False when the browser blocks storage: the choice then lives until the page reloads. */
 export function saveSetup(setup: Setup, get: GetStorage = () => globalThis.localStorage): boolean {
   const s = storage(get);

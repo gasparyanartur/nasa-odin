@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegionId } from '../datasets/catalog';
-import { api, type Point, type Pose, type Settings, type TerrainData } from '../mission/data';
+import { api, type Alternative, type Point, type Pose, type Settings, type TerrainData } from '../mission/data';
 import { arrivalText, hazardStatus, shouldSample, stopsAt } from './helmet';
 import { HAZARD_ZONES } from './hazards';
 import { appendSample, closeWalk, listWalks, localStore, saveWalk, startWalk, type Walk, type WalkRegion } from './pathlog';
@@ -9,6 +9,9 @@ import { isFailure, planScienceWalk, type LegResult, type ScienceWalkFailure, ty
 import { loadSetup, saveSetup } from './setupStore';
 import { IDLE, advance, cancelReturn, dismiss, fade, message, reopen, reset as resetStorm, resumeReturn, trigger, AUTO_FADE, type StormState } from './storm';
 import { WALK_STOPS } from './sciencewalk';
+import { loadWalkTerrain } from './preparedRoute';
+
+export type ScienceSource = 'prepared' | 'planned';
 
 export type ScienceState =
   | { status: 'idle' }
@@ -34,27 +37,46 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   // Science walk
   const [science, setScience] = useState<ScienceState>({ status: 'idle' });
   const [scienceSelected, setScienceSelected] = useState(false);
+  // On Boxwork the prepared route is the default science walk; a successful re-plan with the team planner replaces it.
+  const [scienceSource, setScienceSource] = useState<ScienceSource>('prepared');
+  const source = useRef(scienceSource); source.current = scienceSource;
   const scienceRequest = useRef<AbortController | null>(null);
-  const clearScience = useCallback(() => { scienceRequest.current?.abort(); scienceRequest.current = null; setScience({ status: 'idle' }); setScienceSelected(false); }, []);
+  const clearScience = useCallback(() => { scienceRequest.current?.abort(); scienceRequest.current = null; setScience({ status: 'idle' }); setScienceSelected(false); setScienceSource('prepared'); }, []);
+  const choosePrepared = useCallback(() => { setScienceSource('prepared'); setScienceSelected(true); }, []);
+  const choosePlanned = useCallback(() => { setScienceSource('planned'); setScienceSelected(true); }, []);
   const planScience = useCallback(async (habitat: Point, settings: Settings) => {
     if (!data || !boxwork) return;
     scienceRequest.current?.abort();
     const c = new AbortController(); scienceRequest.current = c;
-    setScienceSelected(false);
+    // A selected prepared route stays the guidance while the planner works and when it refuses.
+    if (source.current === 'planned') setScienceSelected(false);
     setScience({ status: 'busy', leg: 0, total: WALK_STOPS.length + 1 });
     const call = (start: Point, goal: Point, s: Settings, elapsedS: number) =>
       api<LegResult>('/api/return', { datasetId: data.meta.id, start, goal, settings: s, mode: 'shortest', elapsedS }, c.signal);
     try {
       const plan = await planScienceWalk(data, habitat, settings, call, (leg, total) => { if (scienceRequest.current === c) setScience({ status: 'busy', leg, total }); });
       if (scienceRequest.current !== c) return;
-      setScience({ status: 'done', plan }); setScienceSelected(true);
+      setScience({ status: 'done', plan }); setScienceSource('planned'); setScienceSelected(true);
     } catch (e) {
       if (scienceRequest.current !== c || (e as Error)?.name === 'AbortError') return;
       setScience({ status: 'failed', failure: isFailure(e) ? e : { message: (e as Error)?.message ?? 'The science walk could not be planned.' } });
     } finally { if (scienceRequest.current === c) scienceRequest.current = null; }
   }, [data, boxwork]);
   const plan = science.status === 'done' ? science.plan : undefined;
-  const ends = useMemo(() => new Map((plan?.approaches ?? []).map(a => [a.stop.id, a.point])), [plan]);
+  const planned = scienceSource === 'planned' ? plan : undefined;
+  const scienceRoute = (prepared?: Alternative) => !scienceSelected || !boxwork ? undefined : planned ? planned.route : prepared;
+  const ends = useMemo(() => new Map((planned?.approaches ?? []).map(a => [a.stop.id, a.point])), [planned]);
+
+  // The 1 m walking grid, loaded only while the prepared route is the guidance.
+  const [walkData, setWalkData] = useState<TerrainData>();
+  const [walkDataError, setWalkDataError] = useState('');
+  const wantWalk = boxwork && scienceSelected && !planned && !!data?.meta.detail;
+  useEffect(() => {
+    if (!wantWalk || !data) { setWalkData(undefined); setWalkDataError(''); return; }
+    const c = new AbortController();
+    loadWalkTerrain(data, c.signal).then(w => { if (!c.signal.aborted) setWalkData(w); }).catch(e => { if ((e as Error).name !== 'AbortError') setWalkDataError((e as Error).message); });
+    return () => c.abort();
+  }, [wantWalk, data]);
 
   // Stops reached on this excursion
   const [visited, setVisited] = useState<Set<number>>(() => new Set());
@@ -117,7 +139,8 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
     setup, persistent, on, boxwork,
     pickMission: (id: MissionId) => { const next = pickMission(setup, id); setSetup(next); return next; },
     toggle: (id: FeatureId) => { const next = toggleFeature(setup, id); setSetup(next); return next; },
-    science, scienceSelected, setScienceSelected, planScience, clearScience, plan,
+    science, scienceSelected, setScienceSelected, planScience, clearScience, plan, scienceSource, choosePrepared, choosePlanned, scienceRoute,
+    walkData: wantWalk ? walkData : undefined, walkDataError: wantWalk ? walkDataError : '',
     visited, arrival, arrivalLine: arrival ? arrivalText(arrival) : undefined,
     storm, stormMessage, runStorm,
     dismissStorm: () => setStorm(dismiss), reopenStorm: () => setStorm(s => reopen(s, Date.now())),

@@ -10,6 +10,7 @@ const RULES: [RegExp, IconName, string][] = [
   [/^Historical temperature unavailable/, 'thermo', 'Temperature unknown'],
   [/^Current temperature is below/, 'thermo', 'Below temperature limit'],
   [/^Movement stopped/, 'nogo', 'Movement stopped'],
+  [/inside a marked hazard area/, 'nogo', 'In hazard area'],
   [/off the planned route/, 'route', 'Off the planned route'],
   [/^Elapsed time exceeds/, 'time', 'Over the time budget'],
   [/detector-dose proxy exceeds/, 'radiation', 'Over the dose budget'],

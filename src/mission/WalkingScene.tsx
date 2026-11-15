@@ -11,7 +11,7 @@ export interface ExtraMark extends Point { id:string; label:string; mark?:string
 
 interface Props {
   active:boolean;imagery:'colour'|'grey';onUnavailable:()=>void;onFailure:()=>void;fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;
-  start:Point;goal:Point;next?:Point;data:TerrainData;route?:Alternative;settings:Settings;initialPose:Pose;
+  start:Point;goal:Point;next?:Point;data:TerrainData;walkData?:TerrainData;route?:Alternative;settings:Settings;initialPose:Pose;
   timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;
   extra?:ExtraMark[];zones?:HazardZone[];wayBack?:Point[];
 }
@@ -54,7 +54,7 @@ export default function WalkingScene(p:Props){
           const dt=Math.max(0,(now-previous)/1000)*current.timeScale;
           const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
           const right=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
-          const advanced=advanceWalk(current.data,pose,current.settings,pose.heading,forward,right,dt);pose={...advanced.pose,pitch:pose.pitch};
+          const advanced=advanceWalk(current.walkData??current.data,pose,current.settings,pose.heading,forward,right,dt);pose={...advanced.pose,pitch:pose.pitch};
           send+=dt;if(send>.1){send=0;current.onPose({...pose});current.onBlocked(advanced.blocked);}
           view.eye(pose);
         }

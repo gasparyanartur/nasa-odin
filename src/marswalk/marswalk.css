@@ -127,6 +127,18 @@
 .science-walk__circles .info-wrap{margin-left:4px;vertical-align:middle}
 .science-walk__failure{margin-top:8px;display:grid;gap:6px}
 .science-walk__failure>strong{font-size:var(--fs-sm);color:var(--alarm-ink)}
+.science-walk-card>small.science-walk__origin{margin-top:8px;font-weight:700;color:var(--brass-hi)}
+.science-walk-card.selected>small.science-walk__origin{color:var(--label-ink)}
+.science-walk-card>strong .science-walk__value{white-space:nowrap}
+.science-walk-card>strong:has(.science-walk__value){flex-wrap:wrap;column-gap:10px;row-gap:2px}
+.science-walk__why,.science-walk__circles{margin:10px 0}
+.science-walk__why .info-wrap{margin-left:4px;vertical-align:middle}
+.science-walk__replan{display:inline-flex;align-items:center;gap:8px;margin:4px 0 2px}
+.science-walk__replan .pict{width:16px;height:16px}
+.hazard-avoid{margin-top:10px}
+.hazard-avoid .check{display:inline-flex;margin-top:0}
+.hazard-avoid .info-wrap{margin-left:6px;vertical-align:middle}
+.hazard-avoid .caption{margin-top:4px}
 
 /* ---------- Look closer additions ---------- */
 .closer-marswalk{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px;align-items:start}

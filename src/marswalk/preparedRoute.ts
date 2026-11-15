@@ -1,5 +1,6 @@
 import raw from '../../public/marswalk/science-route.json';
 import { localToGeo, type Alternative, type Meta, type Point, type Route, type Settings, type TerrainData } from '../mission/data';
+import { heightAt, loadHeightGrid } from './fullData';
 
 export interface PreparedLeg { from: string; to: string; distanceM: number; maxSlopeDeg: number; climbM: number | null; descentM: number | null; pointRange: [number, number] }
 export interface ReadmeLine { line: number; text: string }
@@ -98,4 +99,17 @@ export function walkTerrain(data: TerrainData, height: (x: number, y: number) =>
     heights[i] = z ?? NaN; slopes[i] = s ?? NaN; valid[i] = z !== null && s !== null ? 1 : 0;
   }
   return { ...data, meta: { ...data.meta, size, stepM }, heights, slopes, valid };
+}
+
+/** Loads the full 1 m height grid and the Marswalk 1 m slope cells and builds the walking grid. */
+export async function loadWalkTerrain(data: TerrainData, signal?: AbortSignal): Promise<TerrainData> {
+  const base = data.meta.detail?.baseUrl;
+  if (!base) throw new Error('The 1 m walking grid exists only where the Marswalk detail data is prepared.');
+  const get = async (url: string) => { const r = await fetch(url, { signal }); if (!r.ok) throw new Error(`The 1 m walking grid could not load (${url}).`); return r; };
+  const scene = await (await get(`${base}/scene.json`)).json();
+  const [grid, slopeBuffer] = await Promise.all([loadHeightGrid(signal), get(`${base}/${scene.core.slope}`).then(r => r.arrayBuffer())]);
+  const values = new Uint8Array(slopeBuffer);
+  if (values.length !== scene.core.slope_cells ** 2) throw new Error('The Marswalk slope cells do not match scene.json.');
+  const slope: SlopeCells = { cells: scene.core.slope_cells, sizeM: scene.core.size_m, scaleDeg: scene.slope.scale_deg, nodata: scene.slope.nodata, groundScaleX: scene.ground_scale.x, values };
+  return walkTerrain(data, (x, y) => heightAt(grid, x, y), slope);
 }

@@ -29,7 +29,10 @@ const WalkingScene = lazy(() => import('./mission/WalkingScene'));
 import { RoutePlanningError, type RouteDiagnostics, api, loadTerrain, localToGeo, routeProgress, sample, type Point, type Pose, type ReturnResult, type RouteResult, type Settings, type TerrainData } from './mission/data';
 import { useMarswalk } from './marswalk/useMarswalk';
 import { hudPatch, overlaysFor, type FeatureId, type Setup } from './marswalk/presets';
-import { WALK_STOPS } from './marswalk/sciencewalk';
+import { WALK_STOPS, isFailure, zoneRestriction } from './marswalk/sciencewalk';
+import { HAZARD_ZONES, plannerExclusions } from './marswalk/hazards';
+import { PREPARED_NAME, preparedAlternative, preparedEnd } from './marswalk/preparedRoute';
+import { savedSetup } from './marswalk/setupStore';
 import { placedDrillSites } from './marswalk/stops';
 import { nextStop } from './marswalk/helmet';
 import WalkChoice from './marswalk/WalkChoice';
@@ -85,7 +88,8 @@ export default function App(){
   const [returnRetry,setReturnRetry]=useState(0);
   const request=useRef<AbortController|null>(null),returnRequest=useRef<AbortController|null>(null),lastReturn=useRef<Point & {elapsed?:number}>({x:Infinity,y:Infinity});
   const mw=useMarswalk({regionId:selectedRegionId,data,pose,walking:view==='walk'&&!pauseMenu,session});
-  const science=mw.scienceSelected&&mw.plan?mw.plan.route:undefined;
+  const prepared=useMemo(()=>mw.boxwork&&data?preparedAlternative(data.meta,settings):undefined,[mw.boxwork,data,settings.doseRateMicroGyH]);
+  const science=mw.scienceRoute(prepared),preparedActive=!!science&&science===prepared;
   const route=science??result?.routes[selected];
   const [stopId,setStopId]=useState<number>();
   // A walk choice sets its layers and helmet switches once, when chosen; the team's own switches stay free after that.
@@ -98,10 +102,15 @@ export default function App(){
     const keys=only?hudOf[only]??[]:(Object.keys(patch) as (keyof typeof patch)[]);
     if(keys.length)setHud(h=>({...h,...Object.fromEntries(keys.map(k=>[k,patch[k]]))}));
   }
+  // A saved walk choice sets its layers and helmet switches again after a reload; the guided Bradbury example keeps its own.
+  useEffect(()=>{const saved=savedSetup();if(saved&&!directDemo)applySetup(saved);},[]);
+  const [avoidHazards,setAvoidHazards]=useState(true);
+  const hazardAvoidance=mw.boxwork&&avoidHazards;
   const fieldStore=useFieldStore(),[fieldDraft,setFieldDraft]=useState<FieldRecord>(),[selectedField,setSelectedField]=useState<string>(),[fieldNotice,setFieldNotice]=useState('');
   const sharedFields=useMemo(()=>fieldStore.records.filter(r=>r.regionId===region?.id),[fieldStore.records,region?.id]);
   const activeField=sharedFields.find(r=>r.id===selectedField);
   const missionSettings=useMemo(()=>({...settings,exclusions:[...settings.exclusions,...fieldExclusions(sharedFields)]}),[settings,fieldStore.records,selectedRegionId]);
+  const hazardCircles=useMemo(()=>hazardAvoidance?zoneRestriction(missionSettings.exclusions.length):undefined,[hazardAvoidance,missionSettings.exclusions.length]);
   const fieldContext=useRef({records:sharedFields,settings,data});fieldContext.current={records:sharedFields,settings,data};
   function commitFields(next:FieldRecord[]){
     next=validateRecords(next);
@@ -165,7 +174,9 @@ export default function App(){
   function startDemo(){if(selectedRegionId!=='gale-bradbury')changeRegion('gale-bradbury');invalidate();setPlaying(false);setStart(HOME);setGoal(targetById('yellowknife')!.point);setTargetId('yellowknife');setGuide(true);setMode('inspect');setInspection(targetById('yellowknife')!.point);setSettings({...defaults,dwellMin:10,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH});setGeology({visible:true,opacity:.35,contacts:true});setOverlays({...defaultOverlays(),slope:{visible:true,opacity:.25}});setPose({...HOME,heading:0,elapsed:0});setTimeScale(1);setBlocked(false);lastReturn.current={x:Infinity,y:Infinity};updateDemoUrl(true);setTabletTab('routes');setSession(v=>v+1);setView('plan');}
   async function plan(){
     if(!data||!canPlan(region))return;setPlaying(false);request.current?.abort();const c=new AbortController();request.current=c;setBusy(true);setError('');setRouteFailure(undefined);setResult(undefined);setBack(undefined);
-    try{const r=await api<RouteResult>('/api/routes',{datasetId:data.meta.id,start,goal,settings:missionSettings},c.signal);if(request.current!==c||c.signal.aborted)return;if(r.datasetId!==data.meta.id||r.version!==data.meta.version)throw new Error('Route dataset/version does not match the active terrain. Reload the site and compare again.');setResult(r);setSelected(r.recommendedIndex);setFieldNotice('');lastReturn.current={x:Infinity,y:Infinity};}
+    let planSettings=missionSettings;
+    if(hazardAvoidance){const zones=zoneRestriction(missionSettings.exclusions.length);if(isFailure(zones)){setBusy(false);request.current=null;setError(zones.message);return;}planSettings={...missionSettings,exclusions:[...missionSettings.exclusions,...plannerExclusions(zones)]};}
+    try{const r=await api<RouteResult>('/api/routes',{datasetId:data.meta.id,start,goal,settings:planSettings},c.signal);if(request.current!==c||c.signal.aborted)return;if(r.datasetId!==data.meta.id||r.version!==data.meta.version)throw new Error('Route dataset/version does not match the active terrain. Reload the site and compare again.');setResult(r);setSelected(r.recommendedIndex);setFieldNotice('');lastReturn.current={x:Infinity,y:Infinity};}
     catch(e){if(request.current===c&&(e as Error).name!=='AbortError'){setError((e as Error).message);setRouteFailure(e instanceof RoutePlanningError?e.diagnostics:undefined);}}
     finally{if(request.current===c)setBusy(false);}
   }
@@ -191,11 +202,13 @@ export default function App(){
   const scienceTarget=targetById(targetId);
   const progress=route?routeProgress(route,pose):null;
   const totalReturn=pose.elapsed+(back?.route?.metrics.durationS??0);
-  const reached=route&&(science?mw.visited.size===WALK_STOPS.length&&Math.hypot(pose.x-start.x,pose.y-start.y)<8:Math.hypot(pose.x-goal.x,pose.y-goal.y)<8);
+  const reached=route&&(science?mw.visited.size===WALK_STOPS.length&&(Math.hypot(pose.x-start.x,pose.y-start.y)<8||(preparedActive&&Math.hypot(pose.x-preparedEnd().x,pose.y-preparedEnd().y)<8)):Math.hypot(pose.x-goal.x,pose.y-goal.y)<8);
   const alerts=[...(route?.warnings??[]),...(back?.warnings??[])];
   if(settings.conditionsMode==='historical'&&currentTemperature==null)alerts.push('Historical temperature unavailable at the current mission time.');
   if(currentTemperature!=null&&currentTemperature<settings.minTemperatureK)alerts.push('Current temperature is below the configured demonstration limit.');
   if(blocked)alerts.push('Movement stopped: terrain limit, exclusion, or coverage boundary.');
+  if(mw.hazard?.state==='inside'&&mw.hazard.zone)alerts.push(`You are inside a marked hazard area: ${mw.hazard.zone.label}.`);
+  if(mw.walkDataError&&view==='walk')alerts.push(`${mw.walkDataError} Walking checks the 5 m team grid instead.`);
   if(progress&&progress.offRouteM>25)alerts.push('You are more than 25 m off the planned route.');
   if(pose.elapsed>settings.maxDurationMin*60)alerts.push('Elapsed time exceeds the configured excursion budget.');
   if(pose.elapsed/3600*settings.doseRateMicroGyH>settings.maxDoseMicroGy)alerts.push('Accumulated detector-dose proxy exceeds the configured budget.');
@@ -272,7 +285,7 @@ export default function App(){
 </div>
     {context==='surface'&&data&&canPlan(region)&&<main aria-hidden={tabletOpen||undefined} className={`hud-page ${tabletOpen||pauseMenu?'surface-paused':''} ${visor?'visor-enabled':''}`}>
 <Suspense fallback={<div className="loading-data">Opening the surface HUD…</div>}>
-<WalkingScene key={`${session}-${quality}-${imagery}`} active={view==='walk'&&!pauseMenu} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={science?{...hud,destination:false}:hud} extra={stopMarks} zones={mw.zones} wayBack={wayBack} start={start} goal={goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} route={route} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
+<WalkingScene key={`${session}-${quality}-${imagery}`} active={view==='walk'&&!pauseMenu} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={science?{...hud,destination:false}:hud} extra={stopMarks} zones={mw.zones} wayBack={wayBack} start={start} goal={goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} walkData={mw.walkData} route={route} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
 </Suspense>{!tabletOpen&&<>{visor&&<Visor waypoints={!!progress&&hud.waypoints&&hud.next} pose={pose} target={progress?{x:progress.target[0],y:progress.target[1]}:undefined}/>}<header className="hud-heading">
 <Icon name={reached?'check':route?'route':'compass'}/>
 <div>
@@ -406,6 +419,8 @@ export default function App(){
 <button className="text-button" disabled={!settings.exclusions.length} onClick={()=>changeSettings({...settings,exclusions:[]})}>Clear exclusions</button>
 </div>
 <p className="caption">Manual exclusions are user-declared 40 m areas. Edit field restrictions in Field data.</p>
+{mw.boxwork&&<div className="hazard-avoid"><label className="check"><input type="checkbox" aria-label="Avoid marked hazard areas" checked={avoidHazards} onChange={e=>{setAvoidHazards(e.target.checked);invalidate();lastReturn.current={x:Infinity,y:Infinity};}}/>Avoid marked hazard areas</label><InfoMark title="Avoid marked hazard areas" does={<>Sends the {HAZARD_ZONES.length} marked hazard areas to the route planner with the shortest and gentler routes. The planner takes circles only, so each area is covered completely by circles that can also block open ground up to two circle radii beyond its edge.</>} source="src/marswalk/hazards.ts, toRestrictions; planner limits in server/app.py (radius 5 to 500 m, at most 30 restrictions per request)" coverage={<>The circles share the 30-restriction budget with your manual exclusions and saved field restrictions. The map and the helmet draw the real hazard outlines, never the circles.</>}/>
+<p className="caption">{!avoidHazards?'Off: the shortest and gentler routes may cross the marked hazard areas.':hazardCircles&&!isFailure(hazardCircles)?`On: ${hazardCircles.exclusions.length} circles of ${hazardCircles.radiusM} m radius, ${30-missionSettings.exclusions.length-hazardCircles.exclusions.length} of 30 restrictions left after your own ${missionSettings.exclusions.length}.`:hazardCircles&&isFailure(hazardCircles)?hazardCircles.message:''}</p></div>}
 </section>
         <section>
 <details className="advanced-assumptions">
@@ -455,7 +470,7 @@ export default function App(){
 <button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'—'} K · {d.status}</small>
 </button>)}</div>
 </details>}</>}</section>}
-        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelect={()=>{mw.setScienceSelected(true);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
+        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} source={mw.scienceSource} habitat={start} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelectPrepared={()=>{mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} onSelectPlanned={()=>{mw.choosePlanned();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
         {guide&&<button className="secondary full" onClick={startDemo}>Reset guided example</button>}<button className="text-button reset" onClick={reset}>↺ Reset example excursion</button>
 <p className="caption">Restores example endpoints and mission settings. Saved field restrictions remain active; edit them in Field data.</p>
       {result&&!science&&<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>}</aside>
@@ -556,7 +571,7 @@ export default function App(){
 <div className="wall-label"><h2>Notices</h2>{notices.length?<ul className="closer-notices">{notices.map(n=><li key={n.text} className={n.kind}><Icon name={n.kind==='success'?'check':'warning'}/>{n.text}</li>)}</ul>:<p>No active notices.</p>}{returnError&&<button className="secondary" onClick={retryReturn}>Retry the return estimate</button>}<p className="caption">In the helmet a notice shows as a symbol and one short line under the compass for about 10 seconds; the full list opens with the notice symbol at the side (key N).</p></div>
 <div className="wall-label"><h2>Helmet keys</h2><dl className="closer-keys"><div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk; the mouse looks around</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Pause walking and release the mouse</dd></div><div><dt><kbd>T</kbd></dt><dd>Open this Tablet</dd></div><div><dt><kbd>L</kbd></dt><dd>Log an observation here</dd></div><div><dt><kbd>M</kbd></dt><dd>Pause menu</dd></div><div><dt><kbd>N</kbd></dt><dd>Open or close the notice list</dd></div><div><dt><kbd>X</kbd></dt><dd>Dismiss the newest notice</dd></div><div><dt><kbd>R</kbd></dt><dd>Retry the return estimate when it failed</dd></div></dl></div>
 </section>
-{data&&<MarswalkCloser route={route} science={!!science} routeName={science?'Science walk, 8 stops':route?.mode==='shortest'?'Shortest permitted route':route?'Gentler terrain route':''} data={data} habitat={start} boxwork={mw.boxwork} walks={mw.walks} walksPersistent={mw.walksPersistent} spaceWeather={mw.on.spacewx} storm={mw.storm} stormMessage={mw.stormMessage} onRunStorm={mw.runStorm} onCancelReturn={mw.cancelReturn} onResumeReturn={mw.resumeReturn} onResetStorm={mw.resetStorm} onShowStorm={mw.reopenStorm}/>}
+{data&&<MarswalkCloser route={route} science={!!science} routeName={science?(preparedActive?`${PREPARED_NAME}, prepared by the Marswalk planner`:'Science walk, 8 stops'):route?.mode==='shortest'?'Shortest permitted route':route?'Gentler terrain route':''} data={data} habitat={start} boxwork={mw.boxwork} walks={mw.walks} walksPersistent={mw.walksPersistent} spaceWeather={mw.on.spacewx} storm={mw.storm} stormMessage={mw.stormMessage} onRunStorm={mw.runStorm} onCancelReturn={mw.cancelReturn} onResumeReturn={mw.resumeReturn} onResetStorm={mw.resetStorm} onShowStorm={mw.reopenStorm}/>}
 </main>}
 
       </>}

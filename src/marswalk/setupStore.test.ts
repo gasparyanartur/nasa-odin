@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETUP, pickMission, toggleFeature } from './presets';
-import { SETUP_KEY, loadSetup, saveSetup } from './setupStore';
+import { SETUP_KEY, loadSetup, saveSetup, savedSetup } from './setupStore';
 
 function memory(): Storage {
   const m = new Map<string, string>();
@@ -21,6 +21,17 @@ describe('walk choice storage', () => {
     expect(loadSetup(() => s)).toEqual(DEFAULT_SETUP);
     const full = { ...memory(), setItem: () => { throw new Error('QuotaExceededError'); } } as Storage;
     expect(saveSetup(DEFAULT_SETUP, () => full)).toBe(false);
+  });
+
+  it('reports a stored choice for re-applying after a reload, and none when nothing is stored', () => {
+    const s = memory();
+    expect(savedSetup(() => s)).toBeNull();
+    const chosen = pickMission(DEFAULT_SETUP, 'water');
+    saveSetup(chosen, () => s);
+    expect(savedSetup(() => s)).toEqual(chosen);
+    expect(savedSetup(() => { throw new Error('SecurityError'); })).toBeNull();
+    s.setItem(SETUP_KEY, '{not json');
+    expect(savedSetup(() => s)).toBeNull();
   });
 
   it('cleans unknown values on load', () => {
