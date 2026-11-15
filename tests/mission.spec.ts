@@ -1,19 +1,21 @@
+import { observePlanner } from './planner-helpers';
 import { uiRoutes, uiDisplay, uiClose, uiLayers, uiRestart } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 
 test('real Gale layers, route comparison, walkable HUD and reset',async({page},info)=>{
+  await observePlanner(page);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
   await page.getByRole('button',{name:'Gale · Bradbury',exact:false}).first().click();
   await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
-  await uiRoutes(page);await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  await uiRoutes(page);await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
   await uiLayers(page);await expect(page.locator('.tablet-environment')).toBeVisible();
   await page.getByLabel('Slope',{exact:true}).check();
   const map=page.getByRole('img',{name:'Gale terrain selection map'});
   const bounds=(await map.boundingBox())!;
   await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
   await expect(page.getByLabel('Terrain inspection')).toContainText('-450');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2,{timeout:60000});
   await expect(page.locator('.route-card').first()).toContainText('including return');
   await page.screenshot({timeout:60_000,path:info.outputPath('gale-planner.png'),fullPage:true});
@@ -49,17 +51,17 @@ test('real Gale layers, route comparison, walkable HUD and reset',async({page},i
   expect(colors).toBeGreaterThan(8);
   await page.screenshot({timeout:60_000,path:info.outputPath('gale-walking-hud.png')});
   await uiRestart(page);
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeVisible();
   await expect(page.locator('.route-card')).toHaveCount(0);
   await uiRoutes(page);await page.getByRole('button',{name:'＋ Exclusion',exact:true}).click();
   const b=(await map.boundingBox())!;
   await map.click({position:{x:b.width/2,y:b.height/2}});
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('blocked',{timeout:30000});
   await page.getByRole('button',{name:'Clear exclusions'}).click();
-  await page.route('**/api/routes',route=>route.abort());
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('Route planning is temporarily unavailable');
+  await page.evaluate(()=>window.plannerTest.fail.routes=true);
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('The browser planner was interrupted');
   await page.setViewportSize({width:800,height:700});
   await page.screenshot({timeout:60_000,path:info.outputPath('gale-mobile.png'),fullPage:true});
   expect(errors).toEqual([]);

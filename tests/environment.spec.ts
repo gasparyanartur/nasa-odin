@@ -5,7 +5,7 @@ const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{n
 test('numeric environmental maps, historical data and causal forecast share state without changing a mission',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/?demo=yellowknife');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   const route=await page.locator('.route-card.selected').textContent();
   await uiStation(page);

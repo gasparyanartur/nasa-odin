@@ -3,9 +3,10 @@ import { test,expect } from '@playwright/test';
 const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{name:'Main navigation'});
 
 test('functional contexts, projected waypoints and clock visibility retain one mission',async({page},info)=>{
+  test.setTimeout(240_000);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/?demo=yellowknife');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   const route=await page.locator('.route-card.selected').textContent();
   await uiStation(page);
@@ -36,12 +37,16 @@ test('functional contexts, projected waypoints and clock visibility retain one m
   const earth=await page.locator('.hud-clock-panel time').getAttribute('datetime');
   expect(Math.abs(Date.parse(earth!)-Date.now())).toBeLessThan(10_000);
   await expect(page.locator('.walk-instructions')).toHaveCount(0);
+  // Capture a settled frame; a software GPU can backlog CDP during continuous walking renders.
+  await page.keyboard.press('Escape');
   await page.screenshot({timeout:60_000,path:info.outputPath('v04-projected-hud.png')});
+  await uiFaceRoute(page);
+  // Read projected CSS coordinates directly: CDP box queries can stall on a busy software GPU.
   // Measure after the first painted camera frame and pointer-lock recentering.
-  const before=(await waypoint.boundingBox())!;
+  const before=(await waypoint.evaluate(el=>{if(!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height};}))!;
   // Headless absolute mouse moves do not reliably emit relative pointer-lock deltas.
   await page.evaluate(()=>{for(let i=0;i<3;i++)document.dispatchEvent(new MouseEvent('mousemove',{movementX:30,movementY:-5,bubbles:true}));});
-  await expect.poll(async()=>{const b=await waypoint.boundingBox();return b?Math.abs(b.x-before.x):100;}).toBeGreaterThan(20);
+  await expect.poll(async()=>{const b=await waypoint.evaluate(el=>{if(!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height};});return b?Math.abs(b.x-before.x):100;}).toBeGreaterThan(20);
   await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mousemove',{movementX:Math.PI/.002,bubbles:true})));
   await expect(waypoint).toBeHidden();
   await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mousemove',{movementX:-Math.PI/.002,bubbles:true})));
@@ -50,7 +55,7 @@ test('functional contexts, projected waypoints and clock visibility retain one m
   await expect.poll(async()=>parseFloat((await page.getByTestId('elapsed').textContent())!)).toBeGreaterThan(2);
   await page.keyboard.up('w');await page.keyboard.press('Escape');
   const position=await page.getByTestId('position').textContent(),elapsed=await page.getByTestId('elapsed').textContent(),mars=await page.getByTestId('hud-lmst').textContent();
-  const projectedBefore=await waypoint.boundingBox();
+  const projectedBefore=await waypoint.evaluate(el=>{if(!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height};});
   await page.screenshot({timeout:60_000,path:info.outputPath('v04-hud-paused.png')});
   await uiDisplay(page);
   await expect(page.getByTestId('tablet-position')).toContainText(position!);
@@ -75,7 +80,7 @@ test('functional contexts, projected waypoints and clock visibility retain one m
   await nav(page).getByRole('button',{name:/Tablet/}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
-  if(projectedBefore){await expect(waypoint).toBeVisible();const after=(await waypoint.boundingBox())!;expect(after.x).toBeCloseTo(projectedBefore.x,0);expect(after.y).toBeCloseTo(projectedBefore.y,0);}
+  if(projectedBefore){await expect(waypoint).toBeVisible();const after=(await waypoint.evaluate(el=>{if(!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height};}))!;expect(after.x).toBeCloseTo(projectedBefore.x,0);expect(after.y).toBeCloseTo(projectedBefore.y,0);}
   await page.setViewportSize({width:800,height:700});
   await page.screenshot({timeout:60_000,path:info.outputPath('v04-hud-mobile.png')});
   const compass=(await page.locator('.visor-compass').boundingBox())!,clock=(await page.locator('.hud-clock-panel').boundingBox())!;
@@ -95,7 +100,7 @@ test('tablet touch pinch, drag, tap inspection and placement share transformed c
   await page.setViewportSize({width:1024,height:900});
   await page.goto('/?demo=yellowknife');
   const map=page.getByRole('img',{name:'Gale terrain selection map'});
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
   await map.scrollIntoViewIfNeeded();
   const box=(await map.boundingBox())!;
   const cdp=await page.context().newCDPSession(page);

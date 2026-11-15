@@ -1,3 +1,4 @@
+import { observePlanner } from './planner-helpers';
 import { uiRoutes, uiDisplay, uiClose, uiStation } from './ui-helpers';
 import {test,expect} from '@playwright/test';
 const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{name:'Main navigation'});
@@ -7,7 +8,7 @@ test('Boxwork terrain integrates route, manual HUD, clocks and field records wit
   await page.goto('/?demo=boxwork');
   await expect(page.getByRole('dialog')).toContainText('Gale · Boxwork');
   await uiRoutes(page);await page.locator('.target-picker > summary').click();await expect(page.getByLabel('Boxwork rover evidence')).toBeVisible();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   const route=await page.locator('.route-card.selected').textContent();
   await page.getByLabel('Boxwork imagery').selectOption('grey');
@@ -53,25 +54,18 @@ test('Boxwork terrain integrates route, manual HUD, clocks and field records wit
   expect(errors).toEqual([]);
 });
 
-test('Boxwork defaults plan from Station and explain an outdated planner rejection',async({page})=>{
+test('Boxwork defaults plan from Station and recover from a browser worker failure',async({page})=>{
+  await observePlanner(page);
   await page.goto('/');
   await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Gale · Boxwork/}).click();
   await page.getByRole('button',{name:'Open tablet',exact:true}).last().click();
   await uiRoutes(page);
-  await page.route('**/api/routes',r=>r.fulfill({status:422,contentType:'application/json',body:JSON.stringify({detail:[
-    {type:'literal_error',loc:['body','datasetId'],msg:"Input should be 'gale-bradbury-v1'"},
-    {type:'extra_forbidden',loc:['body','settings','departureHour'],msg:'Extra inputs are not permitted'},
-  ]})}));
-  await page.getByRole('button',{name:'Compare routes',exact:true}).click();
-  const error=page.getByRole('alert').filter({hasText:'Cannot plan route'});
-  await expect(error).toContainText("Terrain dataset: Input should be 'gale-bradbury-v1'");
-  await expect(error).toContainText('Departure hour: Extra inputs are not permitted');
-  await expect(error).toContainText('Restart the planner');
+  await page.route('**/assets/worker-*.js',route=>route.abort());
+  await page.getByRole('button',{name:'Plan route',exact:true}).click();
+  const error=page.getByRole('alert').filter({hasText:'The browser planner was interrupted'});
   await expect(error).toBeInViewport();
-  await page.unroute('**/api/routes');
-  const response=page.waitForResponse(r=>r.url().endsWith('/api/routes'));
-  await page.getByRole('button',{name:'Compare routes',exact:true}).click();
-  expect((await response).ok()).toBe(true);
+  await page.unroute('**/assets/worker-*.js');
+  await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await expect(error).toHaveCount(0);
 });

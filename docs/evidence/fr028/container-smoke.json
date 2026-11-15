@@ -1,0 +1,25 @@
+{
+  "image": "martian-map:fr028",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html"
+    },
+    {
+      "path": "/gale/height.f32",
+      "status": 200,
+      "contentType": "application/octet-stream"
+    },
+    {
+      "path": "/boxwork/detail/dem_core.bin",
+      "status": 200,
+      "contentType": "application/octet-stream"
+    },
+    {
+      "path": "/api/health",
+      "status": 404,
+      "contentType": null
+    }
+  ]
+}

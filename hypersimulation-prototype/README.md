@@ -56,7 +56,7 @@ Typed modules with data in `public/marswalk/`. [The module README](src/marswalk/
 
 ## Run it beside the root app
 
-From the repository root, after the root setup in [Step 4](#step-4-set-up-martian-map-once):
+From the repository root, after `npm ci` in the root (the root README's Step 4). Since 2026-11-15 the root app plans routes in the browser and no longer sets up Python, so create this folder's Python environment once first: `python3 -m venv .venv` and `.venv/bin/python -m pip install -r requirements-runtime.txt`, both run inside this folder. Then:
 
 ```bash
 cd hypersimulation-prototype
@@ -75,7 +75,7 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 `API_PORT` and `WEB_PORT` still override the defaults, as in Step 5 below.
 
 - **No `npm install` needed here.** Node finds the root `node_modules/` from this folder. Running `npm ci` in this folder is optional; it gives the folder its own copy.
-- **Python:** the planner and every Python script here use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`). The root setup is enough. To give this folder its own environment, run the Step 4 Python lines inside this folder.
+- **Python:** the planner and every Python script here use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`). A root `.venv` exists only on machines set up before 2026-11-15, so create this folder's own environment as described above.
 
 ## Tests
 

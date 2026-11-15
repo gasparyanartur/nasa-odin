@@ -1,3 +1,4 @@
+"""Offline Python reference API for tests; the app uses the browser planner."""
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -126,7 +127,7 @@ def return_route(req: ReturnRequest):
 
 
 # Mount after API routes so unknown APIs/assets remain proper 404s.
-# Vite handles development; the container serves the production build directly.
+# Static mounting is retained for offline reference tests, not deployment.
 STATIC = Path(os.environ.get('MARTIAN_STATIC_DIR', DATA.parents[1] / 'dist'))
 if os.environ.get('MARTIAN_STATIC_DIR') and not STATIC.is_dir():
     raise RuntimeError('MARTIAN_STATIC_DIR does not contain a production build.')

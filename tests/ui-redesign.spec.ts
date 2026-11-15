@@ -1,3 +1,4 @@
+import { observePlanner, plannerCount, plannerReply } from './planner-helpers';
 import { test, expect, type Page } from '@playwright/test';
 
 const tablet=(page:Page)=>page.getByRole('dialog');
@@ -18,6 +19,7 @@ async function walk(page:Page) {
   await expect.poll(async()=>parseFloat((await page.getByTestId('elapsed').textContent())!)).toBeGreaterThan(1);
   await page.keyboard.up('w');
   await page.keyboard.press('Escape');
+  await expect(page.locator('.walk-instructions')).toBeVisible();
 }
 async function visibleWithinViewport(page:Page,selector:string) {
   const boxes=await page.locator(selector).evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length).map(n=>{const b=n.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,w:innerWidth,h:innerHeight};}));
@@ -76,14 +78,14 @@ test('planning and route adoption preserve walking pose, layers and profile rema
   const position=await page.getByTestId('position').textContent(),elapsed=await page.getByTestId('elapsed').textContent();
   await page.getByRole('button',{name:'Open tablet',exact:true}).click();
   await tool(page,'Routes').click();
-  await expect(page.getByLabel('Route planning')).toContainText('from habitat');
+  await expect(page.getByRole('complementary',{name:'Routes',exact:true})).toContainText('from habitat');
   await page.locator('.advanced-assumptions > summary').click();
   await page.getByLabel('Walking speed',{exact:true}).fill('1');
   await expect(page.getByTestId('tablet-explore-position')).toContainText(elapsed!.replace(' s',' s elapsed'));
   await page.locator('.target-picker > summary').click();
   await page.getByRole('button',{name:'Plan to Rocknest →',exact:true}).click();
   await expect(page.getByTestId('tablet-explore-position')).toContainText(elapsed!.replace(' s',' s elapsed'));
-  await tablet(page).getByRole('button',{name:'Compare routes',exact:true}).click();
+  await tablet(page).getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await expect(page.getByRole('button',{name:'Walk selected route →',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Walk selected route →',exact:true}).click();
@@ -107,16 +109,16 @@ test('planning and route adoption preserve walking pose, layers and profile rema
   await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
 });
 
-test('return API failure does not block free walking and can be retried',async({page})=>{
-  await page.route('**/api/return',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({detail:'Return estimate temporarily unavailable'})}));
+test('return worker failure does not block free walking and can be retried',async({page})=>{
+  await observePlanner(page,{fail:{return:true}});
   await enter(page,'yellowknife');
   await expect(page.locator('.hud-bottom')).toContainText('Unavailable');
   await walk(page);
   await expect(page.getByRole('button',{name:'Retry return estimate'})).toBeVisible();
-  await page.unroute('**/api/return');
-  const retried=page.waitForResponse(r=>r.url().endsWith('/api/return'));
+  await page.evaluate(()=>window.plannerTest.fail.return=false);
+  const mark=await plannerCount(page);
   await page.getByRole('button',{name:'Retry return estimate'}).click();
-  const response=await retried;expect(await response.text()).not.toContain('temporarily unavailable');expect(response.ok()).toBe(true);
+  const response=await plannerReply(page,'return',mark);expect(response.reply).toHaveProperty('result');
   await expect(page.locator('.hud-bottom')).not.toContainText('Unavailable');
   await expect(page.getByRole('button',{name:'Retry return estimate'})).toHaveCount(0);
 });

@@ -2,7 +2,7 @@
 
 Note (2026-11-15): this is a dated record. Paths under `hypersimulation-prototype/app/src` and the old static Marswalk app it names were removed from the tree on 2026-11-15; they remain in git history at commit 66ee212.
 
-Date: 2026-11-15. Status: Draft. The user selected minimal hosting and accepts a client-side application. This revises the earlier Docker/Render proposal. Application migration and deployment have not started.
+Date: 2026-11-15. Status: In progress. The user authorized FR-028 on 2026-11-15. FR-028 is complete locally after the review below; hosting/publication remains FR-029 and has not started. This revises the earlier Docker/Render proposal.
 
 ## Goal and success criteria
 
@@ -14,9 +14,9 @@ Success means the production build works on a static file server with no Python 
 
 The [React/Vite frontend](../../package.json) already renders the globe and surface in the browser. Approximately 25 MB of prepared data is under `public/`; the largest prepared file is about 2.1 MB. Both height/slope/validity grids and historical conditions are already loaded by the browser. Bradbury uses a 401 × 401 grid; Boxwork uses 201 × 201. Field records already persist locally with import/export.
 
-The remaining application-server dependency is in [App.tsx](../../src/App.tsx): `/api/routes` compares outbound/return candidates and conditions; `/api/return` estimates return from the current pose. [server/planner.py](../../server/planner.py), [server/conditions.py](../../server/conditions.py) and [server/app.py](../../server/app.py) define the behavior to preserve. These operate on bundled data and user settings rather than server secrets or shared records. Client-side execution is therefore a suitable architectural option; its performance has not yet been measured.
+The application now calls [BrowserPlanner](../../src/mission/planner/client.ts) through [usePlanner](../../src/mission/planner/usePlanner.ts). Route comparison, return estimates, conditions and diagnostics execute in [the TypeScript planner](../../src/mission/planner/core.ts) inside module Web Workers. The former HTTP API helper and Vite API proxies are removed. [server/planner.py](../../server/planner.py), [server/conditions.py](../../server/conditions.py) and [server/app.py](../../server/app.py) remain offline reference/test tools only.
 
-The existing Dockerfile, Render configuration and [release guide](../release.md) describe the previous server-hosted approach. Keep that distinction explicit until the migration is complete. Current uncommitted UI work must be preserved and included deliberately in the chosen release snapshot.
+The Docker image now serves files without Python. Development/demo startup and production browser tests no longer launch a backend; browser acceptance uses a files-only server. [Release instructions](../release.md) describe the static build and separate FR-029 handoff. Concurrent expedition-feedback/UI work has been preserved; verification uses an isolated build directory, port and test outputs.
 
 ## Proposed approach
 
@@ -54,12 +54,12 @@ Global imagery still comes from Mars Trek/ArcGIS, and fonts currently use Google
 
 | Milestone | Status | Deliverable and completion evidence |
 | --- | --- | --- |
-| 1. Browser planner | Proposed | Port search, diagnostics and conditions; compare representative successful/blocked/disconnected and return cases against Python on both real sites. Preserve assumptions and data registration. |
-| 2. Static application | Proposed | Replace API use with the browser worker; verify cancellation, stale-result handling, field restrictions, route comparison, return updates and UI responsiveness. Test a production build with no Python process. |
+| 1. Browser planner | Complete locally | Port search, diagnostics and conditions; compare representative successful/blocked/disconnected and return cases against Python on both real sites. Preserve assumptions and data registration. |
+| 2. Static application | Complete locally | Replace API use with the browser worker; verify cancellation, stale-result handling, field restrictions, route comparison, return updates and UI responsiveness. Test a production build with no Python process. |
 | 3. Cloudflare scaffolding | Proposed | Add minimal static deployment configuration and update run/release instructions. Validate the built files, workers, binary responses, cache behavior and direct example links. Reuse existing tests rather than introducing a broad release platform. |
 | 4. Public acceptance | Proposed | Publish the reviewed snapshot; verify both Gale sites, planning, walking, field export/reload, Jezero capability limits and external-layer failure recovery at the actual HTTPS URL. Record release identity and observed performance. |
 
-The next milestone is the browser planner and a focused parity/performance check. Continue deployment only after the application works as a static build.
+FR-028 covers milestones 1–2. FR-029 covers hosting scaffolding and public acceptance in milestones 3–4. The latter remain unstarted.
 
 ## Risks and open decisions
 
@@ -71,4 +71,16 @@ The next milestone is the browser planner and a focused parity/performance check
 
 ## Next milestone
 
-Implement the browser planner in a Web Worker and verify it against the Python reference. Then connect it to the application and prove that the production build functions with static hosting alone.
+FR-029: configure the chosen Cloudflare static hosting and publish the reviewed build, then verify the actual public HTTPS URL. No hosting action is part of this completed FR-028 migration.
+
+## FR-028 completion review — 2026-11-15
+
+Complete locally. The app now uses a typed TypeScript planner in browser module workers for outbound/return search, historical conditions, departure comparison and diagnostics. Independent route/return lanes cache their own terrain copies, terminate superseded CPU work and reject late results. The main rendering/collision arrays remain attached. No prepared scientific data, route objectives, walking policy or field-record format changed.
+
+Development/demo startup, Vite configuration, recording readiness checks, Docker and production browser acceptance no longer require Python or `/api`. The optional container and acceptance server serve files only. Python remains available solely for offline preparation/reference tests. Documentation and the backlog now distinguish FR-028 from publishing under FR-029. Concurrent expedition-feedback implementation was retained; its walk-test helper received explicit pointer-lock readiness assertions, without changing its implementation.
+
+Verification: **76 frontend tests**, **26 planner-reference checks** (20 real-data Python parity cases plus six synthetic cases), **33 offline Python tests**, a production build and **32 hardware-accelerated production browser scenarios** passed. Parity compares full route sequences, metrics, profiles, conditions, recommendation and diagnostics with relative numeric tolerance `1e-7`. The files-only checks cover both sites, walking, restrictions, saved records, return updates, worker load/crash recovery and absence of runtime API requests. Container binary responses and missing-API behavior were checked. The known large-bundle warning remains. See [verification and logs](../evidence/fr028/verification.json).
+
+Earlier forced-SwiftShader verification passed 30/32 scenarios, with pause/retry input and screenshot timing failures; a clock-only retry exceeded its original 120-second budget. Hardware checks also exposed test helpers sending keys before pointer-lock handlers settled. Explicit lock/unlock readiness checks fixed the affected traverse/event/retry scenarios; the final complete hardware run passed all 32. The updated full software suite has not been rerun, and no acceptable software-rendering POV performance is claimed.
+
+A bounded [desktop worker probe](../evidence/fr028/worker-performance.json) completed route comparisons during active POV. Warm-up and concurrent QA prevent causal frame-rate comparisons. Intended-laptop startup/FPS gates remain open in the surface integration work; FR-028 does not establish a 30 FPS guarantee. The overall deployment plan remains in progress until FR-029 completes hosting and public-URL acceptance.

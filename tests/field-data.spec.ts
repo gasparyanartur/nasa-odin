@@ -1,3 +1,4 @@
+import { observePlanner, plannerCount, plannerReply } from './planner-helpers';
 import { uiTablet, uiRoutes, uiDisplay, uiStation, uiClose, uiFaceRoute } from './ui-helpers';
 import { test,expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
@@ -14,7 +15,7 @@ async function create(page:import('@playwright/test').Page,title:string,kind='no
 test('field notes, HUD inspection, pose capture, undo, export/import and reload retain provenance',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/?demo=yellowknife');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
   await fields(page);await create(page,'Layered outcrop');
   await page.getByLabel('Field northing',{exact:true}).fill('');await page.getByLabel('Field northing',{exact:true}).pressSequentially('-10.5');await expect(page.getByLabel('Field northing',{exact:true})).toHaveValue('-10.5');
   await page.getByLabel('Field record description',{exact:true}).fill('Layering interpreted during simulated exploration.');
@@ -55,9 +56,10 @@ test('field notes, HUD inspection, pose capture, undo, export/import and reload 
 });
 
 test('drawn geology and point readings remain annotations; declared circles change both route candidates',async({page},info)=>{
+  await observePlanner(page);
   await page.goto('/?demo=yellowknife');
-  const initial=page.waitForResponse(r=>r.url().endsWith('/api/routes')&&r.ok());await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();const before=await(await initial).json();
-  const points=before.routes[before.recommendedIndex].points;const middle=points[Math.floor(points.length/2)];
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();const before=(await plannerReply(page,'routes')).reply!;if(!('result' in before))throw new Error('Planner failed');const beforeResult=before.result as import('../src/mission/data').RouteResult;
+  const points=beforeResult.routes[beforeResult.recommendedIndex].points;const middle=points[Math.floor(points.length/2)];
   await fields(page);
   for(const [kind,title,vertices] of [['unit','Interpreted unit',[[.56,.55],[.63,.55],[.63,.62]]],['contact','Interpreted contact',[[.4,.4],[.43,.42]]]] as const){
     await create(page,title,kind);await expect(page.getByRole('button',{name:'Use astronaut position',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Pick / draw on map',exact:true}).click();
@@ -72,8 +74,8 @@ test('drawn geology and point readings remain annotations; declared circles chan
   await create(page,'Declared obstacle','obstacle',middle[0],middle[1]);await page.getByLabel('Field obstacle radius').fill('20');await page.getByLabel('Restrict travel',{exact:true}).check();await page.getByRole('button',{name:'Save field record',exact:true}).click();await expect(nav(page).getByRole('button',{name:/HUD/})).toBeEnabled();
   await page.getByLabel('Show Declared obstacle',{exact:true}).uncheck();
   await uiRoutes(page);
-  const reroute=page.waitForResponse(r=>r.url().endsWith('/api/routes')&&r.ok());await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();const response=await reroute,data=await response.json();
-  expect(response.request().postDataJSON().settings.exclusions).toEqual([{x:middle[0],y:middle[1],radius:20}]);
+  const mark=await plannerCount(page);await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();const response=await plannerReply(page,'routes',mark);if(!('result' in response.reply!))throw new Error('Planner failed');const data=response.reply.result as import('../src/mission/data').RouteResult;
+  expect(response.work.request.settings!.exclusions).toEqual([{x:middle[0],y:middle[1],radius:20}]);
   for(const route of data.routes)for(const [x,y] of route.points)expect(Math.hypot(x-middle[0],y-middle[1])).toBeGreaterThan(20+5/Math.sqrt(2));
   await fields(page);await page.getByLabel('Show Declared obstacle',{exact:true}).check();await page.screenshot({timeout:60_000,path:info.outputPath('v05-field-geometry.png')});
   await uiClose(page);await uiFaceRoute(page);await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:'Inspect field record Declared obstacle',exact:true})).toBeVisible();
@@ -81,9 +83,9 @@ test('drawn geology and point readings remain annotations; declared circles chan
   await page.screenshot({timeout:60_000,path:info.outputPath('v05-field-scene-geometry.png')});
   await page.getByRole('button',{name:'Edit on tablet →',exact:true}).click();
   await page.getByRole('button',{name:'Edit Declared obstacle',exact:true}).click();await page.getByLabel('Field easting').fill('0');await page.getByLabel('Field northing').fill('0');await page.getByRole('button',{name:'Save field record',exact:true}).click();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();await expect(page.getByRole('alert')).toContainText('blocked');
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();await expect(page.getByRole('alert')).toContainText('blocked');
   await fields(page);await page.getByRole('button',{name:'Edit Declared obstacle',exact:true}).click();await page.getByLabel('Restrict travel',{exact:true}).uncheck();await page.getByRole('button',{name:'Save field record',exact:true}).click();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
 });
 
 test('unread storage is preserved, imports fail atomically and quota errors retain exportable records',async({page})=>{
@@ -102,11 +104,12 @@ test('unread storage is preserved, imports fail atomically and quota errors reta
 });
 
 test('live pose logging and constraint replanning retain mission state and use restrictions for return',async({page})=>{
+  await observePlanner(page);
   await page.goto('/?demo=yellowknife');
   await uiDisplay(page);
   await page.getByLabel('Graphics quality').selectOption('low');await page.getByLabel('Simulation pace').selectOption('20');
   await uiRoutes(page);
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
   await uiClose(page);
   await expect(page.locator('.walking-scene canvas')).toBeVisible();await page.waitForTimeout(1000);
   await page.locator('.walking-scene canvas').click({position:{x:450,y:350}});await page.keyboard.down('w');
@@ -121,9 +124,9 @@ test('live pose logging and constraint replanning retain mission state and use r
   await expect(page.getByLabel('Field record title')).toHaveValue('Live pose record');await expect(page.getByRole('status').filter({hasText:'unfinished draft'})).toBeVisible();
   await page.getByRole('button',{name:'Save field record',exact:true}).click();await expect(page.getByLabel('Field record details')).toContainText(`${elapsed} elapsed`);await expect(page.getByRole('status').filter({hasText:'unfinished draft'})).toHaveCount(0);
   await create(page,'Remote restricted circle','obstacle',-400,-400);await page.getByLabel('Restrict travel',{exact:true}).check();await page.getByRole('button',{name:'Save field record',exact:true}).click();
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
-  const returning=page.waitForRequest(r=>r.url().endsWith('/api/return'));
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();await expect(page.locator('.route-card')).toHaveCount(2);
+  const returnMark=await plannerCount(page);
   await uiClose(page);
-  expect((await returning).postDataJSON().settings.exclusions).toEqual([{x:-400,y:-400,radius:40}]);
+  expect((await plannerReply(page,'return',returnMark)).work.request.settings!.exclusions).toEqual([{x:-400,y:-400,radius:40}]);
   await expect(page.getByTestId('position')).toHaveText(position!);await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
 });

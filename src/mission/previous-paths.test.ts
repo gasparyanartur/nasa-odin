@@ -1,0 +1,11 @@
+import {describe,it,expect} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {canMove,type TerrainData} from './data';
+import {parsePreviousPaths} from './previous-paths';
+const json=(p:string)=>JSON.parse(readFileSync(p,'utf8'));
+function terrain(site:string){const base=`public/${site}`,meta=json(`${base}/manifest.json`),buffer=(f:string)=>{const b=readFileSync(`${base}/${f}`);return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength);};return {meta,heights:new Float32Array(buffer('height.f32')),slopes:new Float32Array(buffer('slope.f32')),valid:new Uint8Array(buffer('valid.u8'))} as TerrainData;}
+describe('saved historical and example paths',()=>{
+ it('retains the exact published Curiosity positions and sols without inventing elapsed time',()=>{const data=terrain('boxwork'),paths=parsePreviousPaths(json('public/boxwork/previous-paths.json'),data),rover=paths.find(p=>p.kind==='rover')!,evidence=json('public/boxwork/evidence.json');expect(rover.points).toEqual(evidence.path);expect(rover.sourceUrl).toBe(evidence.sourceUrl);expect(rover.elapsedS).toBeUndefined();expect(rover.estimatedDurationS).toBeUndefined();});
+ for(const site of ['boxwork','gale'])it(`provides a labeled ${site} plan that follows valid terrain under its stated constraints`,()=>{const data=terrain(site),plan=parsePreviousPaths(json(`public/${site}/previous-paths.json`),data).find(p=>p.kind==='example')!;expect(plan.description).toContain('not an executed');expect(plan.elapsedS).toBeUndefined();expect(plan.estimatedDurationS).toBeGreaterThan(0);expect(plan.points[0]).toEqual(data.meta.defaultStart??{x:0,y:0});expect(plan.points.at(-1)).toEqual(data.meta.defaultGoal??{x:600,y:450});for(let i=1;i<plan.points.length;i++)expect(canMove(data,plan.points[i-1],plan.points[i],{maxSlopeDeg:20,exclusions:[]})).toBe(true);});
+ it('rejects paths for another dataset/version, out-of-bounds points and invented rover times',()=>{const data=terrain('boxwork'),v=json('public/boxwork/previous-paths.json');for(const patch of [{version:999},{datasetId:'other'},{points:[{x:0,y:0},{x:1000,y:0}]},{elapsedS:100},{estimatedDurationS:100}])expect(()=>parsePreviousPaths({...v,paths:[{...v.paths[0],...patch}]},data)).toThrow();});
+});

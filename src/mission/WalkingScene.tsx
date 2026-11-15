@@ -1,14 +1,16 @@
+import {captionBounds,rectInsideVisor} from './visor-layout';
+import {circle,exposedArea,type ExpeditionEvent} from './events';
 import { useEffect, useRef, useState } from 'react';
 import { SCIENCE } from '../datasets/geology';
 import { anchor, colorFor, type FieldRecord } from '../field/model';
 import type { HudSettings } from './HudSettings';
-import { advanceWalk, type Alternative, type Point, type Pose, type Settings, type TerrainData } from './data';
+import { advanceWalk, type Route, type Point, type Pose, type Settings, type TerrainData } from './data';
 import type { GraphicsQuality } from './conditions';
 import { createSurface, type SurfaceEngine } from './surface/renderer';
 
 interface Props {
-  active:boolean;imagery:'colour'|'grey';onUnavailable:()=>void;onFailure:()=>void;fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;
-  start:Point;goal:Point;next?:Point;data:TerrainData;route?:Alternative;settings:Settings;initialPose:Pose;
+  paths:{id:string;points:Point[];color:string}[];events:ExpeditionEvent[];returning:boolean;active:boolean;imagery:'colour'|'grey';onUnavailable:()=>void;onFailure:()=>void;fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;
+  start:Point;goal:Point;next?:Point;data:TerrainData;route?:Route;settings:Settings;initialPose:Pose;
   timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;
 }
 export default function WalkingScene(p:Props){
@@ -16,12 +18,12 @@ export default function WalkingScene(p:Props){
   const [locked,setLocked]=useState(false),[ready,setReady]=useState(false),[status,setStatus]=useState('Loading measured surface…'),[error,setError]=useState('');
   const labels=useRef(new Map<string,HTMLDivElement>());
   const points=[...(p.hud.waypoints?[
-    ...(p.hud.next&&p.next?[{...p.next,id:'next',label:'Next route waypoint'}]:[]),
+    ...(p.hud.next&&p.next?[{...p.next,id:'next',label:p.returning?'Return to habitat':'Next route waypoint'}]:[]),
     ...(p.hud.habitat?[{...p.start,id:'habitat',label:'Habitat'}]:[]),
     ...(p.hud.destination&&p.route?[{...p.goal,id:'destination',label:'Destination'}]:[]),
     ...(p.data.evidence?.markers??[]).filter(m=>p.hud.science.includes(m.id)),
     ...SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury')&&p.hud.science.includes(t.id)).map(t=>({...t.point,id:t.id,label:t.name})),
-  ]:[]),...p.fields.filter(r=>r.visible).map(r=>({...anchor(r),id:`field-${r.id}`,label:r.title}))];
+  ]:[]),...p.events.map(e=>({...e.kind==='solar'?p.start:e.center,id:`event-${e.id}`,label:e.kind==='solar'?'Shelter boundary · solar scenario':'Danger area · dust scenario'})),...p.fields.filter(r=>r.visible).map(r=>({...anchor(r),id:`field-${r.id}`,label:r.title}))];
   useEffect(()=>{if(!p.active&&document.pointerLockElement===canvas.current)document.exitPointerLock();},[p.active]);
   const currentPoints=useRef(points);currentPoints.current=points;
   useEffect(()=>{
@@ -58,10 +60,10 @@ export default function WalkingScene(p:Props){
         const placed:{x:number;y:number}[]=[];
         for(const point of currentPoints.current){
           const label=labels.current.get(point.id);if(!label)continue;
-          const projected=view.project(point);label.hidden=!projected.visible;if(!projected.visible)continue;
+          const projected=view.project(point);label.hidden=!projected.visible||(current.hud.visor&&!rectInsideVisor({x:projected.sx-15,y:projected.sy-15,width:30,height:30},el.clientWidth,el.clientHeight));if(label.hidden)continue;
           const {sx:x,sy:y}=projected,w=el.clientWidth,h=el.clientHeight;
-          const clampX=(v:number)=>Math.max(85,Math.min(w-85,v));
-          const minY=100,maxY=Math.max(minY,h-190),baseY=Math.max(minY,Math.min(maxY,y+30));
+          const bounds=captionBounds(w,h),clampX=(v:number)=>Math.max(bounds.left,Math.min(bounds.right,v));
+          const minY=bounds.top,maxY=bounds.bottom,baseY=Math.max(minY,Math.min(maxY,y+30));
           let center=clampX(x),labelY=baseY,done=false;
           for(const dx of [0,170,-170,340,-340]){if(done)break;for(let row=0;row<16;row++){const dy=row===0?0:Math.ceil(row/2)*72*(row%2?1:-1),cy=baseY+dy,cx=clampX(x+dx);if(cy<minY||cy>maxY||placed.some(q=>Math.abs(q.x-cx)<164&&Math.abs(q.y-cy)<70))continue;center=cx;labelY=cy;done=true;break;}}
           placed.push({x:center,y:labelY});const offset=labelY-y-30,caption=label.querySelector<HTMLElement>('.waypoint-caption');
@@ -76,18 +78,25 @@ export default function WalkingScene(p:Props){
   useEffect(()=>{engine.current?.quality(p.quality);},[p.quality,ready]);
   useEffect(()=>{
     const view=engine.current;if(!view)return;const ids:string[]=[];
-    const overlay=(id:string,kind:'line'|'polygon'|'points',points:Point[],color:string)=>{ids.push(id);view.overlay(id,kind,points,color);};
-    if(p.data.evidence){overlay('rover-path','line',p.data.evidence.path,'#a5d8d0');overlay('drill-positions','points',p.data.evidence.markers,'#a5d8d0');}
-    if(p.route)overlay('route','line',p.route.points.map(([x,y])=>({x,y})),'#ffe4a3');
+    const overlay=(id:string,kind:'line'|'polygon'|'points',points:Point[],color:string,pattern?:'diagonal'|'cross')=>{ids.push(id);view.overlay(id,kind,points,color,pattern);};
+    for(const path of p.paths)overlay(`previous-${path.id}`,'line',path.points,path.color);
+    if(p.data.evidence){overlay('drill-positions','points',p.data.evidence.markers,'#a5d8d0');}
+    for(const event of p.events){
+      const center=event.kind==='solar'?p.start:event.center;
+      overlay(`event-${event.id}`,event.kind==='solar'?'line':'polygon',circle(center,event.radiusM),event.kind==='solar'?'#9defbf':'#ff7755','cross');
+      // A solar event is regional exposure, with a green habitat shelter boundary.
+      if(event.kind==='solar')overlay(`exposed-${event.id}`,'polygon',exposedArea(p.start,event.radiusM,p.data.meta.extentM),'#ff7755','cross');
+    }
+    if(p.route)overlay('route','line',p.route.points.map(([x,y])=>({x,y})),p.returning?'#79f0da':'#ffe4a3');
     for(const r of p.fields.filter(r=>r.visible&&['unit','contact','obstacle'].includes(r.kind)&&!(r.kind==='obstacle'&&r.restrictTravel))){const points=r.kind==='obstacle'?Array.from({length:97},(_,i)=>({x:r.points[0].x+r.radiusM!*Math.cos(i/96*Math.PI*2),y:r.points[0].y+r.radiusM!*Math.sin(i/96*Math.PI*2)})):r.points;overlay(`field-${r.id}`,r.kind==='contact'?'line':'polygon',points,colorFor(r.kind));}
     p.settings.exclusions.forEach((e,i)=>overlay(`restriction-${i}`,'polygon',Array.from({length:97},(_,k)=>({x:e.x+e.radius*Math.cos(k/96*Math.PI*2),y:e.y+e.radius*Math.sin(k/96*Math.PI*2)})),'#ffaf85'));
     return()=>ids.forEach(id=>view.remove(id));
-  },[ready,p.route,p.fields,p.settings.exclusions]);
+  },[ready,p.route,p.fields,p.settings.exclusions,p.events,p.start,p.returning,p.paths]);
   return <div className="walking-scene">
     <canvas className="surface-canvas" ref={canvas} aria-label="Measured surface simulator"/>
-    {status&&<div className="surface-status" role="status">{status}</div>}
+    {status&&<div className="surface-status" role="status" title={status}>{status}</div>}
     {error&&<div className="scene-unavailable" role="alert"><p>{error}</p><button onClick={p.onUnavailable}>Open Tablet · keep mission</button></div>}
-    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)labels.current.set(point.id,el);else labels.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id} ${point.id.startsWith('field-')?'field-waypoint':''}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption">{point.id.startsWith('field-')?<button aria-label={`Inspect field record ${point.label}`} onClick={()=>{if(!locked)p.onFieldSelect(point.id.slice(6));}}>{point.label}</button>:<b>{point.label}</b>}<small/></div></div>)}</div>
+    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)labels.current.set(point.id,el);else labels.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id} ${point.id.startsWith('field-')?'field-waypoint':''}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption">{point.id.startsWith('field-')?<button aria-label={`Inspect field record ${point.label}`} onClick={()=>{if(!locked)p.onFieldSelect(point.id.slice(6));}}>{point.label}</button>:<b title={point.label}>{point.label}</b>}<small/></div></div>)}</div>
     {ready&&p.active&&!locked&&!error&&<div className="walk-instructions"><span className="eyebrow">MANUAL SURFACE EXCURSION</span><h2>Take the next step.</h2><p>Click the terrain to begin. WASD to walk, mouse to look.<br/>Esc pauses the simulation and releases the mouse.<br/>Then select a field marker to inspect its record.</p><span>Measured terrain · simulated astronaut · illustrative lighting</span></div>}
     {locked&&<div className="reticle" aria-hidden="true">＋</div>}
   </div>;
