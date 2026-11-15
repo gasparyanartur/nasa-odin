@@ -1,0 +1,115 @@
+{
+ "schema": "marswalk-hazards",
+ "version": 1,
+ "frame": {
+  "datasetId": "gale-boxwork-v1",
+  "team": "Team app Boxwork local frame: ground metres east (x) and north (y) from the origin in public/boxwork/manifest.json",
+  "marswalk": "Marswalk local frame: projected metres (equirectangular, standard parallel 0) from the same origin, public/data/scene.json",
+  "rule": "x_team = x_marswalk * groundScaleX; y_team = y_marswalk",
+  "groundScaleX": 0.9964884795347444,
+  "origin": {
+   "longitude": 137.38299966521333,
+   "latitude": -4.802997938337184
+  },
+  "radiusM": 3396190.0
+ },
+ "source": "Marswalk app, public/data/team-inputs.default.json (branch hackathon/marswalk-simple-front, commit d2ed7bb0)",
+ "zones": [
+  {
+   "id": "nogo-1",
+   "label": "Scarp edge west of the boxwork",
+   "kind": "scarp_edge",
+   "hatch": "hatch-scarp",
+   "polygon": [
+    [
+     -343.788525,
+     -170
+    ],
+    [
+     -298.946544,
+     -180
+    ],
+    [
+     -283.999217,
+     -300
+    ],
+    [
+     -288.981659,
+     -420
+    ],
+    [
+     -348.770968,
+     -420
+    ]
+   ],
+   "marswalkPolygon": [
+    [
+     -345,
+     -170
+    ],
+    [
+     -300,
+     -180
+    ],
+    [
+     -285,
+     -300
+    ],
+    [
+     -290,
+     -420
+    ],
+    [
+     -350,
+     -420
+    ]
+   ],
+   "origin": "assumption",
+   "originNote": "Marked area drawn by the Marswalk team (Marswalk presets.js: \"marked areas drawn by this team\"); no published source."
+  },
+  {
+   "id": "nogo-2",
+   "label": "Dark loose material, footing unknown",
+   "kind": "loose_ground",
+   "hatch": "hatch-loose",
+   "polygon": [
+    [
+     0.0,
+     -150
+    ],
+    [
+     39.859539,
+     -150
+    ],
+    [
+     54.806866,
+     -250
+    ],
+    [
+     19.92977,
+     -260
+    ]
+   ],
+   "marswalkPolygon": [
+    [
+     0,
+     -150
+    ],
+    [
+     40,
+     -150
+    ],
+    [
+     55,
+     -250
+    ],
+    [
+     20,
+     -260
+    ]
+   ],
+   "origin": "assumption",
+   "originNote": "Marked area drawn by the Marswalk team (Marswalk presets.js: \"marked areas drawn by this team\"); no published source."
+  }
+ ]
+}
