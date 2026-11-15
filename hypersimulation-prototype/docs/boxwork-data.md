@@ -4,7 +4,7 @@ The Boxwork site is a separate Mount Sharp area, not a replacement for Bradbury.
 
 ## Data and coordinates
 
-`public/boxwork/manifest.json` identifies `gale-boxwork-v1` and lists input SHA-256 hashes. Rebuild it from the committed donor package with `npm run prepare:boxwork`; no download or external raw-data path is required. The original Fable application remains under `hypersimulation-prototype/` for reference.
+`public/boxwork/manifest.json` identifies `gale-boxwork-v1` and lists input SHA-256 hashes. Rebuild it from the committed donor package with `npm run prepare:boxwork`; no download or external raw-data path is required. In this folder the donor data stays at `app/public/data/`. The original Fable application (with its source catalogue and alignment report) remains in git history at commit 66ee212.
 
 The supplied display core is 1,024 projected metres across, with 1,025 × 1,025 height samples and four 2,048 px colour or greyscale image tiles at 0.25 m/pixel. A 2,048 m surround provides visual context at lower detail. Processed colour is not a true-colour claim. Source post spacing and centimetre height encoding do not establish source accuracy. See the preserved source catalogue, data licence and original alignment report.
 
@@ -34,14 +34,14 @@ Bradbury-only exports retain Mars GeoJSON v1 compatibility. Exports containing B
 
 The native Three.js renderer is adapted into the existing React application; there is one npm Three.js runtime and no embedded standalone donor app. The current route/return API, Station, Tablet and HUD remain the system. Overview imagery loads first, then the surround, intermediate core image and full tiles. Errors preserve the mission; the Tablet remains available if 3D cannot run. Source credits and licences are bundled under `public/boxwork/`; see also [renderer provenance](../src/mission/surface/NOTICE.md).
 
-Public deployment, cross-patch/regional routing, chemical overlays, audio notes, the donor's scripted hazard/tour and a broader interface redesign remain separate scope. Local browser checks on software rendering do not establish performance on the donor's target laptop.
+Public deployment, cross-patch/regional routing, chemical overlays and audio notes remain separate scope. The combined app adds the Marswalk hazard areas and the eight-stop science walk on Boxwork; see [the Marswalk modules](../src/marswalk/README.md). Local browser checks on software rendering do not establish performance on the donor's target laptop.
 
-Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged.
+Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged in git history at commit 66ee212.
 
 
 ## Local verification and remaining performance gates
 
-The [integration review](plans/2026-11-14-hypersimulation-integration.md#implementation-review--2026-11-14) links passing numerical/API/browser evidence and screenshots. All 20 browser cases pass across recorded full and affected focused runs; earlier failed runs remain identified. The intended integrated-GPU laptop has not been tested. A cold 10 Mbit/s desktop run measured 4.62 s Tablet readiness, above the provisional 3 s target. The available RTX 3090 delivered 36.7 RAF/s in a bounded Medium-mode sample; forced software rendering was much slower. These observations do not establish target-laptop performance. Startup optimization and target-device measurement remain open in the plan.
+The [integration review](plans/2026-11-14-hypersimulation-integration.md#implementation-review--2026-11-14) links passing numerical/API/browser evidence and screenshots. All 20 browser cases pass across recorded full and affected focused runs; earlier failed runs remain identified. The intended integrated-GPU laptop has not been tested. A cold 10 Mbit/s desktop run measured 4.62 s Tablet readiness, above the provisional 3 s target. The available RTX 3090 delivered 36.7 RAF/s in a bounded Medium-mode sample; forced software rendering was much slower. These observations do not establish target-laptop performance. Startup optimization and target-device measurement remain open in the plan. These runs were made in the root app before the copy; the browser suite has not been re-run in this folder.
 
 ## Understanding unavailable routes
 

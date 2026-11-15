@@ -1,6 +1,6 @@
 # Wiring the full Boxwork data
 
-AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Status: data, types and tests are ready; nothing below is wired yet. This file lists the lines a later builder changes. No existing file was edited to write it.
+AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project. Status: the parts in the list below are wired. The sections after it are the planning notes written before the wiring; their line numbers are from that day and may no longer match.
 
 **Wired on 2026-11-15** (the sections below keep the planning notes):
 

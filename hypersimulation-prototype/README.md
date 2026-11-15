@@ -1,12 +1,58 @@
 # hypersimulation-prototype: the combined app
 
-This folder holds the combined app: the team app's Station, Tablet and HUD with the combined design system, the quiet HUD and the Marswalk content. The Marswalk content is the walk presets, the science stops with their tasks, the hazard areas with a legend, the prepared science walk, the solar storm scenario, the suit limits, saved walks and the sharp imagery. It was built from the team review call of 2026-11-15, as a full copy of branch `design/exhibit-system-team-feedback`.
+This folder holds the combined app: the team app's Station, Tablet and HUD with the combined design system, the quiet HUD and the Marswalk content. The Marswalk content is the walk presets, the science stops with their tasks, the hazard areas with a legend, the prepared science walk, the solar storm scenario, the suit limits, saved walks, the sharp imagery and a ground panorama. It was built from the team review call of 2026-11-15, as a full copy of branch `design/exhibit-system-team-feedback`.
 
 The team app in the repository root stays as it is. The two apps sit side by side and can run at the same time.
 
 **It replaces the old static Marswalk app.** That app was in this folder before; it remains in git history at commit 66ee212 (`git show 66ee212:hypersimulation-prototype/README.md`, or `git worktree add ../marswalk-old 66ee212` from the repository root for the full folder).
 
 **`app/` is not part of this app.** `app/public/data/` with `app/DATA-LICENSE.md`, `app/LICENSE` and `app/sources.json` is the donor data of the old app, kept at its old path. The root app's `npm run prepare:boxwork` (`scripts/prepare_boxwork.py`) rebuilds `public/boxwork/` from it, and `docs/evidence/hyper-integration/source-inventory.json` lists its hashes. Do not move or edit these files. Their licence and credit are in `app/DATA-LICENSE.md`.
+
+## What it adds to the team app
+
+The three places stay the same: Station, Tablet and HUD. The [Marswalk parts](#marswalk-parts-branch-designexhibit-system-team-feedback) section below says what each place shows.
+
+- **Station:** after you pick a prepared region, step **02 / Choose your task** offers the walk presets (`src/marswalk/WalkChoice.tsx`).
+- **Tablet:** the tools are Map, Routes, Field data, Display and Look closer. Look closer is new: suit limits, Curiosity's path, saved walks, the solar storm scenario and the ground panorama.
+- **HUD:** a quiet HUD. A notice shows for 10 seconds, then moves to a notice list you open with N (`src/mission/HudNotices.tsx`). A feature that is off shows nothing in the helmet.
+
+### HUD keys
+
+The keys work while you walk, with no modifier key held, and not while you type in a field (`src/App.tsx`).
+
+| Key | Action |
+|---|---|
+| T | Open the tablet (Look closer when the notice list is open, else Map) |
+| L | Log here: start a field record at your position |
+| M | Open or close the pause menu |
+| N | Open or close the notice list |
+| X | Dismiss the storm notice, or else the latest notice |
+| C | During the storm scenario: cancel the way back, or restart it |
+| R | Retry the return estimate after it failed |
+
+WASD or the arrow keys walk, the mouse looks, and Esc pauses and releases the mouse, as in the team app.
+
+### Design system (`src/design/`)
+
+- `tokens.css`: the colour, type and spacing names. Every other stylesheet reads these names.
+- `skin.css`: the "Exhibit" skin over the Station, Tablet and HUD structure, loaded last. It puts no filter, blend mode or colour layer over Mars imagery, terrain or maps.
+- `icons.tsx`: line pictograms on a 24 x 24 grid. The word beside a pictogram carries its meaning.
+- `InfoMark.tsx`: the small round "i" beside a switch, layer or option. It says what the item does and where its data comes from. It opens on click, hover or keyboard focus and closes on Escape.
+- Faces: Gloock for headings and Overpass for text, local files in `public/fonts/`, SIL Open Font License 1.1 (licence texts beside them).
+
+### Marswalk modules (`src/marswalk/`)
+
+Typed modules with data in `public/marswalk/`. [The module README](src/marswalk/README.md) describes each one; [EVIDENCE.md](src/marswalk/EVIDENCE.md) names the file behind each per-region availability entry.
+
+- Walk presets (Geology walk, Safety watch, Water and chemistry search, Custom). Each feature has an availability entry per region; a feature without data in a region reads "Not in this region".
+- Eight science stops with a full task for the tablet and a short line for the helmet, plus the crew rover and the drill sites.
+- Two hazard areas drawn by the Marswalk team (assumption), hatched, with a legend. The planner gets them as circles, an approximation that can also block open ground just outside an area.
+- The prepared science walk: planned ahead of time by the old Marswalk planner on the 1 m grid. It is the default science walk on Boxwork.
+- The solar storm scenario: a replayed DONKI event, labelled scenario.
+- Four sourced suit limits, checked against the chosen route.
+- Saved walks, compared with Curiosity's path (Boxwork only), the chosen route and the latest other saved walk.
+- Sharper Boxwork imagery for the tablet map and the helmet minimap.
+- A ground panorama: a real Curiosity photo of the ridges, small first, full size on request.
 
 ## Run it beside the root app
 
@@ -31,13 +77,19 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 - **No `npm install` needed here.** Node finds the root `node_modules/` from this folder. Running `npm ci` in this folder is optional; it gives the folder its own copy.
 - **Python:** the planner and every Python script here use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`). The root setup is enough. To give this folder its own environment, run the Step 4 Python lines inside this folder.
 
+## Tests
+
+- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 29 test files, 138 tests, all passed on 2026-11-15 after the move into this folder.
+- The server tests (`npm run test:api`) and the full browser suite (`npm run test:browser`) were not re-run after the move.
+
 ## Known limits
 
 - The planner works on a 5 m grid. The default science walk is a prepared route, planned ahead of time by the old Marswalk planner on the 1 m grid. Re-planning with the 5 m planner can refuse it, because the stops sit on steep ridge walls.
 - Hazard areas reach the planner as circles, which can also block open ground just outside an area.
 - Hazard areas are drawn and announced, but walking into one is not stopped.
-- The server tests (`npm run test:api`) were not run on the author's machine.
-- Four browser tests that need pointer lock fail in headless Chromium on macOS.
+- In this folder's `package.json`, `test:api` and the `prepare:*` scripts miss a space after `scripts/python.mjs`, so they fail as written. Until that is fixed, run them as `node scripts/python.mjs` followed by the rest of the command.
+- Browser tests that need pointer lock fail in headless Chromium on macOS.
+- No unfamiliar user has tested the combined app yet.
 
 ## AI use
 
@@ -62,8 +114,8 @@ The Marswalk prototype's parts now sit inside the same three places. Nothing ope
 - **Station:** after you pick a prepared region, **Choose your task** offers Geology walk, Safety watch, Water and chemistry search and Custom. Each card lists the features it turns on; a feature without data in the region reads "Not in this region". The choice is kept in this browser (with blocked storage it lasts until reload).
 - **Tablet → Display:** every feature as a labelled switch, grouped, with an info mark and a state word, beside a small schematic preview of what the helmet then shows. Changing a switch makes the walk Custom. Nothing switches by itself at a stop.
 - **Tablet → Map (Boxwork):** the two hazard areas are drawn hatched (one hatch per danger, no tint under the hatch) with a small legend that names the danger and its origin (source, assumption or scenario). The eight science stops and the two placed drill sites are marked; tap a stop for its full task.
-- **Tablet → Routes (Boxwork):** **Plan the science walk** asks the planner for nine legs: habitat, Stop 1 to Stop 8 in order, back to the habitat (shortest mode, through `/api/return`). The hazard areas go to the planner as restriction circles, at most 30 in total with your own restrictions; the circles can also block open ground just outside an area. A leg may end within 8 m of a stop that is steeper than the slope limit. A refused leg shows the planner's own diagnostics and no route is drawn. With the default 20° slope limit the planner refuses the first leg, because the stops sit on steep ridge walls in the 5 m planning grid.
-- **Tablet → Look closer:** the suit limits for the chosen route (value, unit, source), its distance from Curiosity's path, your saved walks with **Compare**, and **Run the solar storm scenario** (labelled scenario; needs Space weather on).
+- **Tablet → Routes (Boxwork):** the default science walk is the prepared route, "Planned by the Marswalk planner on the 1 m terrain grid" (`src/marswalk/preparedRoute.ts`, `public/marswalk/science-route.json`). While you follow it, each step is checked on the 1 m grid. **Plan it again with the route planner** asks the team planner for nine legs: habitat, Stop 1 to Stop 8 in order, back to the habitat (shortest mode, through `/api/return`). The hazard areas go to the planner as restriction circles, at most 30 in total with your own restrictions; the circles can also block open ground just outside an area. A leg may end within 8 m of a stop that is steeper than the slope limit. A refused leg shows the planner's own diagnostics, and the prepared route stays the guidance. With the default 20° slope limit the planner can refuse a leg, because the stops sit on steep ridge walls in the 5 m planning grid.
+- **Tablet → Look closer:** the suit limits for the chosen route (value, unit, source), its distance from Curiosity's path, your saved walks with **Compare**, the ground panorama, and **Run the solar storm scenario** (labelled scenario). With Space weather on, the scenario also starts by itself 150 minutes into a walk (an assumption).
 - **HUD:** stop marks (number, and the short task for the next stop), an arrival notice "Stop n: ..." through the existing notices, the hazard areas hatched in the minimap and on the ground, a hazard symbol in the status row when you are inside or within 25 m of an area, and the storm as one notice under the compass (X dismisses, C cancels or restarts the way back, which is drawn while you return). Walked positions are kept, one point per 5 m, and saved when the tablet opens or the walk ends. A feature that is off shows nothing in the helmet.
 
 Marswalk data sources and licences (from `src/marswalk/README.md`):
@@ -197,7 +249,7 @@ The first time, Git asks you to sign in to GitHub:
 - **Windows:** a sign-in window opens. Choose **Sign in with your browser** and approve the request on GitHub. Git remembers this.
 - **macOS and Linux:** Git asks for a username and a password. Enter your GitHub username. GitHub does not accept your account password here, so create a token instead: go to [github.com/settings/tokens](https://github.com/settings/tokens), choose **Generate new token (classic)**, tick **repo**, click **Generate token**, and paste the token as the password. Nothing appears while you paste; press Enter.
 
-Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Marswalk rejects any data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
+Keep `-c core.autocrlf=input`. By default, Git on Windows converts line endings, which changes file sizes. Both apps reject any terrain data file that isn't the expected size. On macOS and Linux the option changes nothing. If you already cloned on Windows without it, delete the folder and clone again.
 
 To get your teammates' latest changes later, run `git pull` inside the `nasa-martian-map` folder. The default branch is `master`. To switch to another branch, run `git switch <branch-name>`, for example `git switch hypersimulation-prototype`.
 
@@ -321,6 +373,8 @@ npm test
 npm run test:api
 npm run build
 ```
+
+In `hypersimulation-prototype/`, `npm run test:api` fails as written; see [Known limits](#known-limits) at the top of this file.
 
 For browser checks, install local Chromium once and then run:
 
