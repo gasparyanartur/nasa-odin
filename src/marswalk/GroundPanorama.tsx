@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import raw from '../../public/marswalk/panorama.json';
 import InfoMark from '../design/InfoMark';
 import { Icon } from '../design/icons';
@@ -29,12 +30,12 @@ export default function GroundPanorama() {
       <figcaption className="caption">{credit} Resized only, colours as published.</figcaption>
     </figure>
     <button ref={opener} type="button" className="secondary" onClick={() => setFull(true)}><Icon name="look" />Open full size ({large.widthPx} px)</button>
-    {full && <div className="panorama-full" role="dialog" aria-modal="true" aria-label={PANORAMA_TITLE}>
+    {full && createPortal(<div className="panorama-full" role="dialog" aria-modal="true" aria-label={PANORAMA_TITLE}>
       <div className="panorama-full__bar"><strong>{PANORAMA_TITLE}</strong><button ref={closeButton} type="button" className="secondary" onClick={() => setFull(false)}>Close <kbd>Esc</kbd></button></div>
       <div className="panorama-full__scroll" tabIndex={0} aria-label="Scroll the panorama sideways">
         <img src={large.url} width={large.widthPx} height={large.heightPx} alt="Curiosity's 360-degree view of the boxwork ridges and hollows, full size" />
       </div>
       <p className="caption">{credit} Scroll sideways to turn around.</p>
-    </div>}
+    </div>, document.body)}
   </div>;
 }
