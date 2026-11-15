@@ -1,41 +1,53 @@
-# NASA Space Apps 2026 - Interplanetary Survival Guide: Martian Map
+# ODIN
+
+**Offworld Discovery Intelligence Network** - a map for an astronaut's first walk on Mars.
+
+NASA Space Apps 2026, challenge "Interplanetary Survival Guide: Martian Map". Team Clanker Lovers.
 
 [![ODIN: a map for an astronaut's first walk on Mars. Three screens: Station, Tablet, Helmet.](docs/readme-hero.png)](https://gasparyanartur.github.io/nasa-odin/)
 
 **Try it in the browser: https://gasparyanartur.github.io/nasa-odin/**
 
+## What it does
 
-This repository holds one current app. Older versions are kept in `archive/` for reference.
+ODIN turns NASA orbit images, terrain and rover measurements into one tool with three places.
 
-## The current app: `hypersimulation-prototype/`
+- **Station**: a globe of Mars. You choose a region and a task, and look at planet-wide data such as geology, temperature, thorium and potassium.
+- **Tablet**: a local map on a 25 cm orbit image. You set a destination and the app plans a route that keeps to a slope limit, the suit time and the no-go areas. If no safe route exists, the app says why and offers a fix.
+- **Helmet**: a first-person view of the terrain with a compass, a round minimap, marked hazard areas and the next stop. A dust or solar particle scenario draws the way back to the habitat.
 
-A map for an astronaut's first walk on Mars. You choose a region and a task at the Station, plan a route on the Tablet, and follow it in the Helmet display. It runs fully in the browser; no server and no Python are needed to run it.
+A guided tour on the real controls starts on the first visit.
+
+## Run it locally
+
+You need Node.js 22.17 or newer.
 
 ```bash
-cd hypersimulation-prototype
+git clone https://github.com/gasparyanartur/nasa-odin.git
+cd nasa-odin/odin
 npm install
 npm run dev
 ```
 
-Then open http://localhost:5174. Details, data sources and licences: [hypersimulation-prototype/README.md](hypersimulation-prototype/README.md).
+Then open http://localhost:5174. The app runs in the browser. It needs no account and no backend; only the planet-wide imagery loads from public map services.
 
-Static build (for example for a sub-path host): `VITE_BASE=/nasa-odin/ npx vite build` inside `hypersimulation-prototype/`.
+How it works, the data sources and the known limits: [odin/README.md](odin/README.md).
 
-## Live site
+## Repository layout
 
-The app is live at https://gasparyanartur.github.io/nasa-odin/. GitHub Pages serves it from the branch `gh-pages`, which holds a static build of `hypersimulation-prototype/` (base `/nasa-odin/`). The site does not update by itself: after an app change, build again and push the result to `gh-pages`. The workflow `.github/workflows/pages.yml` can do this on every push to `master` if the Pages source in the repository settings is changed to "GitHub Actions".
+- `odin/`: the app (TypeScript, React, Vite, CesiumJS, three.js) with its data, tests and documents.
+- `docs/`: the image for this page.
+- `archive/`: earlier versions and working documents of the team, kept for reference and attribution. Nothing in it is needed to run ODIN. See [archive/README.md](archive/README.md).
+- `.github/workflows/pages.yml`: builds `odin/` and publishes the live site on every push to `master`.
+
+## Data and credits
+
+All Mars imagery, terrain and measurements are real data from NASA, USGS, ESA and other agencies and keep their own terms. See [odin/public/boxwork/DATA-LICENSE.md](odin/public/boxwork/DATA-LICENSE.md) and the source list in [odin/README.md](odin/README.md). No endorsement by NASA or any agency is implied.
+
+## AI use
+
+Large parts of the code and documents were written with AI coding assistants (Claude by Anthropic, OpenAI Codex) under the team's direction. The app contains no AI-generated images.
 
 ## Licence
 
-The code in this repository is licensed under the Apache License 2.0, see [LICENSE](LICENSE). Mars imagery, terrain and measurements come from NASA, USGS, ESA and other agencies and keep their own terms; see `hypersimulation-prototype/public/boxwork/DATA-LICENSE.md` and the source notes in the app README. Parts of the code and documents were written with AI assistance (Claude by Anthropic, OpenAI Codex) and reviewed by the team.
-
-## What is in `archive/`
-
-- `archive/martian-map-v1/`: the earlier Martian Map app that used to be in the repository root, with its own README. The current app grew out of it and contains its features.
-- `archive/marswalk-static-data/`: source data, licence and source list of the first static Marswalk prototype.
-
-Nothing in `archive/` is needed to run the current app. See [archive/README.md](archive/README.md).
-
-## Team documents
-
-`docs/` holds the team's documents (backlog, data notes, plans). Some of them still describe the archived app by its old root paths.
+The code is licensed under the Apache License 2.0, see [LICENSE](LICENSE).

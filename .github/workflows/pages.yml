@@ -19,14 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: hypersimulation-prototype
+        working-directory: odin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: hypersimulation-prototype/.nvmrc
+          node-version-file: odin/.nvmrc
           cache: npm
-          cache-dependency-path: hypersimulation-prototype/package-lock.json
+          cache-dependency-path: odin/package-lock.json
       - run: npm ci
       - run: npx vite build
         env:
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: hypersimulation-prototype/dist
+          path: odin/dist
 
   deploy:
     needs: build
