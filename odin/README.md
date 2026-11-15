@@ -4,7 +4,7 @@ O.D.I.N. (Offworld Discovery Intelligence Network) lets you plan and walk a scie
 
 **Live site:** https://gasparyanartur.github.io/nasa-odin/
 
-ODIN is the entry of team Clanker Lovers to NASA Space Apps 2026, challenge "Interplanetary Survival Guide: Martian Map". GitHub Actions publishes the site on every push to `master`.
+ODIN is the entry of team Pathfinders 4600 to NASA Space Apps 2026, challenge "Interplanetary Survival Guide: Martian Map". GitHub Actions publishes the site on every push to `master`.
 
 The application is a **laptop simulation operated with mouse and keyboard**. Station, Tablet and HUD are the astronaut's interfaces inside that simulation. **Tablet means the simulated astronaut's device, not a physical tablet or a touch-first device target.**
 
