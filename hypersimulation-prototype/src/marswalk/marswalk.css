@@ -10,7 +10,7 @@
 .wall-label .origin-tag.is-scenario{color:var(--alarm-ink-card)}
 .wall-label .origin-tag.is-source{color:var(--cobalt)}
 
-/* ---------- Station: choose your walk (left rail, step two under the region list) ---------- */
+/* ---------- Station: choose your task (left rail, step two under the region list) ---------- */
 .walk-choice{border-top:1px solid var(--plinth-hi);padding:18px 0 4px}
 .walk-choice__rows{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
 .walk-row{border:1px solid var(--plinth-line);border-radius:5px;background:var(--wall)}

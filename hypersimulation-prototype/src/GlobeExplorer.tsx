@@ -38,7 +38,8 @@ export default function GlobeExplorer(p:Props) {
   const [error,setError]=useState(''),[localError,setLocalError]=useState(''),[localRetry,setLocalRetry]=useState(0);
   const [markers,setMarkers]=useState<RegionMarker[]>([]);
   const region=getRegion(p.selectedRegionId);
-  const positionedMarkers=layoutMarkers(markers,container.current?.clientWidth??1000,container.current?.clientHeight??800);
+  const [area,setArea]=useState({width:0,height:0});
+  const positionedMarkers=layoutMarkers(markers,area.width,area.height);
 
   async function load(definition:DatasetDefinition) {
     const request=++sequence.current;
@@ -54,6 +55,14 @@ export default function GlobeExplorer(p:Props) {
       controller.current=new GlobeController(container.current!,status=>{setTilesLoading(status.loading);if(status.error)setError(status.error);},id=>onSelect.current(id),setMarkers,selection=>onGeology.current(selection),sample=>{if(environmentSelection.current)onEnvironment.current?.({...environmentSelection.current,sampleId:sample});});
     } catch {setFatal(true);setError('The globe could not start. Use a browser with WebGL enabled and reload this page.');}
     return()=>{sequence.current++;importSequence.current++;controller.current?.dispose();controller.current=null;};
+  },[]);
+  useEffect(()=>{
+    const el=container.current;if(!el)return;
+    const measure=()=>setArea(a=>a.width===el.clientWidth&&a.height===el.clientHeight?a:{width:el.clientWidth,height:el.clientHeight});
+    measure();
+    if(typeof ResizeObserver!=='function'){window.addEventListener('resize',measure);return()=>window.removeEventListener('resize',measure);}
+    const observer=new ResizeObserver(measure);observer.observe(el);
+    return()=>observer.disconnect();
   },[]);
   useEffect(()=>{void load(p.basemap);},[p.basemap]);
   useEffect(()=>{controller.current?.setVisible(p.visible);},[p.visible]);

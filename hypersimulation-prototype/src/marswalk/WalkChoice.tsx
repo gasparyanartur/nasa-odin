@@ -14,8 +14,8 @@ export default function WalkChoice({ setup, region, persistent, onPick }: { setu
   const box = useRef<HTMLElement>(null);
   // A new region brings step two into view in the rail, which scrolls on short windows.
   useEffect(() => { box.current?.scrollIntoView?.({ block: 'nearest' }); }, [region]);
-  return <section ref={box} className="walk-choice" aria-label="Choose your walk">
-    <div className="section-label">02 / CHOOSE YOUR WALK</div>
+  return <section ref={box} className="walk-choice" aria-label="Choose your task">
+    <div className="section-label">02 / CHOOSE YOUR TASK</div>
     <ul className="walk-choice__rows">{MISSIONS.map(m => {
       const chosen = setup.mission === m.id;
       const words = missionWords(m.id, region);
