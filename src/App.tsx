@@ -27,6 +27,20 @@ import SurfaceMap, { type PickMode } from './mission/SurfaceMap';
 import { BASEMAPS, OVERLAYS, canPlan, defaultOverlays, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
 const WalkingScene = lazy(() => import('./mission/WalkingScene'));
 import { RoutePlanningError, type RouteDiagnostics, api, loadTerrain, localToGeo, routeProgress, sample, type Point, type Pose, type ReturnResult, type RouteResult, type Settings, type TerrainData } from './mission/data';
+import { useMarswalk } from './marswalk/useMarswalk';
+import { hudPatch, overlaysFor, type FeatureId, type Setup } from './marswalk/presets';
+import { WALK_STOPS } from './marswalk/sciencewalk';
+import { placedDrillSites } from './marswalk/stops';
+import { nextStop } from './marswalk/helmet';
+import WalkChoice from './marswalk/WalkChoice';
+import FeatureSwitches from './marswalk/FeatureSwitches';
+import HazardLegend from './marswalk/HazardLegend';
+import StopCard from './marswalk/StopCard';
+import ScienceWalkCard from './marswalk/ScienceWalkCard';
+import MarswalkCloser from './marswalk/MarswalkCloser';
+import StormNotice from './marswalk/StormNotice';
+import MarswalkCredits from './marswalk/MarswalkCredits';
+import type { ExtraMark } from './mission/WalkingScene';
 
 const directDemo=new URLSearchParams(window.location.search).get('demo')==='yellowknife';
 const directBoxwork=new URLSearchParams(window.location.search).get('demo')==='boxwork';
@@ -70,7 +84,20 @@ export default function App(){
   const [pose,setPose]=useState<Pose>({...HOME,heading:0,elapsed:0}),[blocked,setBlocked]=useState(false),[back,setBack]=useState<ReturnResult>(),[returnError,setReturnError]=useState('');
   const [returnRetry,setReturnRetry]=useState(0);
   const request=useRef<AbortController|null>(null),returnRequest=useRef<AbortController|null>(null),lastReturn=useRef<Point & {elapsed?:number}>({x:Infinity,y:Infinity});
-  const route=result?.routes[selected];
+  const mw=useMarswalk({regionId:selectedRegionId,data,pose,walking:view==='walk'&&!pauseMenu,session});
+  const science=mw.scienceSelected&&mw.plan?mw.plan.route:undefined;
+  const route=science??result?.routes[selected];
+  const [stopId,setStopId]=useState<number>();
+  // A walk choice sets its layers and helmet switches once, when chosen; the team's own switches stay free after that.
+  function applySetup(next:Setup,only?:FeatureId){
+    const layers=overlaysFor(next),patch=hudPatch(next);
+    const layerOf:Partial<Record<FeatureId,OverlayId>>={orbit:'imagery',height:'elevation',slope:'slope'};
+    const hudOf:Partial<Record<FeatureId,(keyof typeof patch)[]>>={nav:['visor','waypoints','next'],clocks:['marsTime','earthTime']};
+    const ids=(only?[layerOf[only]]:Object.values(layerOf)).filter((x):x is OverlayId=>!!x);
+    if(ids.length)setOverlays(o=>({...o,...Object.fromEntries(ids.map(id=>[id,{...o[id],visible:layers.includes(id)}]))}));
+    const keys=only?hudOf[only]??[]:(Object.keys(patch) as (keyof typeof patch)[]);
+    if(keys.length)setHud(h=>({...h,...Object.fromEntries(keys.map(k=>[k,patch[k]]))}));
+  }
   const fieldStore=useFieldStore(),[fieldDraft,setFieldDraft]=useState<FieldRecord>(),[selectedField,setSelectedField]=useState<string>(),[fieldNotice,setFieldNotice]=useState('');
   const sharedFields=useMemo(()=>fieldStore.records.filter(r=>r.regionId===region?.id),[fieldStore.records,region?.id]);
   const activeField=sharedFields.find(r=>r.id===selectedField);
@@ -101,9 +128,9 @@ export default function App(){
     return()=>c.abort();
   },[retry,selectedRegionId]);
   useEffect(()=>()=>{request.current?.abort();returnRequest.current?.abort();},[]);
-  function invalidate(){setProfileEdge(undefined);request.current?.abort();returnRequest.current?.abort();setBusy(false);request.current=null;returnRequest.current=null;setResult(undefined);setBack(undefined);setError('');setRouteFailure(undefined);setReturnError('');}
+  function invalidate(){mw.clearScience();setProfileEdge(undefined);request.current?.abort();returnRequest.current?.abort();setBusy(false);request.current=null;returnRequest.current=null;setResult(undefined);setBack(undefined);setError('');setRouteFailure(undefined);setReturnError('');}
   function changeRegion(id?:RegionId){
-    if(id===selectedRegionId)return;setMapPanel(undefined);setPauseMenu(false);setSession(v=>v+1);
+    if(id===selectedRegionId)return;setMapPanel(undefined);setPauseMenu(false);setSession(v=>v+1);setStopId(undefined);
     invalidate();setSelectedField(undefined);setFieldDraft(undefined);setFieldNotice('');setTargetId(undefined);setGeologySelection(undefined);setGuide(false);updateDemoUrl(false);setData(undefined);setSelectedRegionId(id);setStart(HOME);setGoal(GOAL);setSelected(0);setSettings(defaults);setPlaying(false);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(1);lastReturn.current={x:Infinity,y:Infinity};setView('globe');
   }
   function changeHour(hour:number){setPlaying(false);restartScenario(hour);}
@@ -164,7 +191,7 @@ export default function App(){
   const scienceTarget=targetById(targetId);
   const progress=route?routeProgress(route,pose):null;
   const totalReturn=pose.elapsed+(back?.route?.metrics.durationS??0);
-  const reached=route&&Math.hypot(pose.x-goal.x,pose.y-goal.y)<8;
+  const reached=route&&(science?mw.visited.size===WALK_STOPS.length&&Math.hypot(pose.x-start.x,pose.y-start.y)<8:Math.hypot(pose.x-goal.x,pose.y-goal.y)<8);
   const alerts=[...(route?.warnings??[]),...(back?.warnings??[])];
   if(settings.conditionsMode==='historical'&&currentTemperature==null)alerts.push('Historical temperature unavailable at the current mission time.');
   if(currentTemperature!=null&&currentTemperature<settings.minTemperatureK)alerts.push('Current temperature is below the configured demonstration limit.');
@@ -174,8 +201,16 @@ export default function App(){
   if(pose.elapsed/3600*settings.doseRateMicroGyH>settings.maxDoseMicroGy)alerts.push('Accumulated detector-dose proxy exceeds the configured budget.');
   if(back?.route&&totalReturn>settings.maxDurationMin*60)alerts.push('Current return estimate exceeds the remaining time budget.');
   const uniqueAlerts=Array.from(new Set(alerts));
-  const notices:HudNotice[]=[...uniqueAlerts.map(text=>({text,kind:'warning' as const})),...(returnError?[{text:returnError,kind:'warning' as const}]:[]),...(reached?[{text:'Destination reached. Return to the habitat or end the demonstration.',kind:'success' as const}]:[])];
+  const stormText=mw.stormMessage?`${mw.stormMessage.headline}, scenario. ${mw.stormMessage.advice}`:undefined;
+  const notices:HudNotice[]=[...(stormText?[{text:stormText,kind:'warning' as const}]:[]),...uniqueAlerts.map(text=>({text,kind:'warning' as const})),...(returnError?[{text:returnError,kind:'warning' as const}]:[]),...(mw.arrivalLine?[{text:mw.arrivalLine,kind:'stop' as const}]:[]),...(reached?[{text:science?'Science walk complete: all stops reached and back at the habitat.':'Destination reached. Return to the habitat or end the demonstration.',kind:'success' as const}]:[])];
   const hudNotices=useHudNotices(notices);
+  // The storm has its own notice under the compass; its line in the shared list must not also show as a toast.
+  useEffect(()=>{for(const t of hudNotices.toasts)if(t.notice.text===stormText)hudNotices.drop(t.id);},[hudNotices.toasts,stormText]);
+  const next=mw.boxwork&&mw.on.stops?nextStop(mw.visited):undefined;
+  const stopMarks=useMemo<ExtraMark[]|undefined>(()=>mw.boxwork&&mw.on.stops?WALK_STOPS.map(s=>({id:`stop-${s.id}`,x:s.x,y:s.y,mark:String(s.id),label:s.id===next?.id?`${s.id} · ${s.short}`:`Stop ${s.id}`,compact:s.id!==next?.id})):undefined,[mw.boxwork,mw.on.stops,next?.id]);
+  const mapStops=useMemo(()=>mw.boxwork&&mw.on.stops?WALK_STOPS.map(s=>({id:s.id,x:s.x,y:s.y,kind:s.kind,visited:mw.visited.has(s.id)})):undefined,[mw.boxwork,mw.on.stops,mw.visited]);
+  const drills=useMemo(()=>mw.boxwork&&mw.on.drill?placedDrillSites().map(d=>({x:d.x,y:d.y})):undefined,[mw.boxwork,mw.on.drill]);
+  const wayBack=useMemo(()=>mw.storm.returning&&back?.route?back.route.points.map(([x,y])=>({x,y})):undefined,[mw.storm.returning,back]);
   const alertCount=uniqueAlerts.length+(returnError?1:0);
   const headingDeg=((pose.heading*180/Math.PI+360)%360).toFixed(0);
   const nextDistance=progress?distance(Math.hypot(progress.target[0]-pose.x,progress.target[1]-pose.y)):undefined;
@@ -196,7 +231,8 @@ export default function App(){
       else if(k==='l'){e.preventDefault();logHere();}
       else if(k==='m'){e.preventDefault();setPauseMenu(v=>!v);}
       else if(k==='n'){e.preventDefault();setNoticeList(v=>!v);}
-      else if(k==='x'){e.preventDefault();hudNotices.dismiss();}
+      else if(k==='x'){e.preventDefault();if(mw.storm.warning==='shown')mw.dismissStorm();else hudNotices.dismiss();}
+      else if(k==='c'&&mw.stormMessage){e.preventDefault();if(mw.storm.returning)mw.cancelReturn();else mw.resumeReturn();}
       else if(k==='r'&&returnError){e.preventDefault();retryReturn();}
     };
     window.addEventListener('keydown',key);
@@ -232,22 +268,22 @@ export default function App(){
     {dataError&&view!=='plan'&&<div className="data-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
     <div style={{display:view==='globe'&&stationTab==='atlas'?'block':'none'}}>
-<GlobeExplorer environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible}/>
+<GlobeExplorer environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible} walkChoice={region&&<WalkChoice setup={mw.setup} region={region.id} persistent={mw.persistent} onPick={id=>applySetup(mw.pickMission(id))}/>}/>
 </div>
     {context==='surface'&&data&&canPlan(region)&&<main aria-hidden={tabletOpen||undefined} className={`hud-page ${tabletOpen||pauseMenu?'surface-paused':''} ${visor?'visor-enabled':''}`}>
 <Suspense fallback={<div className="loading-data">Opening the surface HUD…</div>}>
-<WalkingScene key={`${session}-${quality}-${imagery}`} active={view==='walk'&&!pauseMenu} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={hud} start={start} goal={goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} route={route} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
+<WalkingScene key={`${session}-${quality}-${imagery}`} active={view==='walk'&&!pauseMenu} imagery={imagery} onFailure={()=>setSceneFailed(true)} onUnavailable={()=>{setView('plan');setFieldNotice('The 3D display is unavailable. Your mission is retained on the Tablet. Retry HUD to reopen the scene.');}} fields={sharedFields} onFieldSelect={setSelectedField} hud={science?{...hud,destination:false}:hud} extra={stopMarks} zones={mw.zones} wayBack={wayBack} start={start} goal={goal} next={progress?{x:progress.target[0],y:progress.target[1]}:undefined} data={data} route={route} settings={missionSettings} initialPose={pose} timeScale={timeScale} quality={quality} onPose={updatePose} onBlocked={setBlocked}/>
 </Suspense>{!tabletOpen&&<>{visor&&<Visor waypoints={!!progress&&hud.waypoints&&hud.next} pose={pose} target={progress?{x:progress.target[0],y:progress.target[1]}:undefined}/>}<header className="hud-heading">
 <Icon name={reached?'check':route?'route':'compass'}/>
 <div>
 <span className="eyebrow sr-only">{region?.shortName.toUpperCase()} / SURFACE EXCURSION</span>
-<h2>{reached?'Destination reached.':!route?'Free exploration':route.mode==='shortest'?'On the shortest traverse.':'Taking the gentler path.'}</h2>
+<h2>{reached?(science?'Science walk complete.':'Destination reached.'):!route?'Free exploration':science?'On the science walk.':route.mode==='shortest'?'On the shortest traverse.':'Taking the gentler path.'}</h2>
 <span className="sr-only">{scienceTarget&&route?`Science destination: ${scienceTarget.name} · simulated position`:'Simulated position · mission clock pauses with Esc'}</span>
 </div>
 </header>
-<HudToast toasts={hudNotices.toasts} onDismiss={hudNotices.dismiss}/>
+{mw.stormMessage&&mw.storm.warning==='shown'?<div className="hud-alerts" aria-live="polite"><StormNotice storm={mw.storm} msg={mw.stormMessage} onDismiss={mw.dismissStorm} onCancel={mw.cancelReturn} onResume={mw.resumeReturn}/></div>:<HudToast toasts={hudNotices.toasts} onDismiss={hudNotices.dismiss}/>}
 <div className="hud-corner">{hud.minimap&&<aside className="hud-map">
-<SurfaceMap imagery={imagery} data={data} start={start} goal={route?goal:undefined} routes={result?.routes} fields={sharedFields} selected={selected} pose={pose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} mini/>
+<SurfaceMap imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={pose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mini/>
 <span className="hud-map__north" aria-hidden="true">N</span>
 <div className="sr-only">
 <span>H HABITAT</span>{route&&<span>D DESTINATION</span>}</div>
@@ -261,7 +297,14 @@ export default function App(){
 <Icon name={alertCount?'warning':'fine'}/>
 <small className="sr-only">ALERTS</small>
 <strong>{alertCount?`${alertCount} ${alertCount===1?'alert':'alerts'}`:'No alerts'}</strong>
-</div>{progress&&<div className="hud-chip">
+</div>{mw.hazard&&mw.hazard.state!=='clear'&&<div className="hud-chip is-warning hud-chip--hazard">
+<Icon name="nogo"/>
+<small className="sr-only">HAZARD AREA</small>
+<strong>{mw.hazard.state==='inside'?'In hazard area':'Hazard area near'}</strong>
+</div>}{mw.stormMessage&&mw.storm.warning!=='shown'&&<div className="hud-chip is-alarm">
+<Icon name="warning"/>
+<strong>{mw.storm.returning?'Return now · scenario':'Return cancelled · scenario'}</strong>
+</div>}{progress&&<div className="hud-chip">
 <Icon name="place"/>
 <small className="sr-only">NEXT WAYPOINT</small>
 <strong>{nextDistance}</strong>
@@ -396,7 +439,7 @@ export default function App(){
 </details>{error&&routeFailure&&data&&<RouteFailure diagnostics={routeFailure} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>}</section>
         {result&&<section className="route-options" aria-label="Route alternatives">
 <div className="section-label">03 / CHOOSE YOUR TRAVERSE</div>{result.routes.map((r,i)=>
-<button className={`route-card ${selected===i?'selected':''}`} key={r.mode} aria-pressed={selected===i} onClick={()=>{setSelected(i);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}}>
+<button className={`route-card ${selected===i&&!science?'selected':''}`} key={r.mode} aria-pressed={selected===i&&!science} onClick={()=>{mw.setScienceSelected(false);setSelected(i);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}}>
 <span>{r.mode==='shortest'?'01 / SHORTEST PERMITTED':'02 / GENTLER TERRAIN'}{result.recommendedIndex===i?(r.conditions.status==='within'?' · RECOMMENDED':' · FEWEST WARNINGS'):''}<b>{distance(r.metrics.distanceM)}</b>
 </span>
 <strong>{duration(r.metrics.durationS)} <small>outbound · {Math.round(r.metrics.ascentM)} m ascent</small>
@@ -412,9 +455,10 @@ export default function App(){
 <button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'—'} K · {d.status}</small>
 </button>)}</div>
 </details>}</>}</section>}
+        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelect={()=>{mw.setScienceSelected(true);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
         {guide&&<button className="secondary full" onClick={startDemo}>Reset guided example</button>}<button className="text-button reset" onClick={reset}>↺ Reset example excursion</button>
 <p className="caption">Restores example endpoints and mission settings. Saved field restrictions remain active; edit them in Field data.</p>
-      {result&&<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>}</aside>
+      {result&&!science&&<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>}</aside>
       <section className="terrain-workspace" aria-label="Local terrain map">
 <header className="map-toolbar">
 <span>{mode==='inspect'?'LOCAL MAP':mode==='start'?'CLICK MAP · RESTART AT NEW HABITAT':mode==='goal'?'CLICK MAP · SET DESTINATION':'CLICK MAP · ADD EXCLUSION'}</span>
@@ -424,7 +468,7 @@ export default function App(){
 <button className="secondary" onClick={logHere}><Icon name="note"/>Log here</button>
 </div>
 </header>
-        {data?<SurfaceMap imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={goal} routes={result?.routes} selected={selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onInspect={setInspection}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
+        {data?<SurfaceMap imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={science?undefined:goal} routes={science?[science]:result?.routes} selected={science?0:selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onInspect={setInspection} zones={mw.zones} mapStops={mapStops} drills={drills} selectedStop={stopId} onStopSelect={setStopId}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
         <div className="inspection" aria-label="Terrain inspection">
 <span>
 <small>LOCATION</small>{geo?`${geo[1].toFixed(5)}° N / ${geo[0].toFixed(5)}° E`:'—'}</span>
@@ -433,7 +477,7 @@ export default function App(){
 <span>
 <small>LOCAL MAX SLOPE</small>{measured?`${measured.slope.toFixed(1)}°`:'—'}</span>
 
-</div>
+</div>{data&&(mw.zones||mapStops||drills)&&<div className="map-overlays"><HazardLegend zones={!!mw.zones} stops={!!mapStops} drills={!!drills}/>{stopId!==undefined&&mapStops&&<StopCard id={stopId} visited={mw.visited.has(stopId)} onClose={()=>setStopId(undefined)}/>}</div>}
 
 
       </section>
@@ -474,12 +518,16 @@ export default function App(){
 <a href={data.environment.radiation.source} target="_blank" rel="noreferrer">RAD source ↗</a>
 </div>
 <p>{data.meta.attribution}</p>
+<MarswalkCredits boxwork={mw.boxwork}/>
 </details>}
 </>}</aside>}
       </div>
     {data&&canPlan(region)&&<FieldWorkspace active={view==='plan'&&tabletTab==='field'} data={data} records={sharedFields} draft={fieldDraft} onDraft={draft=>{setFieldDraft(draft);if(!draft)setFieldNotice(n=>n.startsWith('Your unfinished')?'':n);}} selected={selectedField} onSelect={setSelectedField} pose={pose} inspection={inspection} departureHour={weatherHour} exclusions={missionSettings.exclusions} onCommit={commitFields} onUndo={undoFields} canUndo={!!fieldStore.past.length} storageError={fieldStore.error} unread={fieldStore.unread} onRecover={fieldStore.recover}/>}
     {view==='plan'&&tabletTab==='setup'&&<main className="tablet-setup">
+<div className="setup-stack">
+<FeatureSwitches setup={mw.setup} hud={hud} onToggle={id=>applySetup(mw.toggle(id),id)} onMission={id=>applySetup(mw.pickMission(id))}/>
 <HudConfiguration data={data} regionId={selectedRegionId} sol={data?.environment.sol??10} value={hud} onChange={setHud} quality={quality} onQuality={setQuality} timeScale={timeScale} onTimeScale={setTimeScale}/>
+</div>
 <aside className="mission-snapshot">
 <span className="eyebrow">SHARED MISSION</span>
 <h2>{region?.shortName}</h2>
@@ -508,6 +556,7 @@ export default function App(){
 <div className="wall-label"><h2>Notices</h2>{notices.length?<ul className="closer-notices">{notices.map(n=><li key={n.text} className={n.kind}><Icon name={n.kind==='success'?'check':'warning'}/>{n.text}</li>)}</ul>:<p>No active notices.</p>}{returnError&&<button className="secondary" onClick={retryReturn}>Retry the return estimate</button>}<p className="caption">In the helmet a notice shows as a symbol and one short line under the compass for about 10 seconds; the full list opens with the notice symbol at the side (key N).</p></div>
 <div className="wall-label"><h2>Helmet keys</h2><dl className="closer-keys"><div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk; the mouse looks around</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Pause walking and release the mouse</dd></div><div><dt><kbd>T</kbd></dt><dd>Open this Tablet</dd></div><div><dt><kbd>L</kbd></dt><dd>Log an observation here</dd></div><div><dt><kbd>M</kbd></dt><dd>Pause menu</dd></div><div><dt><kbd>N</kbd></dt><dd>Open or close the notice list</dd></div><div><dt><kbd>X</kbd></dt><dd>Dismiss the newest notice</dd></div><div><dt><kbd>R</kbd></dt><dd>Retry the return estimate when it failed</dd></div></dl></div>
 </section>
+{data&&<MarswalkCloser route={route} science={!!science} routeName={science?'Science walk, 8 stops':route?.mode==='shortest'?'Shortest permitted route':route?'Gentler terrain route':''} data={data} habitat={start} boxwork={mw.boxwork} walks={mw.walks} walksPersistent={mw.walksPersistent} spaceWeather={mw.on.spacewx} storm={mw.storm} stormMessage={mw.stormMessage} onRunStorm={mw.runStorm} onCancelReturn={mw.cancelReturn} onResumeReturn={mw.resumeReturn} onResetStorm={mw.resetStorm} onShowStorm={mw.reopenStorm}/>}
 </main>}
 
       </>}

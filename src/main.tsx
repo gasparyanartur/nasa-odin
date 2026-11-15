@@ -8,5 +8,6 @@ import './field/field.css';
 import './environment/environment.css';
 import './contexts.css';
 import './design/skin.css';
+import './marswalk/marswalk.css';
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);

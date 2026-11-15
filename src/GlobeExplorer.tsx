@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { parseDataset, type DatasetDefinition } from './datasets/definition';
 import { BASEMAPS, REGIONS, canPlan, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
 import { layoutMarkers } from './globe/marker-layout';
@@ -23,6 +23,7 @@ interface Props {
   visible:boolean; onVisibleChange:(visible:boolean)=>void; opacity:number; onOpacityChange:(value:number)=>void;
   overlays:OverlaySettings; onOverlayChange:(id:OverlayId,patch:Partial<OverlaySettings[OverlayId]>)=>void;
   conditionsHour:number; conditionsVisible:boolean; onConditionsChange:(visible:boolean)=>void;
+  walkChoice?:ReactNode;
 }
 
 export default function GlobeExplorer(p:Props) {
@@ -110,7 +111,7 @@ export default function GlobeExplorer(p:Props) {
       <div ref={container} className="globe"/>
       <div className="region-markers"><svg aria-hidden="true" className="marker-leaders">{positionedMarkers.filter(m=>m.left!==m.x||m.top!==m.y).map(m=><line key={m.id} x1={m.x} y1={m.y} x2={m.left} y2={m.top}/>)}</svg>{positionedMarkers.map(m=><button key={m.id} className="region-marker" aria-label={`Explore ${getRegion(m.id)!.shortName} on map`} aria-pressed={m.id===p.selectedRegionId} style={{left:m.left,top:m.top}} onClick={()=>selectRegion(m.id)}><span className="marker-dot"/>{getRegion(m.id)!.shortName}</button>)}</div>
       <div className="map-header"><span className="map-caption">＋ MARS / {region?region.shortName.toUpperCase():'CHOOSE A REGION'}</span><button className="home-button" onClick={()=>{p.onRegionChange(undefined);controller.current?.home();}} disabled={fatal} aria-label="Reset globe view">Global view ↗</button></div>
-      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<div className="surface-entry"><button className="primary" disabled={!p.data} onClick={p.onSurface}>{p.data?'Enter surface':'Loading terrain…'}</button><button className="secondary" disabled={!p.data} onClick={p.onExplore}>Open tablet</button><small>No route required · WASD + mouse</small></div>}</div>}
+      {region&&<div className="map-region-context"><span className="eyebrow">{canPlan(region)?'PREPARED EXCURSION REGION':'ORBITAL EXPLORATION'}</span><strong>{region.shortName}</strong><span>{region.terrain?'Outlined area: real terrain for planning and walking.':'Choose a basemap to inspect this region.'}</span>{canPlan(region)&&<div className="surface-entry"><button className="primary" disabled={!p.data} onClick={p.onSurface}>{p.data?'Enter surface':'Loading terrain…'}</button><button className="secondary" disabled={!p.data} onClick={p.onExplore}>Open tablet</button><small>No route required · WASD + mouse</small></div>}</div>}{region&&canPlan(region)&&p.walkChoice}
       <div className="map-guide"><span>DRAG TO ROTATE</span><i/><span>SCROLL TO ZOOM</span><i/><span>SELECT A REGION TO EXPLORE</span></div>
       <div className="map-footnote">Global context is a sphere.<br/>Gale relief is relative to the patch minimum.</div>
     </section>
