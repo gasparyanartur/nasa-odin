@@ -1,0 +1,13 @@
+
+> martian-map@0.7.0 test
+> vitest run
+
+
+ RUN  v5.1.0 /home/gasparyanartur/dev/nasa-martian-map
+
+
+ Test Files  15 passed (15)
+      Tests  58 passed (58)
+   Start at  15:37:57
+   Duration  1.10s (transform 48%, import 27%, tests 21%, worker 3%)
+

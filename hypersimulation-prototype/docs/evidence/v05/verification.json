@@ -1,0 +1,110 @@
+{
+  "date": "2026-11-14",
+  "version": "0.5.0",
+  "scope": [
+    "FR-016"
+  ],
+  "status": "Local verification passed; implementation uncommitted",
+  "previous_release": {
+    "commit": "f068d3e78f426ac76bc50cb8a2b85cb74bba9638",
+    "annotated_tag": "v0.4",
+    "pushed_to": "origin/master and origin refs/tags/v0.4"
+  },
+  "checks": {
+    "build": {
+      "command": "npm run build",
+      "result": "passed",
+      "warning": "Existing large Cesium/Three bundle warning"
+    },
+    "frontend": {
+      "command": "npm test",
+      "passed": 42,
+      "files": 10
+    },
+    "api": {
+      "command": "npm run test:api",
+      "passed": 19
+    },
+    "browser": {
+      "unique_cases_passed": 13,
+      "execution": "Verified across bounded production-browser runs",
+      "initial_full_run": "Interrupted after 9 passes and one camera-baseline timing failure; remaining cases verified in subsequent runs.",
+      "completed_regression_run": {
+        "command": "npm run test:browser -- tests/contexts.spec.ts tests/field-data.spec.ts tests/next-version.spec.ts tests/science.spec.ts",
+        "passed": 9,
+        "duration": "3.8 min"
+      },
+      "projection_and_numeric_refinement": {
+        "command": "npm run test:browser -- tests/contexts.spec.ts tests/field-data.spec.ts",
+        "passed": 6,
+        "duration": "2.2 min"
+      },
+      "final_editor_build": {
+        "command": "npm run test:browser -- tests/field-data.spec.ts",
+        "passed": 4,
+        "duration": "1.2 min"
+      },
+      "other_initial_passes": [
+        "explore: two cases",
+        "globe: one case",
+        "mission: one case"
+      ]
+    },
+    "documentation": "Local links and git diff --check passed"
+  },
+  "browser_environment": {
+    "renderer": "Chromium headless / SwiftShader",
+    "desktop": [
+      1440,
+      1000
+    ],
+    "phone": [
+      390,
+      844
+    ],
+    "touch_regression": [
+      1024,
+      900
+    ]
+  },
+  "verified_behaviors": [
+    "Six data kinds and Mars GeoJSON round trips, geometry/units/time/uncertainty validation",
+    "Create/edit/draw/hide/delete/undo/import/export/reload and Gale/Jezero isolation",
+    "HUD marker inspection and terrain-following shared geometry",
+    "Enabled field circles passed to both route and return requests; hidden circles stay enforced",
+    "Identical circular exclusions in swept walking collision checks",
+    "Live walked pose and elapsed time captured and retained after constraint edits/replanning",
+    "Unfinished drafts retained across views and repeated Log here",
+    "Malformed saved data retained; atomic import rejection; storage quota failures keep exportable in-memory data",
+    "Negative decimal coordinate and decimal reading keyboard entry; field labels stay above HUD metrics"
+  ],
+  "preview": {
+    "url": "http://127.0.0.1:5273",
+    "health": "200",
+    "api_version": "0.5.0"
+  },
+  "boundaries": [
+    "Prepared Gale only; browser-local saved records without cross-device sync",
+    "User layer distinct from immutable published products",
+    "Point readings do not change spatial fields or the historical scenario",
+    "Geology annotations and declared obstacle outlines do not edit terrain",
+    "Existing configured-endpoint candidate recomputation; full FR-013 replanning/comparison remains separate",
+    "Unfinished drafts and undo history are session-only; last 20 layer edits can be undone",
+    "Projected labels do not establish terrain line of sight"
+  ],
+  "data_sha256": {
+    "public/gale/manifest.json": "dc36688044b8806ac75792784cb604c788e4d965507bbf8dd3bf75a4ea44c3f7",
+    "public/gale/height.f32": "74dfcd83ec3e7b27f71585e7186b70b84e64181b96d8031e3f16e511e7bf1b52",
+    "public/gale/slope.f32": "d592d39c79c621e91a908fe1521eefb1e58d55740a863e18703cfd150b526d69",
+    "public/gale/valid.u8": "a1a8ad3622622956d1261af9d3c171b64df899e0152aaa1e7aa3d9ddc6897e80",
+    "public/gale/environment.json": "1a38817ab0c140653dcb5e1dceb5d6180cef84bccf14a2d7028d043666177927",
+    "public/science/geology.json": "6773b73c05d1efb582bb23631f378abf576e78a9510e22a7a27bc7828c2ecec6"
+  },
+  "screenshots": [
+    "v05-field-geometry.png",
+    "v05-field-hud.png",
+    "v05-field-mobile.png",
+    "v05-field-scene-geometry.png",
+    "v05-field-tablet.png"
+  ]
+}

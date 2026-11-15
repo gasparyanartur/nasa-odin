@@ -1,0 +1,39 @@
+{
+  "imageId": "sha256:2d204eb3701e160f50bc10faca5bcd9e0fd36b3f9bd863304f9a7eaae3e5db86",
+  "health": {
+    "status": "ok",
+    "datasetId": "gale-bradbury-v1",
+    "version": 1,
+    "datasets": [
+      {
+        "id": "gale-bradbury-v1",
+        "version": 1
+      },
+      {
+        "id": "gale-boxwork-v1",
+        "version": 1
+      }
+    ]
+  },
+  "checks": [
+    {
+      "datasetId": "gale-bradbury-v1",
+      "routeCount": 2,
+      "distanceM": [
+        141.67459022144803,
+        150.45163638238228
+      ]
+    },
+    {
+      "datasetId": "gale-boxwork-v1",
+      "routeCount": 2,
+      "distanceM": [
+        236.56795908853533,
+        244.9833951042259
+      ]
+    }
+  ],
+  "staticAssetsAndCesiumWorker": "pass",
+  "missingApiAndAsset404": "pass",
+  "preview": "http://127.0.0.1:8374/?demo=boxwork"
+}

@@ -1,0 +1,246 @@
+{
+ "placeholder": false,
+ "signed_off_by": null,
+ "science_goal": "Test if the difference between ridge rock and hollow rock holds across several ridge and hollow pairs in the walk area.",
+ "base": {
+  "x": 203.694,
+  "y": 318.916,
+  "label": "Crew rover, parked at the Curiosity position of sol 4534",
+  "assumption": true,
+  "placeholder": false
+ },
+ "walking_speed_m_s": {
+  "value": 0.7,
+  "placeholder": false
+ },
+ "work_time_min_per_station": {
+  "value": 25,
+  "placeholder": false
+ },
+ "partner_trail_m": {
+  "value": 20,
+  "placeholder": false
+ },
+ "hazard_start_min": {
+  "value": 150,
+  "placeholder": false
+ },
+ "start_lmst_hour": {
+  "value": 9,
+  "placeholder": false
+ },
+ "stations": [
+  {
+   "id": 1,
+   "x": -94,
+   "y": 44,
+   "kind": "ridge",
+   "on_path": true,
+   "relief_m": 1.1,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Break a fresh face on the ridge rock with a hammer. Compare the inside with the weathered surface through a hand lens and bag the chip.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 2,
+   "x": -133,
+   "y": 40,
+   "kind": "hollow",
+   "on_path": true,
+   "relief_m": -0.78,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Dig a trench 20 cm deep in the hollow floor. Photograph the wall of the trench and bag material from the top and from the bottom.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 3,
+   "x": -217,
+   "y": -214,
+   "kind": "ridge",
+   "on_path": true,
+   "relief_m": 3.64,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Measure the direction and the tilt of the ridge wall at three points with a compass clinometer, and mark each point on the map.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 4,
+   "x": -201,
+   "y": -218,
+   "kind": "hollow",
+   "on_path": true,
+   "relief_m": -1.01,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Trace one light vein by hand from the ridge wall into the hollow floor. Sample both ends and record the length walked.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 5,
+   "x": -115,
+   "y": -277,
+   "kind": "hollow",
+   "on_path": true,
+   "relief_m": -1.7,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Pick the three nodules that look most different inside a circle of 5 m, by eye. Bag them and photograph each place before removal.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 6,
+   "x": -92,
+   "y": -292,
+   "kind": "ridge",
+   "on_path": true,
+   "relief_m": 1.41,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Chip paired samples from the ridge top and from the hollow edge next to it, in the same light, within one stop.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 7,
+   "x": -56,
+   "y": -215,
+   "kind": "hollow",
+   "on_path": false,
+   "relief_m": -1.14,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Sample a hollow that the rover did not visit: dig a trench 20 cm deep and bag material from the top and from the bottom.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  },
+  {
+   "id": 8,
+   "x": -68,
+   "y": -192,
+   "kind": "ridge",
+   "on_path": false,
+   "relief_m": 0.51,
+   "relief_note": "height above (+) or below (-) the mean of a 31 m box, from the 1 m terrain",
+   "task": "Sample a ridge that the rover did not visit: break a fresh face, compare it with station 1 by eye, and bag the chip.",
+   "photo": null,
+   "placeholder": {
+    "position": false,
+    "kind": false,
+    "task": false
+   }
+  }
+ ],
+ "no_go": [
+  {
+   "id": "nogo-1",
+   "label": "Scarp edge west of the boxwork",
+   "polygon": [
+    [
+     -345,
+     -170
+    ],
+    [
+     -300,
+     -180
+    ],
+    [
+     -285,
+     -300
+    ],
+    [
+     -290,
+     -420
+    ],
+    [
+     -350,
+     -420
+    ]
+   ],
+   "placeholder": false
+  },
+  {
+   "id": "nogo-2",
+   "label": "Dark loose material, footing unknown",
+   "polygon": [
+    [
+     0,
+     -150
+    ],
+    [
+     40,
+     -150
+    ],
+    [
+     55,
+     -250
+    ],
+    [
+     20,
+     -260
+    ]
+   ],
+   "placeholder": false
+  }
+ ],
+ "drill_sites": [
+  {
+   "name": "Altadena",
+   "x": -0.751,
+   "y": 153.584,
+   "sol": 4571,
+   "kind": "edge of the boxwork",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "source_url": "https://science.nasa.gov/blog/curiosity-blog-sols-4804-4811-kicking-off-the-final-phase-of-boxwork-exploration",
+   "position_note": "rover position on sol 4571; the drill position is not published"
+  },
+  {
+   "name": "Valle de la Luna",
+   "x": null,
+   "y": null,
+   "sol": null,
+   "kind": "hollow",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "source_url": "https://science.nasa.gov/blog/curiosity-blog-sols-4689-4694-drill-in-the-boxwork-unit-is-go/",
+   "position_note": "position not published"
+  },
+  {
+   "name": "Nevado Sajama",
+   "x": -93.634,
+   "y": -286.816,
+   "sol": 4805,
+   "kind": "ridge",
+   "reported": "Minerals for this site are not in the NASA releases we read - see the release",
+   "source_url": "https://science.nasa.gov/blog/curiosity-blog-sols-4804-4811-kicking-off-the-final-phase-of-boxwork-exploration",
+   "position_note": "rover position on sol 4805; the drill position is not published"
+  }
+ ]
+}

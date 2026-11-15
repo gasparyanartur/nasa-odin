@@ -1,0 +1,9 @@
+{
+  "checked": "2026-11-14",
+  "capabilities": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/WMTSCapabilities.xml",
+  "tile": "https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/0/0/1.jpg",
+  "status": 200,
+  "contentType": "image/jpeg",
+  "cors": "*",
+  "bytes": 52404
+}
