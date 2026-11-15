@@ -73,8 +73,8 @@ export default function MarswalkCloser(p: Props) {
           {p.storm.warning !== 'shown' && <button type="button" className="secondary" onClick={p.onShowStorm}>Show the notice again</button>}
           <button type="button" className="text-button" onClick={p.onResetStorm}>End the scenario</button>
         </div>
-      </> : <button type="button" className="secondary closer-storm__run" disabled={!p.spaceWeather} onClick={p.onRunStorm}><Icon name="sun" />Run the solar storm scenario</button>}
-      <p className="caption">{p.spaceWeather ? `With Space weather on, it also starts by itself ${HAZARD_START.value} ${HAZARD_START.unit} into a walk (an assumption). The helmet notice fades to the side list after about ${AUTO_FADE.value / 1000} s.` : 'Space weather is off for this walk. Switch it on under Display to run the scenario.'}</p>
+      </> : <button type="button" className="secondary closer-storm__run" onClick={p.onRunStorm}><Icon name="sun" />Run the solar storm scenario</button>}
+      <p className="caption">{p.spaceWeather ? `With Space weather on, it also starts by itself ${HAZARD_START.value} ${HAZARD_START.unit} into a walk (an assumption). The helmet notice fades to the side list after about ${AUTO_FADE.value / 1000} s.` : 'Space weather is off for this walk, so the scenario does not start by itself. Run it here to see the RETURN NOW warning; switch Space weather on under Display to have it start during a walk.'}</p>
       <p className="caption">{SEP_EVENT.citation} <a href={SEP_EVENT.link} target="_blank" rel="noreferrer">DONKI event ↗</a></p>
     </div>
   </section>;

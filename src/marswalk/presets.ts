@@ -127,7 +127,7 @@ export const FEATURES: Feature[] = [
     WALK()),
   f('area', 'routes', 'Larger area and corridors',
     'Shows the wider area and regional corridors around the walk.', '',
-    NOWHERE('Not built yet in the team app (backlog FR-021, requested).')),
+    NOWHERE('Not built yet in the team app (requested).')),
   f('global', 'routes', 'Global maps: Viking, MOLA, CTX',
     'Shows planet-wide maps: Viking colour, MOLA height and CTX image.',
     'NASA/JPL-Caltech/USGS Mars Trek: Viking MDIM 2.1 colour mosaic, MGS MOLA relief, MRO CTX imagery',
@@ -139,13 +139,13 @@ export const FEATURES: Feature[] = [
     'Shows Mars solar time and the Earth clock in the helmet view.', '', WALK()),
   f('chem', 'helmet', 'Chemical and moisture markers',
     'Shows chemical and moisture markers in the helmet view.', '',
-    NOWHERE('Not built yet in the team app (backlog FR-020, requested).')),
+    NOWHERE('Not built yet in the team app (requested).')),
 
   f('fnotes', 'notes', 'Field notes: text, readings, obstacles',
     'Lets you write notes, keep readings and draw obstacles on the map.', '', WALK()),
   f('vnotes', 'notes', 'Voice notes, "Note here"',
     'Lets you record a voice note from the helmet view.', '',
-    NOWHERE('Not built yet in the team app (backlog FR-022, requested).')),
+    NOWHERE('Not built yet in the team app (requested).')),
 ];
 
 const IDS = FEATURES.map(x => x.id);

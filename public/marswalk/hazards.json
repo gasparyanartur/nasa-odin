@@ -65,7 +65,7 @@
     ]
    ],
    "origin": "assumption",
-   "originNote": "Marked area drawn by the Marswalk team (Marswalk presets.js: \"marked areas drawn by this team\"); no published source."
+   "originNote": "Marked area drawn by the Marswalk team; no published source."
   },
   {
    "id": "nogo-2",
@@ -109,7 +109,7 @@
     ]
    ],
    "origin": "assumption",
-   "originNote": "Marked area drawn by the Marswalk team (Marswalk presets.js: \"marked areas drawn by this team\"); no published source."
+   "originNote": "Marked area drawn by the Marswalk team; no published source."
   }
  ]
 }

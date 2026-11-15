@@ -10,35 +10,37 @@
 .wall-label .origin-tag.is-scenario{color:var(--alarm-ink-card)}
 .wall-label .origin-tag.is-source{color:var(--cobalt)}
 
-/* ---------- Station: choose your walk ---------- */
-.map-panel:has(.walk-choice) .map-region-context{bottom:calc(36px + var(--walk-h) + 12px)}
-.map-panel:has(.walk-choice) .map-guide{display:none}
-.map-panel{--walk-h:0px}
-.map-panel:has(.walk-choice) .map-footnote{display:none}
-.walk-choice{position:absolute;left:24px;right:24px;bottom:36px;display:flex;flex-direction:column;gap:6px;z-index:2;pointer-events:none}
-.walk-choice__head{align-self:flex-start;display:flex;align-items:baseline;gap:14px;padding:5px 10px;background:rgba(21,20,18,.86);border-radius:var(--radius);pointer-events:auto}
-.walk-choice__head .eyebrow{color:var(--on-wall);font:700 var(--fs-xs)/1 var(--font-text);letter-spacing:var(--track-caps)}
-.walk-choice__note{font-size:var(--fs-xs);color:var(--on-wall)}
-.walk-choice__cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;pointer-events:auto}
-.walk-card{position:relative;display:flex;flex-direction:column;min-width:0;padding:10px 12px 8px;background:rgba(21,20,18,.9);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall)}
-.walk-card.is-chosen{background:var(--card);border-color:transparent;box-shadow:var(--brass-top-inset),var(--shadow-card);color:var(--label-ink)}
-.walk-card__pick{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:8px;row-gap:2px;align-items:center;padding:0 40px 0 0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer}
-.walk-card__pick .pict{width:20px;height:20px;color:var(--brass-hi)}
-.walk-card.is-chosen .walk-card__pick .pict{color:var(--label-ink-2)}
-.walk-card__pick strong{font:700 var(--fs-sm)/1.25 var(--font-text)}
-.walk-card__pick span{grid-column:1 / -1;font-size:var(--fs-xs);line-height:1.4;color:var(--on-wall-2)}
-.walk-card.is-chosen .walk-card__pick span{color:var(--label-ink-2)}
-.walk-card__pick:focus-visible{outline:var(--focus-ring);outline-offset:3px}
-.walk-card>.info-wrap{position:absolute;top:8px;right:8px}
-.walk-card.is-chosen .info{color:var(--label-ink-2);border-color:var(--label-ink-2)}
-.walk-card__words{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:2px 10px;font:600 var(--fs-xs)/1.35 var(--font-text);color:var(--on-wall)}
-.walk-card.is-chosen .walk-card__words{color:var(--label-ink)}
-.walk-card__words li.is-off{color:var(--on-wall-2)}
-.walk-card__words li.is-off s{text-decoration-thickness:1px}
-.walk-card__words li.is-off em{font-style:normal;font-weight:700}
-.walk-card.is-chosen .walk-card__words li.is-off{color:var(--label-ink-2)}
-@media (max-width:1100px){.walk-choice__cards{grid-template-columns:repeat(2,minmax(0,1fr))}.walk-card__words{display:none}}
-@media (max-width:700px){.walk-choice{display:none}.map-panel:has(.walk-choice) .map-region-context{bottom:52px}}
+/* ---------- Station: choose your walk (left rail, step two under the region list) ---------- */
+.walk-choice{border-top:1px solid var(--plinth-hi);padding:18px 0 4px}
+.walk-choice__rows{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.walk-row{border:1px solid var(--plinth-line);border-radius:5px;background:var(--wall)}
+.walk-row.is-chosen{border-color:var(--brass);background:var(--plinth-hi)}
+.walk-row__head{display:flex;align-items:center;gap:4px;padding-right:6px}
+.walk-row__pick{flex:1;min-width:0;display:flex;align-items:center;gap:9px;min-height:44px;padding:6px 4px 6px 12px;background:transparent;border:0;color:var(--on-wall);text-align:left;cursor:pointer}
+.walk-row__pick .pict{flex:none;width:18px;height:18px;color:var(--brass-hi)}
+.walk-row__pick strong{font:600 13px/1.25 var(--font-text)}
+.walk-row__pick:focus-visible{outline:var(--focus-ring);outline-offset:-2px}
+.walk-row__detail{padding:0 12px 10px 39px;font-size:12px;line-height:1.5;color:var(--on-wall-2)}
+.walk-row__detail p{margin:0 0 6px}
+.walk-row__words{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:2px 10px;font:600 12px/1.4 var(--font-text);color:var(--on-wall)}
+.walk-row__words li.is-off{color:var(--on-wall-2)}
+.walk-row__words li.is-off s{text-decoration-thickness:1px}
+.walk-row__words li.is-off em{font-style:normal;font-weight:700}
+.walk-row__more-label{margin:0 0 4px;font-weight:700}
+.info-pop .walk-row__words{color:inherit}
+.info-pop .walk-row__words li.is-off{color:inherit;opacity:.75}
+.walk-choice__note{margin:10px 0 0}
+
+/* The region card on the picture stays small: name, the blue Enter surface bar and Open tablet. */
+.map-region-context{gap:6px;padding:12px 14px;width:290px}
+.map-region-context .eyebrow{font-size:11px}
+.map-region-context strong{font-size:19px}
+.map-region-context .surface-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:4px}
+.map-region-context .surface-entry .primary{align-self:stretch;min-height:44px;padding:0 16px;white-space:nowrap}
+.map-region-context .surface-entry .secondary{min-height:44px;padding:0 12px;margin:0}
+.map-region-context .surface-entry small{grid-column:1 / -1}
+@media (max-width:1000px){.map-region-context{width:260px}.map-region-context .surface-entry .primary{padding:0 10px;font-size:15px}.map-region-context .surface-entry .secondary{padding:0 8px}.map-region-context>span:last-of-type{display:none}}
+@media (max-width:700px){.map-region-context{width:auto;max-width:calc(100% - 28px)}}
 
 /* ---------- Tablet Display: feature switches and the helmet preview ---------- */
 .setup-stack{display:flex;flex-direction:column;gap:28px;min-width:0}
@@ -90,14 +92,17 @@
 .tablet-main .terrain-workspace{position:relative}
 /* Zero height: the map sizes itself from its siblings' heights (SurfaceMap fit), so these overlays must not count. */
 .map-overlays{position:absolute;top:0;left:0;right:0;height:0;z-index:3}
-.hazard-legend{position:absolute;left:24px;top:62px;width:min(290px,40%);padding:6px 10px 8px;background:rgba(21,20,18,.9);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
-.hazard-legend summary{cursor:pointer;font:700 var(--fs-xs)/1.4 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--on-wall)}
-.hazard-legend table{border-collapse:collapse;margin-top:4px}
-.hazard-legend th{font:700 var(--fs-xs)/1.3 var(--font-text);color:var(--on-wall-2);text-align:left;padding:2px 8px 2px 0}
-.hazard-legend td{padding:3px 6px 3px 0;vertical-align:middle;line-height:1.35}
-.hazard-legend td:nth-child(2){min-width:0}
-.hazard-legend td .info-wrap{margin-left:4px;vertical-align:middle}
-.hazard-legend td:last-child{white-space:nowrap}
+.hazard-legend-box{position:absolute;inset:0 0 auto 0;height:0}
+.hazard-legend__toggle{position:absolute;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;background:rgba(21,20,18,.88);border:1px solid var(--plinth-line);border-radius:var(--radius-pill);color:var(--on-wall);font:700 var(--fs-xs)/1 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;cursor:pointer}
+.hazard-legend__toggle[hidden]{display:none}
+.hazard-legend__toggle[aria-expanded=true]{border-color:var(--brass);color:var(--brass-hi)}
+.hazard-legend__toggle .pict{width:15px;height:15px}
+.hazard-legend__toggle:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.hazard-legend{position:absolute;width:260px;overflow:auto;padding:8px 10px;background:rgba(21,20,18,.94);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs);box-sizing:border-box}
+.hazard-legend__rows{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hazard-legend__rows li{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;column-gap:8px;line-height:1.35}
+.hazard-legend__rows li>.map-mark{justify-self:center}
+.hazard-legend__text{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px}
 .hazard-legend .origin-tag{margin-left:0}
 .hazard-legend__swatch{display:block;width:30px;height:18px;background-color:#6b5a4a;border:1px dashed var(--eng)}
 .map-mark{display:grid;place-items:center;width:18px;height:18px;font:700 var(--fs-xs)/1 var(--font-text)}
@@ -106,10 +111,16 @@
 .stop-card{position:absolute;top:62px;right:24px;width:min(270px,42%);max-height:380px;overflow:auto;padding:12px 14px}
 .stop-card .stop-card__task{font:600 var(--fs-sm2)/1.45 var(--font-text);color:var(--label-ink);margin:8px 0}
 .stop-card .secondary{color:var(--label-ink);border-color:var(--brass-lo);margin-top:8px}
-@media (max-width:900px){.hazard-legend{left:12px}.stop-card{right:12px;width:min(270px,60%)}}
+@media (max-width:900px){.stop-card{right:12px;width:min(270px,60%)}}
 
-/* ---------- Tablet Routes: science walk ---------- */
-.science-walk{margin-top:16px}
+/* ---------- Tablet Routes: science walk (first on Boxwork, the default choice) ---------- */
+.science-walk{margin:0 0 6px}
+.mission-sidebar section.science-walk{border-top:0;margin-top:0;padding-top:0}
+.mission-sidebar .science-walk .section-label{margin-top:0}
+.science-walk-card.is-default{border-color:var(--brass)}
+.science-walk__go{margin:8px 0 0}
+.science-walk__more{margin-top:8px;font-size:var(--fs-xs)}
+.science-walk__more>summary{cursor:pointer;color:var(--brass-hi);padding:6px 0}
 .science-walk-card{display:block;width:100%;margin-top:10px;padding:14px;text-align:left;background:var(--plinth);border:1px solid transparent;border-radius:var(--radius-case);color:var(--on-wall);cursor:pointer}
 .science-walk-card:hover:not(:disabled){border-color:var(--brass-lo)}
 .science-walk-card.selected{background:var(--card);color:var(--label-ink);box-shadow:var(--brass-top-inset),var(--shadow-card)}

@@ -45,12 +45,13 @@ export const kilometres = (m: number) => `${(m / 1000).toFixed(1)} km`;
 
 const assumption = (id: string, r: PreparedRoute = PREPARED) => r.assumptions.find(a => a.id === id);
 
-/** One source line per figure, quoted from the Marswalk README assumptions table. */
+/** One plain source line per figure, from the Marswalk assumptions table: name, value, and where the value comes from. */
 export function sourceLine(id: string, r: PreparedRoute = PREPARED): string {
   const a = assumption(id, r);
-  if (!a) return 'No source line recorded.';
-  const cells = a.readme.text.split('|').map(c => c.trim()).filter(Boolean);
-  return `${cells.join(', ')} (Marswalk README.md line ${a.readme.line})`;
+  if (!a) return 'No source recorded.';
+  const [name, value, kind = '', source = ''] = a.readme.text.split('|').map(c => c.trim()).filter(Boolean);
+  if (kind.toLowerCase() === 'assumption') return `${name} ${value}: an assumption of the Marswalk team, no published source`;
+  return `${name} ${value}: a ${kind} value, from ${source}`;
 }
 
 /**

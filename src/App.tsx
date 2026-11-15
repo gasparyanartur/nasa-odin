@@ -233,6 +233,8 @@ export default function App(){
   const returnLine=back?.route?`${duration(Math.max(0,settings.maxDurationMin*60-totalReturn))} time reserve`:'Updates: 25 m / 60 s';
   const doseProxy=`${(pose.elapsed/3600*settings.doseRateMicroGyH).toFixed(3)} µGy proxy`;
   function retryReturn(){lastReturn.current={x:Infinity,y:Infinity};setReturnRetry(v=>v+1);}
+  // Before the first step the walker turns to face Stop 1, so the helmet shows the next stop mark; a walk under way keeps its heading.
+  function startPrepared(){mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};if(pose.elapsed===0){const first=WALK_STOPS[0];setPose(p=>({...p,heading:Math.atan2(first.x-p.x,first.y-p.y)}));setSession(v=>v+1);}}
   function openTablet(tab:typeof tabletTab='explore'){setMapPanel(undefined);setTabletTab(tab);setView('plan');}
   useEffect(()=>{
     if(view!=='walk')return;
@@ -384,6 +386,7 @@ export default function App(){
 <button className="text-button" onClick={()=>{setGuide(false);updateDemoUrl(false);}}>Continue free exploration</button>
 </details>
 </section>}
+        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} isDefault={!route} source={mw.scienceSource} habitat={start} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelectPrepared={()=>{mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} onSelectPlanned={()=>{mw.choosePlanned();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
         <div className="eyebrow">{region?.shortName.toUpperCase()} / EXCURSION</div>
 <h1>Plan your traverse.</h1>
 <p className="subtle">Compare from habitat to destination. Your astronaut stays where you left them.</p>{selectedRegionId==='gale-boxwork'&&<label>Orbital imagery<select aria-label="Boxwork imagery" value={imagery} onChange={e=>setImagery(e.target.value as 'colour'|'grey')}>
@@ -420,7 +423,7 @@ export default function App(){
 <button className="text-button" disabled={!settings.exclusions.length} onClick={()=>changeSettings({...settings,exclusions:[]})}>Clear exclusions</button>
 </div>
 <p className="caption">Manual exclusions are user-declared 40 m areas. Edit field restrictions in Field data.</p>
-{mw.boxwork&&<div className="hazard-avoid"><label className="check"><input type="checkbox" aria-label="Avoid marked hazard areas" checked={avoidHazards} onChange={e=>{setAvoidHazards(e.target.checked);invalidate();lastReturn.current={x:Infinity,y:Infinity};}}/>Avoid marked hazard areas</label><InfoMark title="Avoid marked hazard areas" does={<>Sends the {HAZARD_ZONES.length} marked hazard areas to the route planner with the shortest and gentler routes. The planner takes circles only, so each area is covered completely by circles that can also block open ground up to two circle radii beyond its edge.</>} source="src/marswalk/hazards.ts, toRestrictions; planner limits in server/app.py (radius 5 to 500 m, at most 30 restrictions per request)" coverage={<>The circles share the 30-restriction budget with your manual exclusions and saved field restrictions. The map and the helmet draw the real hazard outlines, never the circles.</>}/>
+{mw.boxwork&&<div className="hazard-avoid"><label className="check"><input type="checkbox" aria-label="Avoid marked hazard areas" checked={avoidHazards} onChange={e=>{setAvoidHazards(e.target.checked);invalidate();lastReturn.current={x:Infinity,y:Infinity};}}/>Avoid marked hazard areas</label><InfoMark title="Avoid marked hazard areas" does={<>Sends the {HAZARD_ZONES.length} marked hazard areas to the route planner with the shortest and gentler routes. The planner takes circles only, so each area is covered completely by circles that can also block open ground up to two circle radii beyond its edge.</>} source="The team route planner accepts circles of 5 to 500 m radius, at most 30 per request. The hazard areas are drawn by the Marswalk team (assumption)." coverage={<>The circles share the 30-restriction budget with your manual exclusions and saved field restrictions. The map and the helmet draw the real hazard outlines, never the circles.</>}/>
 <p className="caption">{!avoidHazards?'Off: the shortest and gentler routes may cross the marked hazard areas.':hazardCircles&&!isFailure(hazardCircles)?`On: ${hazardCircles.exclusions.length} circles of ${hazardCircles.radiusM} m radius, ${30-missionSettings.exclusions.length-hazardCircles.exclusions.length} of 30 restrictions left after your own ${missionSettings.exclusions.length}.`:hazardCircles&&isFailure(hazardCircles)?hazardCircles.message:''}</p></div>}
 </section>
         <section>
@@ -471,7 +474,6 @@ export default function App(){
 <button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'—'} K · {d.status}</small>
 </button>)}</div>
 </details>}</>}</section>}
-        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} source={mw.scienceSource} habitat={start} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelectPrepared={()=>{mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} onSelectPlanned={()=>{mw.choosePlanned();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
         {guide&&<button className="secondary full" onClick={startDemo}>Reset guided example</button>}<button className="text-button reset" onClick={reset}>↺ Reset example excursion</button>
 <p className="caption">Restores example endpoints and mission settings. Saved field restrictions remain active; edit them in Field data.</p>
       {result&&!science&&<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>}</aside>
@@ -581,7 +583,7 @@ export default function App(){
 <span data-testid="tablet-explore-position">E {pose.x.toFixed(1)} · N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</span>
 <span className="restriction-summary">{missionSettings.exclusions.length} active restrictions · {route?'Route selected':'Free exploration'}</span>
 </div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}<button className="secondary" disabled={!data||busy} onClick={()=>void plan()}>{busy?'Comparing…':'Compare routes'}</button>
-<button className="primary" disabled={!data} onClick={()=>setView('walk')}>{route?'Walk selected route →':'Enter surface'}</button>
+<button className="primary" disabled={!data} onClick={()=>{if(!route&&prepared)startPrepared();setView('walk');}}>{science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
 </>:<button className="primary" disabled={!data} onClick={()=>setView('walk')}>Return to surface</button>}</footer>
     </TabletShell>
   </>;

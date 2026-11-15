@@ -14,7 +14,7 @@ export const SEP_EVENT = {
 
 export const HAZARD_START = {
   value: 150, unit: 'min', origin: 'assumption' as Origin,
-  note: 'Minutes after the walk starts. No source: the replay of a scenario, not a prediction (Marswalk README, Assumptions).',
+  note: 'Minutes after the walk starts. No source: the replay of a scenario, not a prediction.',
 } as const;
 
 export const AUTO_FADE = {

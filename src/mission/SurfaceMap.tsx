@@ -9,7 +9,7 @@ import { anchor, colorFor, type FieldRecord } from '../field/model';
 import { FULL_MAP, boundViewport, zoomViewport, mapPoint, type MapViewport } from './mapViewport';
 import { colorAt, layerRange, type ScalarLayer } from '../environment/model';
 import type { HazardZone } from '../marswalk/hazards';
-import { drawStops, drawWayBack, drawZones, type MapStop } from '../marswalk/hatch';
+import { drawStops, drawWayBack, drawZones, hitStop, type MapStop } from '../marswalk/hatch';
 import { FOLLOW_TILE_ZOOM, followViewport, followWidth, useSharpImagery } from '../marswalk/sharpImagery';
 
 export type PickMode = 'inspect' | 'start' | 'goal' | 'exclude' | 'field';
@@ -107,7 +107,7 @@ export default function SurfaceMap(p: Props) {
       if(a&&b){ctx.beginPath();const pa=pixel({x:a[0],y:a[1]}),pb=pixel({x:b[0],y:b[1]});ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.strokeStyle='#fff7d4';ctx.lineWidth=11;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
     }
     if(p.wayBack?.length)drawWayBack(ctx,p.wayBack,pixel,(p.mini?1.6:2)*css);
-    if((!p.mini||following)&&(p.mapStops?.length||p.drills?.length))drawStops(ctx,p.mapStops??[],p.mini?[]:p.drills??[],pixel,following?css*.7:css,p.selectedStop);
+    if((!p.mini||following)&&(p.mapStops?.length||p.drills?.length))drawStops(ctx,p.mapStops??[],p.mini?[]:p.drills??[],pixel,following?css*.7:css,p.selectedStop,!p.mini&&view.zoom<2);
     const markerScale=following?800/(el.clientWidth||800)/view.zoom*.75:p.mini?1:800/(el.clientWidth||800)/view.zoom;
     if(!p.mini)for(const target of SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury'))){const[x,y]=pixel(target.point);ctx.beginPath();ctx.arc(x,y,10*markerScale,0,Math.PI*2);ctx.fillStyle=target.id===p.targetId?'#ecd09c':'#2B2825';ctx.fill();ctx.strokeStyle='#e4d2a2';ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=target.id===p.targetId?'#26211C':'#ffe8b9';ctx.font=`bold ${11*markerScale}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(target.id==='rocknest'?'R':'Y',x,y);}
     for(const [label,v,color] of [['H',p.start,'#a9debd'],['D',p.goal,'#f4bc81']] as const){
@@ -147,8 +147,10 @@ export default function SurfaceMap(p: Props) {
     const tolerance=p.data.meta.extentM/current.current.zoom*24/(canvas.current?.clientWidth||800);
     const record=(!p.mode||p.mode==='inspect')?(p.fields??[]).filter(r=>r.visible).map(r=>({record:r,distance:Math.hypot(anchor(r).x-q.x,anchor(r).y-q.y)})).filter(r=>r.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.record:undefined;
     if(record&&p.onFieldSelect){p.onFieldSelect(record.id);return;}
-    const stop=(!p.mode||p.mode==='inspect')&&p.onStopSelect?(p.mapStops??[]).map(s=>({s,distance:Math.hypot(s.x-q.x,s.y-q.y)})).filter(s=>s.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.s:undefined;
-    if(stop){p.onStopSelect!(stop.id);return;}
+    const v=current.current,half=p.data.meta.extentM/2;
+    const hit=(!p.mode||p.mode==='inspect')&&p.onStopSelect&&p.mapStops?.length?hitStop(p.mapStops,s=>[(s.x+half)/(2*half)*800,(half-s.y)/(2*half)*800],800/(canvas.current?.clientWidth||800)/v.zoom,v.zoom<2,[(at.x-v.x)*800/v.zoom,(at.y-v.y)*800/v.zoom]):undefined;
+    if(hit&&'stop' in hit){p.onStopSelect!(hit.stop.id);return;}
+    if(hit&&'cluster' in hit){update(zoomViewport(v,v.zoom*2,at));return;}
     const target=!p.mode||p.mode==='inspect'?SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury')).map(t=>({target:t,distance:Math.hypot(t.point.x-q.x,t.point.y-q.y)})).filter(t=>t.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.target:undefined;
     if(target&&p.onTargetSelect)p.onTargetSelect(target.id);else p.onPick?.(q);
   }
