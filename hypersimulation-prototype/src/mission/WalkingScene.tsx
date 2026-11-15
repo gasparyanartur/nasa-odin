@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SCIENCE } from '../datasets/geology';
 import { anchor, colorFor, type FieldRecord } from '../field/model';
 import type { HudSettings } from './HudSettings';
-import { advanceWalk, type Route, type Point, type Pose, type Settings, type TerrainData } from './data';
+import { advanceWalk, type Route, type Point, type Pose, type Settings, type StopReason, type TerrainData } from './data';
 import type { GraphicsQuality } from './conditions';
 import { createSurface, type SurfaceEngine } from './surface/renderer';
 import type { HazardZone } from '../marswalk/hazards';
@@ -14,7 +14,7 @@ export interface ExtraMark extends Point { id:string; label:string; mark?:string
 interface Props {
   paths:{id:string;points:Point[];color:string}[];events:ExpeditionEvent[];returning:boolean;active:boolean;imagery:'colour'|'grey';onUnavailable:()=>void;onFailure:()=>void;fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;
   start:Point;goal:Point;next?:Point;data:TerrainData;walkData?:TerrainData;route?:Route;settings:Settings;initialPose:Pose;
-  timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;
+  timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(reason:StopReason|null)=>void;
   extra?:ExtraMark[];zones?:HazardZone[];wayBack?:Point[];
   /** Route preview: moves the camera only. The walk pose, its clock and every walk record stay where they were. */
   preview?:{path:PreviewPath;playing:boolean;speed:number};onPreview?:(doneM:number)=>void;
@@ -35,7 +35,7 @@ export default function WalkingScene(p:Props){
   const currentPoints=useRef(points);currentPoints.current=points;
   useEffect(()=>{
     const el=canvas.current!,controller=new AbortController();let disposed=false,frame=0,previous=0,send=0,ignoreMove=false,active=false;
-    let pose={...latest.current.initialPose};const keys=new Set<string>();
+    let pose={...latest.current.initialPose},stopReason:StopReason|null=null;const keys=new Set<string>();
     const isLocked=()=>document.pointerLockElement===el;
     // A final mouse delta can arrive between frames: retain the same view when pausing.
     const flushPose=()=>{if(!disposed&&!latest.current.preview){engine.current?.eye(pose);latest.current.onPose({...pose});}};
@@ -60,7 +60,9 @@ export default function WalkingScene(p:Props){
           const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));
           const right=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft'));
           const advanced=advanceWalk(current.walkData??current.data,pose,current.settings,pose.heading,forward,right,dt);pose={...advanced.pose,pitch:pose.pitch};
-          send+=dt;if(send>.1){send=0;current.onPose({...pose});current.onBlocked(advanced.blocked);}
+          // A stop keeps its reason after the keys are released; only a step that moves again clears it.
+          if(forward||right)stopReason=advanced.reason;
+          send+=dt;if(send>.1){send=0;current.onPose({...pose});current.onBlocked(stopReason);}
           view.eye(pose);
         }
         const preview=current.preview;

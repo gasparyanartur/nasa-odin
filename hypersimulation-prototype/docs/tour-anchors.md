@@ -1,6 +1,6 @@
 # Tour anchors
 
-Stable `data-tour` attributes for a guided tour. Select one with `[data-tour="name"]`. Each name is on one element at a time. Some only exist in a certain state; the line says when.
+Stable `data-tour` attributes for a guided tour. Select one with `[data-tour="name"]`. Each name is on one element at a time. Some only exist in a certain state; the line says when. A blocked control stays in place with `aria-disabled="true"` (never `disabled`) and says why on click, hover or focus; treat it as not available.
 
 AI-written (Claude, Anthropic), 2026-11-15.
 
@@ -53,8 +53,8 @@ AI-written (Claude, Anthropic), 2026-11-15.
 - `map-layers` - Map or Routes, map tool bar, Layers. Opens the map layers panel.
 - `inspect-data` - Map or Routes, map tool bar, Inspect data. Opens the data evidence panel.
 - `log-here` - Map or Routes, map tool bar, Log here. Starts a field record at the astronaut's position.
-- `plan-route` - Routes footer (Plan new route only), Plan route. Plans the shortest and gentler routes.
-- `preview-route` - Routes footer (when a route, the prepared science walk or a shown previous path exists), Preview route. Runs the helmet camera along it in about 90 seconds; nothing is walked or saved.
+- `plan-route` - Routes footer (Plan new route only), Plan route. Plans the shortest and gentler routes. Blocked until a destination is set; planning also starts by itself once start and destination are set.
+- `preview-route` - Routes footer, Preview route; blocked until a route, the prepared science walk or a shown previous path exists. Runs the helmet camera along it in about 90 seconds; nothing is walked or saved.
 - `walk-route` - Routes footer, Walk selected route (or Walk this path with a previous path shown, Walk this route, or Enter surface). Enters the surface on that route.
 - `return-to-surface` - footer of the other tools, Return to surface. Closes the tablet.
 - `display-features` - Display, the feature switches with the helmet preview. Turns features on or off.

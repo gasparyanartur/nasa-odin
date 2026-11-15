@@ -57,8 +57,8 @@
 .feature-row__state{font-weight:700}
 .feature-row[data-state="On"] .feature-row__state,.feature-row[data-state="Always on"] .feature-row__state{color:var(--label-ink)}
 .feature-row.is-fixed .hud-setting{cursor:default}
-.feature-row[data-state="Not in this region"] .hud-setting strong,.feature-row[data-state="Not built yet"] .hud-setting strong{color:var(--label-ink-2);font-weight:500}
-.feature-row[data-state="Not in this region"] input,.feature-row[data-state="Not built yet"] input{opacity:.45}
+.feature-row[data-state="Not available in this region"] .hud-setting strong,.feature-row[data-state="Not built yet"] .hud-setting strong{color:var(--label-ink-2);font-weight:500}
+.feature-row[data-state="Not available in this region"] input,.feature-row[data-state="Not built yet"] input{opacity:.45}
 .feature-row[data-state="Always on"] input{opacity:.7}
 
 .helmet-preview{margin:0;display:grid;gap:8px}
@@ -214,3 +214,16 @@
 .panorama-full__bar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--brass-hi);font-size:var(--fs-sm)}
 .panorama-full__scroll{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;display:flex;align-items:center}
 .panorama-full__scroll img{display:block;height:min(100%,1083px);width:auto;max-width:none}
+
+/* ---------- Tablet Routes: the compact science walk card ---------- */
+.science-walk--compact{margin:4px 0 6px}
+.science-walk--compact .science-walk-card{margin-top:0;padding:9px 12px}
+.science-walk--compact .science-walk-card>span{align-items:center}
+.science-walk--compact .science-walk-card>span em{font-style:normal;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass-hi)}
+.science-walk--compact .science-walk-card.selected>span em{color:var(--label-ink)}
+.science-walk--compact .science-walk-card>strong{margin-top:4px;font:700 var(--fs-sm2)/1.3 var(--font-text);gap:4px}
+.science-walk__meta{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-size:var(--fs-xs);color:var(--on-wall-2)}
+.science-walk--compact .science-walk__more{margin-top:2px}
+.science-walk--compact .science-walk__more>summary{padding:4px 0}
+.science-walk__why-not p{margin:0;font-size:var(--fs-sm);color:var(--on-wall)}
+.science-walk__why-not .button-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}

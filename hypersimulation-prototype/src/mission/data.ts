@@ -78,21 +78,28 @@ export function sample(data: TerrainData, point: Point) {
   return { elevation: z, slope: Math.max(...ids.map(i => data.slopes[i])) };
 }
 
-export function canMove(data: TerrainData, a: Point, b: Point, settings: Pick<Settings, 'maxSlopeDeg' | 'exclusions'>): boolean {
-  const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(data.meta.stepM/2)));
+/** Why a step is refused: the edge of the mapped area, a gap in the terrain data, a no-go area, or a slope over the limit. */
+export type StopReason = 'edge' | 'gap' | 'nogo' | 'slope';
+export function moveBlock(data: TerrainData, a: Point, b: Point, settings: Pick<Settings, 'maxSlopeDeg' | 'exclusions'>): StopReason | null {
+  const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(data.meta.stepM/2))), half=data.meta.extentM/2;
   for (let i=1;i<=n;i++) {
     const p={x:a.x+(b.x-a.x)*i/n,y:a.y+(b.y-a.y)*i/n};
     const v=sample(data,p);
-    if (!v || v.slope>settings.maxSlopeDeg || settings.exclusions.some(e => Math.hypot(e.x-p.x,e.y-p.y)<=e.radius)) return false;
+    if (!v) return Math.abs(p.x)>half||Math.abs(p.y)>half?'edge':'gap';
+    if (settings.exclusions.some(e => Math.hypot(e.x-p.x,e.y-p.y)<=e.radius)) return 'nogo';
+    if (v.slope>settings.maxSlopeDeg) return 'slope';
   }
-  return true;
+  return null;
+}
+export function canMove(data: TerrainData, a: Point, b: Point, settings: Pick<Settings, 'maxSlopeDeg' | 'exclusions'>): boolean {
+  return moveBlock(data,a,b,settings)===null;
 }
 
 // Integrate the full mission interval in small physical steps, independent of drawing FPS.
 export function advanceWalk(data: TerrainData, pose: Pose, settings: Pick<Settings, 'speedMps' | 'maxSlopeDeg' | 'exclusions'>, heading: number, forward: number, right: number, seconds: number) {
   const next={...pose,heading,elapsed:pose.elapsed+seconds};
   const length=Math.hypot(forward,right)||1;
-  let remaining=seconds, blocked=false;
+  let remaining=seconds, blocked=false, reason:StopReason|null=null;
   while(remaining>1e-8&&(forward||right)) {
     const step=Math.min(.1,remaining), amount=settings.speedMps*step/length;
     let target={x:next.x+(Math.sin(heading)*forward+Math.cos(heading)*right)*amount,y:next.y+(Math.cos(heading)*forward-Math.sin(heading)*right)*amount};
@@ -102,10 +109,11 @@ export function advanceWalk(data: TerrainData, pose: Pose, settings: Pick<Settin
       const penalty=Math.hypot(1,grade)*(1+3*Math.max(0,grade)+1.5*Math.max(0,-grade));
       target={x:next.x+(target.x-next.x)/penalty,y:next.y+(target.y-next.y)/penalty};
     }
-    if(!canMove(data,next,target,settings)){blocked=true;break;}
+    reason=moveBlock(data,next,target,settings);
+    if(reason){blocked=true;break;}
     next.x=target.x;next.y=target.y;remaining-=step;
   }
-  return {pose:next,blocked};
+  return {pose:next,blocked,reason};
 }
 
 export function routeProgress(route: Route, point: Point) {
