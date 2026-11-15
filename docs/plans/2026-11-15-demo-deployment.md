@@ -1,5 +1,7 @@
 # Client-side Martian Map demo
 
+Note (2026-11-15): this is a dated record. Paths under `hypersimulation-prototype/app/src` and the old static Marswalk app it names were removed from the tree on 2026-11-15; they remain in git history at commit 66ee212.
+
 Date: 2026-11-15. Status: Draft. The user selected minimal hosting and accepts a client-side application. This revises the earlier Docker/Render proposal. Application migration and deployment have not started.
 
 ## Goal and success criteria

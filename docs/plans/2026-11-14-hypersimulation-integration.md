@@ -1,5 +1,7 @@
 # Integrate the Fable simulator into Martian Map
 
+Note (2026-11-15): this is a dated record. Paths under `hypersimulation-prototype/app/src` and the old static Marswalk app it names were removed from the tree on 2026-11-15; they remain in git history at commit 66ee212.
+
 Date: 2026-11-14. Status: In progress — functional integration verified locally; startup and target-laptop performance gates remain open. Implementation owner: Codex in the current workspace.
 
 ## Goal and success criteria

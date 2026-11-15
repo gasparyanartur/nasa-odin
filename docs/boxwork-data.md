@@ -36,7 +36,7 @@ The native Three.js renderer is adapted into the existing React application; the
 
 Public deployment, cross-patch/regional routing, chemical overlays, audio notes, the donor's scripted hazard/tour and a broader interface redesign remain separate scope. Local browser checks on software rendering do not establish performance on the donor's target laptop.
 
-Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged.
+Renderer teardown releases geometry, textures, event listeners and the WebGL context; repeated view switching does not retain an abandoned surface context. The original donor source remains unchanged in git history at commit 66ee212.
 
 
 ## Local verification and remaining performance gates
