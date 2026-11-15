@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegionId } from '../datasets/catalog';
-import { api, type Alternative, type Point, type Pose, type Settings, type TerrainData } from '../mission/data';
+import type { Alternative, Point, Pose, Settings, TerrainData } from '../mission/data';
+import { usePlanner } from '../mission/planner/usePlanner';
 import { arrivalText, hazardStatus, shouldSample, stopsAt } from './helmet';
 import { HAZARD_ZONES } from './hazards';
 import { appendSample, closeWalk, listWalks, localStore, saveWalk, startWalk, type Walk, type WalkRegion } from './pathlog';
@@ -33,6 +34,8 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   useEffect(() => { if (regionId && regionId !== setup.region) setSetup(pickRegion(setup, regionId)); }, [regionId]);
   const on = useMemo(() => effective(setup), [setup]);
   const boxwork = regionId === 'gale-boxwork';
+  // Its own browser planner, so the helmet's return estimate (same 'return' lane) cannot cancel a science walk leg.
+  const planner = usePlanner(boxwork ? data : undefined);
 
   // Science walk
   const [science, setScience] = useState<ScienceState>({ status: 'idle' });
@@ -45,14 +48,14 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   const choosePrepared = useCallback(() => { setScienceSource('prepared'); setScienceSelected(true); }, []);
   const choosePlanned = useCallback(() => { setScienceSource('planned'); setScienceSelected(true); }, []);
   const planScience = useCallback(async (habitat: Point, settings: Settings) => {
-    if (!data || !boxwork) return;
+    if (!data || !boxwork || !planner) return;
     scienceRequest.current?.abort();
     const c = new AbortController(); scienceRequest.current = c;
     // A selected prepared route stays the guidance while the planner works and when it refuses.
     if (source.current === 'planned') setScienceSelected(false);
     setScience({ status: 'busy', leg: 0, total: WALK_STOPS.length + 1 });
     const call = (start: Point, goal: Point, s: Settings, elapsedS: number) =>
-      api<LegResult>('/api/return', { datasetId: data.meta.id, start, goal, settings: s, mode: 'shortest', elapsedS }, c.signal);
+      planner.returnToHabitat({ start, goal, settings: s, mode: 'shortest', elapsedS }, c.signal) as Promise<LegResult>;
     try {
       const plan = await planScienceWalk(data, habitat, settings, call, (leg, total) => { if (scienceRequest.current === c) setScience({ status: 'busy', leg, total }); });
       if (scienceRequest.current !== c) return;
@@ -61,7 +64,7 @@ export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
       if (scienceRequest.current !== c || (e as Error)?.name === 'AbortError') return;
       setScience({ status: 'failed', failure: isFailure(e) ? e : { message: (e as Error)?.message ?? 'The science walk could not be planned.' } });
     } finally { if (scienceRequest.current === c) scienceRequest.current = null; }
-  }, [data, boxwork]);
+  }, [data, boxwork, planner]);
   const plan = science.status === 'done' ? science.plan : undefined;
   const planned = scienceSource === 'planned' ? plan : undefined;
   const scienceRoute = (prepared?: Alternative) => !scienceSelected || !boxwork ? undefined : planned ? planned.route : prepared;

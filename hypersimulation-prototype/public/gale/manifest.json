@@ -49,5 +49,7 @@
     "elevation.png": "d38bb1b75a31e547187e96abfc9b4887afaaa17545d222c3031c5f0bbbd5c13b",
     "ortho.jpg": "a3404a3242b969080b9e53695f79aa58a5285d9a597b2ab18290b29fc39603b0",
     "terrain.tif": "4e6240a1d25e8c794e0c82dbc0785909eab5345f77d763c59150eb6c6facd92a"
-  }
+  },
+  "pathsFile": "previous-paths.json",
+  "regionId": "gale-bradbury"
 }

@@ -1,7 +1,22 @@
+import { observePlanner, plannerReply } from './planner-helpers';
 import { uiRoutes, uiDisplay, uiClose, uiStation, uiAssumptions } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 
+test.afterEach(async({page},info)=>{
+  if(info.status===info.expectedStatus)return;
+  const state=await page.evaluate(()=>({pointerLocked:!!document.pointerLockElement,focused:document.hasFocus(),activeElement:document.activeElement?.tagName,elapsed:document.querySelector('[data-testid="elapsed"]')?.textContent,instructions:document.querySelectorAll('.walk-instructions').length,missionAudit:(window as any).missionAudit,inputAudit:(window as any).inputAudit})).catch(()=>({pageClosed:true}));
+  await info.attach('clock-input-state',{body:JSON.stringify(state,null,2),contentType:'application/json'});
+});
+
 test('historical replay, environmental departure decisions, visor and graphics preserve mission',async({page},info)=>{
+  // This exercises several renderer rebuilds and screenshots on software WebGL.
+  // Frame-rate acceptance is separate; retain the physical-clock assertions below.
+  test.setTimeout(240_000);
+  await observePlanner(page);
+  await page.addInitScript(()=>{
+    const events:unknown[]=[];(window as any).inputAudit=events;
+    for(const name of ['keydown','pointerlockchange','blur','focus'])window.addEventListener(name,event=>{events.push({event:name,code:(event as KeyboardEvent).code,at:performance.now(),locked:!!document.pointerLockElement});if(events.length>30)events.shift();},true);
+  });
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&/THREE|shader/i.test(m.text()))errors.push(m.text());});
   await page.goto('/');
@@ -22,7 +37,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await uiAssumptions(page);await page.getByText('Departure conditions and limits',{exact:true}).click();
   await page.getByLabel('Minimum temperature',{exact:true}).fill('240');
   await page.getByLabel('Destination stop',{exact:true}).fill('10');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await expect(page.locator('.route-card').first()).toContainText('Limits exceeded');
   await page.getByText('Compare departure hours',{exact:true}).click();
@@ -30,7 +45,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await expect(page.getByRole('button',{name:'Depart 3:00: exceeds',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Depart 12:00: within',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card').first()).toContainText('Within configured limits');
   await expect(page.locator('.image-warning')).toHaveCount(0);
   await uiStation(page);
@@ -43,7 +58,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await page.getByLabel('Historical timeline').fill('12.99');
   await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.getByLabel('Visor navigation overlay')).toBeVisible();
   const canvas=page.locator('.walking-scene canvas');await expect(canvas).toBeVisible();
@@ -62,16 +77,16 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');await page.getByLabel('Simulation pace',{exact:true}).selectOption('20');await resume();
   const departure=await page.getByTestId('hud-lmst').textContent();
   await page.evaluate(()=>{const audit={start:0,end:0};(window as any).missionAudit=audit;document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement)audit.start=performance.now();else audit.end=performance.now();});});
-  const refreshed=page.waitForResponse(r=>r.url().includes('/api/return')&&r.ok()&&r.request().postDataJSON().elapsedS>=60,{timeout:60000});
+  // The worker must refresh even while the astronaut is stationary.
   await canvas.click({position:{x:450,y:350}});
   await expect(page.locator('.walk-instructions')).toHaveCount(0);
   // Mission time evolves even when stationary, and triggers return refresh after 60 simulated seconds.
   await expect.poll(async()=>parseFloat((await page.getByTestId('elapsed').textContent())!),{timeout:60000}).toBeGreaterThanOrEqual(60);
   await expect(page.getByTestId('hud-lmst')).not.toHaveText(departure!);
-  await refreshed;
+  await plannerReply(page,'return',0,60);
   await page.screenshot({timeout:60_000,path:info.outputPath('v02-visor-active.png')});
   await page.keyboard.press('Escape');
-  await expect(page.locator('.walk-instructions')).toBeVisible();
+  await expect(page.locator('.walk-instructions')).toBeVisible({timeout:15000});
   const elapsed=await page.getByTestId('elapsed').textContent();
   const audit=await page.evaluate(()=>(window as any).missionAudit as {start:number;end:number});
   const expectedSeconds=(audit.end-audit.start)/1000*20;

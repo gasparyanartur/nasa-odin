@@ -4,8 +4,8 @@ import {spawnSync} from 'node:child_process';
 
 const baseURL=process.env.DEMO_URL??'http://127.0.0.1:8373';
 let healthy=false;
-for(let attempt=0;attempt<100;attempt++){try{healthy=(await fetch(new URL('/api/health',baseURL),{signal:AbortSignal.timeout(1000)})).ok;}catch{/* container may still be starting */}if(healthy)break;await new Promise(resolve=>setTimeout(resolve,300));}
-if(!healthy)throw new Error('Production server is not healthy. Start the container or set DEMO_URL.');
+for(let attempt=0;attempt<100;attempt++){try{healthy=(await fetch(new URL('/',baseURL),{signal:AbortSignal.timeout(1000)})).ok;}catch{/* container may still be starting */}if(healthy)break;await new Promise(resolve=>setTimeout(resolve,300));}
+if(!healthy)throw new Error('Production site is unavailable. Run npm run demo or set DEMO_URL.');
 await mkdir('tmp/demo-video',{recursive:true});await mkdir('docs/evidence',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const context=await browser.newContext({viewport:{width:1440,height:1000},ignoreHTTPSErrors:true,recordVideo:{dir:'tmp/demo-video',size:{width:1440,height:1000}}});
@@ -23,7 +23,7 @@ try{
   await clip('Inspect real USGS imagery and terrain-derived slope. Historical REMS/RAD stay site context.');
   await page.getByLabel('Global basemap').selectOption('ctx-global-imagery');await active();
   await clip('Select MRO/CTX imagery; source tile gaps are reported while local overlays remain available.');
-  await page.locator('.map-region-context .secondary').click();await page.getByRole('navigation',{name:'Tablet tools'}).getByRole('button',{name:'Routes',exact:true}).click();await page.getByRole('button',{name:'Compare routes',exact:true}).click();await page.locator('.route-card').last().waitFor({timeout:60000});
+  await page.locator('.map-region-context .secondary').click();await page.getByRole('navigation',{name:'Tablet tools'}).getByRole('button',{name:'Routes',exact:true}).click();await page.getByRole('button',{name:'Plan route',exact:true}).click();await page.locator('.route-card').last().waitFor({timeout:60000});
   await page.locator('.route-card').last().click();
   await clip('Compare shortest and gentler routes, including return time and explicit assumptions.');
   await page.getByRole('button',{name:'Walk selected route →'}).click();await page.locator('.walking-scene canvas').waitFor();await page.getByRole('button',{name:'Open tablet',exact:true}).click();await page.getByRole('navigation',{name:'Tablet tools'}).getByRole('button',{name:'Display',exact:true}).click();await page.getByLabel('Simulation pace').selectOption('20');await page.getByRole('dialog').getByRole('button',{name:'Close tablet',exact:false}).first().click();await page.waitForTimeout(1500);

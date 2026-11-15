@@ -1,3 +1,4 @@
+import { observePlanner } from './planner-helpers';
 import { uiRoutes, uiStation, uiStationData, uiLayers } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 
@@ -5,6 +6,7 @@ const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{n
 const card=(page:import('@playwright/test').Page,name:string)=>page.getByRole('region',{name:'Regions'}).getByRole('button',{name:new RegExp(name)});
 
 test('discover regions, choose data, preserve layers and isolate missions',async({page},info)=>{
+  await observePlanner(page);
   const exceptions:string[]=[];page.on('pageerror',e=>exceptions.push(e.message));
   await page.goto('/');await uiStationData(page);
   await expect(nav(page).getByRole('button',{name:/Tablet/})).toBeDisabled();
@@ -32,7 +34,7 @@ test('discover regions, choose data, preserve layers and isolate missions',async
   await expect(page.getByLabel('Slope',{exact:true})).toBeChecked();
   await expect(page.getByLabel('Slope opacity',{exact:true})).toHaveValue('40');
   await page.getByLabel('Slope opacity',{exact:true}).fill('55');
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await uiStation(page);
   await expect(page.getByLabel('Explore Slope opacity',{exact:true})).toHaveValue('55');
@@ -47,8 +49,8 @@ test('discover regions, choose data, preserve layers and isolate missions',async
   await nav(page).getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
   // A result arriving after region change must never restore the previous mission.
-  await page.route('**/api/routes',async route=>{await new Promise(resolve=>setTimeout(resolve,800));try{await route.continue();}catch{/* request was cancelled */}});
-  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await page.evaluate(()=>window.plannerTest.delay.routes=800);
+  await uiRoutes(page);await page.getByRole('button',{name:'Plan route',exact:true}).click();
   await uiStation(page);await card(page,'Jezero').click();
   await page.waitForTimeout(1200);await expect(nav(page).getByRole('button',{name:/HUD/})).toBeDisabled();
   await page.setViewportSize({width:800,height:700});

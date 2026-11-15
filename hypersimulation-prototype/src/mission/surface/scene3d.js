@@ -662,7 +662,8 @@ void main() {
       float diag = stripe(fc.x + fc.y, 10.0, 2.0);
       float back = stripe(fc.x - fc.y, 10.0, 2.0);
       col = mix(col, uHatchColor0, step(0.5, m.r) * diag);
-      col = mix(col, uHatchColor1, step(0.5, m.g) * max(diag, back));
+      // Cross-hatched advisory areas retain the measured terrain underneath.
+      col = mix(col, uHatchColor1, 0.35 * step(0.5, m.g) * max(diag, back));
       // No-go: 45 and 135 degree ink lines with a paper casing (uNogo = period, ink width, casing width in px).
       float dn = min(lineDist((fc.x + fc.y) * 0.70711, uNogo.x), lineDist((fc.x - fc.y) * 0.70711, uNogo.x));
       float nogo = step(0.5, m.b);

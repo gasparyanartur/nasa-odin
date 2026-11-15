@@ -104,7 +104,7 @@ function cover(zone: HazardZone, s: number): (Exclusion & { zoneId: string })[] 
   return out;
 }
 
-// The team planner takes circles only (server/app.py Exclusion: radius 5 to 500 m, at most 30 per request).
+// The team planner takes circles only (src/mission/planner/core.ts settingsFor: radius 5 to 500 m, at most 30 per request).
 // Each kept grid cell is covered by its circumscribed circle, so the union covers every zone completely.
 export function toRestrictions(zones: HazardZone[] = HAZARD_ZONES, budget = MAX_EXCLUSIONS): ZoneRestriction {
   if (!zones.length) return { exclusions: [], spacingM: 0, radiusM: 0 };

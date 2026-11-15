@@ -1,3 +1,4 @@
+import Help from '../Help';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { TerrainData } from './data';
 import { SCIENCE } from '../datasets/geology';
@@ -25,7 +26,7 @@ export default function HudConfiguration({value,onChange,quality,onQuality,timeS
   const row=(control:ReactNode,info:ReactNode,key?:string)=><div className="setting-row" key={key}>{control}{info}</div>;
   const toggle=(key:Exclude<keyof HudSettings,'science'>,label:string,icon:IconName,note:string|undefined,does:string)=>row(<label className="hud-setting"><input type="checkbox" aria-label={label} checked={value[key]} onChange={e=>onChange({...value,[key]:e.target.checked})}/><Icon name={icon}/><span><strong>{label}</strong>{note&&<small>{note}</small>}</span></label>,<InfoMark title={label} does={does}/>);
   return <section className="hud-configuration" aria-label="HUD configuration"><span className="eyebrow">TABLET / DISPLAY SETUP</span><h1>Your view of the surface.</h1><p className="subtle">Choose the navigation and time information in your visor. Display changes keep your route, position and mission clock.</p>
-    <div className="configuration-grid"><fieldset><legend>Navigation</legend>
+    <div className="configuration-grid"><fieldset><legend>Navigation <Help label="About visor navigation">The compass shows heading from true north; the round minimap stays north-up. H is habitat, D destination and the arrow your position and heading. Far markers stay at the map rim. Waypoints are projected into your scene view.</Help></legend>
       {toggle('visor','Visor overlay','helmet','Compass and visor frame','Draws the thin helmet outline and the compass strip at the top of the helmet view. Off leaves the terrain with no visor marks.')}
       {toggle('minimap','HUD minimap','area',undefined,'The round map at the top right of the helmet: north up, your position and heading, the habitat and a selected route.')}
       {toggle('waypoints','Show waypoint markers','flag','Camera-projected navigation labels','Places markers in the 3D scene where the chosen points are. The switches below pick which points get one.')}
@@ -36,7 +37,7 @@ export default function HudConfiguration({value,onChange,quality,onQuality,timeS
         {SCIENCE.targets.filter(t=>t.regionId===regionId).map(t=>row(<label className="hud-setting"><input type="checkbox" aria-label={`${t.name} waypoint`} checked={value.science.includes(t.id)} onChange={e=>onChange({...value,science:e.target.checked?[...value.science,t.id]:value.science.filter(id=>id!==t.id)})}/><Icon name="drill"/><span><strong>{t.name} waypoint</strong><small>Published rover visit area · navigation only</small></span></label>,<InfoMark title={`${t.name} marker`} does="Marks this published rover visit area in the helmet view, for navigation only." source={t.question}/>,t.id))}
         {data?.evidence?.markers.map(m=>row(<label className="hud-setting"><input type="checkbox" aria-label={`${m.label} waypoint`} checked={value.science.includes(m.id)} onChange={e=>onChange({...value,science:e.target.checked?[...value.science,m.id]:value.science.filter(id=>id!==m.id)})}/><Icon name="photo"/><span><strong>{m.label} waypoint</strong><small>{m.note}</small></span></label>,<InfoMark title={`${m.label} marker`} does="Marks this rover evidence point in the helmet view." source={m.note}/>,m.id))}
       </div>
-    </fieldset><fieldset><legend>Time displays</legend>
+    </fieldset><fieldset><legend>Time displays <Help label="About mission clocks">LMST means local mean solar time at the Mars site. Sol is a Mars day. The scenario clock advances with simulated elapsed time and pauses outside the running HUD; Earth UTC is the live real-world date and time.</Help></legend>
       {toggle('marsTime','Mars LMST on HUD','sun',`Gale site · historical Sol ${sol} anchor + simulated elapsed time`,'Shows local mean solar time at the site in the helmet. It is a simulated clock that pauses outside the HUD.')}
       {toggle('earthTime','Live Earth UTC on HUD','clock','Current date/time, independent of the Mars scenario','Shows the current real-world UTC time in the helmet, independent of the Mars scenario.')}
       <p className="caption">These switches hide or show clocks. They do not change time. Set departure and historical conditions in Explore or Station History.</p>

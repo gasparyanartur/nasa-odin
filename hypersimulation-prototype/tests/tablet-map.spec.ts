@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 
 test('Tablet maps fit the available display without changing full-area coverage',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?demo=yellowknife');
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
   for(const viewport of [{width:1440,height:1000},{width:1024,height:768},{width:800,height:700},{width:800,height:700}]){
     await page.setViewportSize(viewport);
     for(const [tab,label] of [['Map','Gale terrain selection map'],['Field data','Field observation map']]){
@@ -22,7 +22,7 @@ test('Tablet maps fit the available display without changing full-area coverage'
 
 test('Tablet map supports keyboard selection, mouse wheel zoom, drag and click placement',async({page})=>{
   await page.goto('/?demo=yellowknife');const map=page.getByRole('img',{name:'Gale terrain selection map',exact:true});
-  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Plan route',exact:true})).toBeEnabled();
   await map.focus();await page.keyboard.press('+');await expect(map).toHaveAttribute('data-zoom','1.50');
   await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowDown');
   const goal=page.locator('.endpoint').nth(1);await goal.getByRole('button',{name:'Place',exact:true}).click();await map.focus();await page.keyboard.press('Enter');

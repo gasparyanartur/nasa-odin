@@ -15,6 +15,10 @@ const RULES: [RegExp, IconName, string][] = [
   [/^Elapsed time exceeds/, 'time', 'Over the time budget'],
   [/detector-dose proxy exceeds/, 'radiation', 'Over the dose budget'],
   [/return estimate exceeds/, 'back', 'Return over the time budget'],
+  [/^Solar-particle scenario: Danger/, 'radiation', 'Solar scenario: return to habitat'],
+  [/^Solar-particle scenario/, 'station', 'Solar scenario: stay at the habitat'],
+  [/^Local dust scenario: Danger/, 'nogo', 'Dust scenario: leave the area'],
+  [/^Local dust scenario/, 'warning', 'Dust scenario: avoid the area'],
 ];
 
 /** The pictogram and the one short line a helmet notice gets; the full sentence stays in the list and the Tablet. */

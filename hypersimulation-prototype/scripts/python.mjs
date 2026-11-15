@@ -1,5 +1,5 @@
 // AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project.
-// Runs the planner's Python: this folder's .venv when it exists, otherwise the repository root's .venv.
+// Runs the data-preparation and reference-check Python: this folder's .venv when it exists, otherwise the repository root's .venv.
 // Usage: node scripts/python.mjs <python arguments>
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';

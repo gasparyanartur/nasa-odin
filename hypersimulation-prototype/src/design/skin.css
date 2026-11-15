@@ -46,7 +46,10 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .setting-row>label{flex:1;min-width:0}
 /* The teammate's Help keeps its tooltip role; it now looks like the info mark */
 .help{margin-left:auto}
-.help [role=tooltip]{width:290px;padding:12px 14px;background:var(--card);color:var(--label-ink);border:0;border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-pop);font:400 var(--fs-sm)/1.5 var(--font-text);right:4px}
+.help-tooltip{position:fixed;z-index:var(--z-pop);width:min(290px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:12px 14px;background:var(--card);color:var(--label-ink);border:0;border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-pop);font:400 var(--fs-sm)/1.5 var(--font-text);text-align:left}
+/* The teammate's explicit Plan route button: a blue outline, so the filled blue bar stays the one primary action. */
+.tablet-footer button.plan-route-button{border-color:var(--cobalt-hi);color:var(--on-wall)}
+.tablet-footer button.plan-route-button:hover:not(:disabled){background:color-mix(in srgb,var(--cobalt-hi) 14%,transparent);border-color:var(--cobalt-hi)}
 .tablet-device .tablet-tabs .help>button.info{border:0;background:transparent;color:var(--on-wall-2);min-height:0;padding:0}
 
 /* switch look for layer and display toggles (still native checkboxes) */

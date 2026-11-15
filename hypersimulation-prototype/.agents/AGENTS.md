@@ -14,8 +14,9 @@ This workspace contains the integrated Gale prototype: globe, local route planne
 - `src/datasets/catalog.ts`: regions, capability gates, basemap references and regional overlay definitions.
 - `public/datasets/`: selectable MOLA/CTX WMTS definitions; keep source-specific values here.
 - `public/gale/`: prepared real terrain, imagery, environment and metadata; shared by browser and backend.
-- `server/`: FastAPI/A* planner and Python tests.
-- `scripts/`: reproducible data preparation and paired frontend/API startup.
+- `src/mission/planner/`: browser worker, client lifecycle and TypeScript route/conditions implementation.
+- `server/`: offline Python planner reference and tests; not part of the application runtime.
+- `scripts/`: reproducible data preparation and static frontend startup.
 - `tests/`: production globe/mission acceptance checks and an older CTX import fixture.
 - `docs/datasets.md`: integration contract and supported coordinate/tiling limits.
 - `docs/gale-data.md`: scientific references, processing and model assumptions.
@@ -38,13 +39,15 @@ Use Node 22.23.4 from `.nvmrc` and npm. The host default may still be Node 18. C
 
 - `npm ci`: install locked dependencies.
 - `npm run dev`: Vite development server.
-- `npm run dev:all`: Vite and local Python planner (requires `.venv` and `requirements.txt`).
-- `npm run demo`: production preview and planner; build first. `API_PORT`/`WEB_PORT` support separate checkouts.
+- `npm run dev:all`: Vite frontend alias; no Python process.
+- `npm run demo`: static production preview; build first. `WEB_PORT` supports separate checkouts.
 - `npm run record:demo`: record the production server at `DEMO_URL` (default port 8373); requires Playwright Chromium and ffmpeg.
 - `npm run build`: TypeScript check and production bundle, including Cesium assets/workers.
 - `npm run preview`: serve `dist/`.
 - `npm test`: manifest/lifecycle and shared mission geometry tests.
-- `npm run test:api`: Python planner/API tests, including real prepared terrain.
+- `npm run test:api`: offline Python reference/API tests, including real prepared terrain.
+- `npm run test:planner:reference`: browser planner parity against Python (requires `.venv`/`requirements.txt`).
+- `node scripts/serve-static.mjs --port 8373`: files-only production check; no API or SPA catch-all.
 - `npm run prepare:data`: regenerate real Gale assets using public range-readable rasters/PDS records.
 - `TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser`: production browser acceptance check; install Chromium as documented in README first.
 
@@ -62,7 +65,7 @@ Use concise Markdown, descriptive headings, fenced command examples, and relativ
 
 ## Validation Guidelines
 
-Vitest covers manifest/lifecycle and mission geometry; Python unittest covers routing/API; Playwright verifies production globe and complete excursion flows. No coverage threshold is configured. Inspect visual changes. For documentation, check local links and retain source URLs, dates, assumptions and observed results. Endpoint access alone does not establish usable raster coverage or rendering performance.
+Vitest covers manifest/lifecycle and mission geometry; Python unittest preserves the offline routing/API reference; the optional planner-reference check compares TypeScript outputs to Python. Playwright verifies production globe and complete excursion flows using a files-only server. `TEST_PORT`, `STATIC_DIR` and a separate `--output` keep concurrent checks isolated. `TEST_HARDWARE=1` enables hardware-accelerated Chromium; the default SwiftShader path is for functional coverage and does not establish interactive POV performance. No coverage threshold is configured. Inspect visual changes. For documentation, check local links and retain source URLs, dates, assumptions and observed results. Endpoint access alone does not establish usable raster coverage or rendering performance.
 
 When implementing routing, verify nodata and barrier handling, disconnected endpoints, directed slope costs, and A* agreement with Dijkstra on small grids. Verify alignment between map, terrain, and HUD coordinates.
 

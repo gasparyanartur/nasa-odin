@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "test:planner:reference": "node scripts/check-planner-reference.mjs",
     "test:api": "node scripts/python.mjs -m unittest discover -s server/tests -v",
     "dev:all": "node scripts/run.mjs",
     "demo": "node scripts/run.mjs --preview",
@@ -19,7 +20,8 @@
     "record:demo": "node scripts/record-demo.mjs",
     "prepare:science": "node scripts/python.mjs scripts/prepare_science.py",
     "prepare:environment": "node scripts/python.mjs scripts/prepare_environment_release.py",
-    "prepare:boxwork": "node scripts/python.mjs scripts/prepare_boxwork.py"
+    "prepare:boxwork": "node scripts/python.mjs scripts/prepare_boxwork.py",
+    "prepare:paths": "node scripts/python.mjs scripts/prepare_previous_paths.py"
   },
   "dependencies": {
     "cesium": "^1.147.0",
