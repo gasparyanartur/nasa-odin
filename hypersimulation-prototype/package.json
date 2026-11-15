@@ -12,14 +12,14 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:browser": "playwright test",
-    "test:api": "node scripts/python.mjs-m unittest discover -s server/tests -v",
+    "test:api": "node scripts/python.mjs -m unittest discover -s server/tests -v",
     "dev:all": "node scripts/run.mjs",
     "demo": "node scripts/run.mjs --preview",
-    "prepare:data": "node scripts/python.mjsscripts/prepare_gale.py && node scripts/python.mjsscripts/prepare_environment.py",
+    "prepare:data": "node scripts/python.mjs scripts/prepare_gale.py && node scripts/python.mjs scripts/prepare_environment.py",
     "record:demo": "node scripts/record-demo.mjs",
-    "prepare:science": "node scripts/python.mjsscripts/prepare_science.py",
-    "prepare:environment": "node scripts/python.mjsscripts/prepare_environment_release.py",
-    "prepare:boxwork": "node scripts/python.mjsscripts/prepare_boxwork.py"
+    "prepare:science": "node scripts/python.mjs scripts/prepare_science.py",
+    "prepare:environment": "node scripts/python.mjs scripts/prepare_environment_release.py",
+    "prepare:boxwork": "node scripts/python.mjs scripts/prepare_boxwork.py"
   },
   "dependencies": {
     "cesium": "^1.147.0",

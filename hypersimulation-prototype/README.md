@@ -87,7 +87,6 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 - The planner works on a 5 m grid. The default science walk is a prepared route, planned ahead of time by the old Marswalk planner on the 1 m grid. Re-planning with the 5 m planner can refuse it, because the stops sit on steep ridge walls.
 - Hazard areas reach the planner as circles, which can also block open ground just outside an area.
 - Hazard areas are drawn and announced, but walking into one is not stopped.
-- In this folder's `package.json`, `test:api` and the `prepare:*` scripts miss a space after `scripts/python.mjs`, so they fail as written. Until that is fixed, run them as `node scripts/python.mjs` followed by the rest of the command.
 - Browser tests that need pointer lock fail in headless Chromium on macOS.
 - No unfamiliar user has tested the combined app yet.
 
