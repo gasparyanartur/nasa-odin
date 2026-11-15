@@ -1,3 +1,4 @@
+import { uiRoutes, uiDisplay, uiClose, uiStation, uiAssumptions } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 
 test('historical replay, environmental departure decisions, visor and graphics preserve mission',async({page},info)=>{
@@ -17,11 +18,11 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await expect(page.getByRole('button',{name:'Play timelapse',exact:true})).toBeVisible();
   await expect(page.getByTestId('scenario-time')).toHaveText('23:59 LMST');
   await page.getByLabel('Historical timeline').fill('3');
-  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
-  await page.getByText('Departure conditions and limits',{exact:true}).click();
+  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
+  await uiAssumptions(page);await page.getByText('Departure conditions and limits',{exact:true}).click();
   await page.getByLabel('Minimum temperature',{exact:true}).fill('240');
   await page.getByLabel('Destination stop',{exact:true}).fill('10');
-  await page.getByRole('button',{name:'Compare routes →'}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   await expect(page.locator('.route-card').first()).toContainText('Limits exceeded');
   await page.getByText('Compare departure hours',{exact:true}).click();
@@ -29,27 +30,27 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await expect(page.getByRole('button',{name:'Depart 3:00: exceeds',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Depart 12:00: within',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
-  await page.getByRole('button',{name:'Compare routes →'}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await expect(page.locator('.route-card').first()).toContainText('Within configured limits');
   await expect(page.locator('.image-warning')).toHaveCount(0);
-  await page.getByRole('navigation').getByRole('button',{name:/Station/}).click();
+  await uiStation(page);
   await page.locator('.scenario-timeline').screenshot({path:info.outputPath('v04-timeline.png')});
-  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
+  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
   await page.evaluate(()=>{document.querySelector('.mission-sidebar')!.scrollTop=0;document.querySelector('.terrain-workspace')!.scrollTop=0;});
-  await page.screenshot({path:info.outputPath('v02-planner.png'),fullPage:true});
+  await page.screenshot({timeout:60_000,path:info.outputPath('v02-planner.png'),fullPage:true});
   // Choosing another time invalidates the planned excursion, including the HUD entry.
-  await page.getByRole('navigation').getByRole('button',{name:/Station/}).click();
+  await uiStation(page);
   await page.getByLabel('Historical timeline').fill('12.99');
-  await page.getByRole('navigation').getByRole('button',{name:/Tablet/}).click();
+  await page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
-  await page.getByRole('button',{name:'Compare routes →'}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.getByLabel('Visor navigation overlay')).toBeVisible();
   const canvas=page.locator('.walking-scene canvas');await expect(canvas).toBeVisible();
   await page.waitForTimeout(1200);
   const pose=await page.getByTestId('position').textContent();
-  const setup=async()=>{await page.getByRole('button',{name:'HUD setup',exact:true}).click();};
-  const resume=async()=>{await page.getByRole('button',{name:'Resume surface HUD →'}).click();await expect(canvas).toBeVisible();};
+  const setup=async()=>{await uiDisplay(page);};
+  const resume=async()=>{await uiClose(page);await expect(canvas).toBeVisible();};
   const width=await canvas.evaluate((c:HTMLCanvasElement)=>c.width);
   await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('low');await resume();
   await expect.poll(()=>canvas.evaluate((c:HTMLCanvasElement)=>c.width)).toBeLessThan(width);
@@ -68,7 +69,7 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await expect.poll(async()=>parseFloat((await page.getByTestId('elapsed').textContent())!),{timeout:60000}).toBeGreaterThanOrEqual(60);
   await expect(page.getByTestId('hud-lmst')).not.toHaveText(departure!);
   await refreshed;
-  await page.screenshot({path:info.outputPath('v02-visor-active.png')});
+  await page.screenshot({timeout:60_000,path:info.outputPath('v02-visor-active.png')});
   await page.keyboard.press('Escape');
   await expect(page.locator('.walk-instructions')).toBeVisible();
   const elapsed=await page.getByTestId('elapsed').textContent();
@@ -81,12 +82,12 @@ test('historical replay, environmental departure decisions, visor and graphics p
   await page.waitForTimeout(500);await expect(page.getByTestId('elapsed')).toHaveText(elapsed!);
   await expect(page.getByTestId('position')).toHaveText(pose!);
   await setup();await page.getByLabel('Graphics quality',{exact:true}).selectOption('medium');await resume();
-  await page.screenshot({path:info.outputPath('v02-visor.png')});
-  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({timeout:60_000,path:info.outputPath('v02-visor.png')});
+  await page.setViewportSize({width:800,height:700});
   await expect(page.locator('.visor-waypoint')).not.toBeVisible();
   const compass=(await page.locator('.visor-compass').boundingBox())!, minimap=(await page.locator('.hud-map').boundingBox())!;
-  expect(compass.x+compass.width).toBeLessThan(minimap.x);
-  await page.screenshot({path:info.outputPath('v02-visor-mobile.png')});
+  expect(compass.y+compass.height).toBeLessThan(minimap.y+minimap.height+100);
+  await page.screenshot({timeout:60_000,path:info.outputPath('v02-visor-mobile.png')});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });

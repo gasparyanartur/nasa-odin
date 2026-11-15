@@ -21,14 +21,19 @@ Version **0.5** adds a personal field layer on **Tablet → Field data** in the 
 
 Geology and readings are user interpretations/point observations, separate from published source layers. Readings do not change the historical scenario or surrounding cells; no terrain, radiation field or forecast is inferred. Only enabled circular obstacles affect planning/movement. Up to 100 records, 100 vertices per geometry and 30 combined manual/field restrictions are supported. Field data is currently unavailable at Jezero. See [field-data effects, recovery and transfer format](docs/field-data.md).
 
-Version **0.4** separates three functional contexts:
+The application is a **laptop simulation operated with mouse and keyboard**. Station, Tablet and HUD are the astronaut’s interfaces inside that simulation. **Tablet means the simulated astronaut’s device, not a physical tablet or a touch-first device target.**
 
-- **Station:** use the **Planetary atlas** for global Viking/MOLA/CTX datasets, region selection and published regional geology. **Data & history** compares source, resolution, acquisition and interpretation, and provides the Sol 10 REMS timeline for Gale. Historical edits change departure and clear incompatible routes; switching views preserves them.
-- **Tablet:** **Explore** provides the local map, layers, touch inspection, science targets, endpoints, assumptions, route alternatives and linked profiles. Maps fit the available display without cropping their full extent. Drag to pan, use the mouse wheel or pinch to zoom, and click or tap to inspect/place. Desktop mouse controls use a compact layout. Zoom and **Full area** buttons and keyboard controls are also available (arrows to pan, +/− to zoom, Home to reset, Enter to inspect the center). **Plan & targets** jumps to planning controls on a small screen. Jezero explains its missing local numeric terrain and links back to the Station atlas.
-- **Tablet → HUD setup:** independently configure visor/compass, minimap, waypoint display and selections (next route point, habitat, destination, Rocknest and Yellowknife Bay), Mars LMST and live Earth UTC. Choose graphics quality and simulation pace here. The Tablet shows both clocks with their meaning: simulated Gale LMST has a Sol 10 historical anchor; **Live Earth UTC** is the current real-world date/time and does not represent the historical scenario. Each clock can be hidden on the HUD without changing time.
-- **HUD:** follow translucent navigation over the measured terrain. Selected waypoint labels project through the actual camera, including pitch and field of view; labels outside the field of view are hidden. These are navigation coordinates, not confirmed visible outcrops or terrain-occlusion indicators. The next-waypoint bearing cue remains available with the visor. Click terrain, use WASD/mouse, and press Esc to pause. Open the Tablet to inspect or configure, then resume at the same position, heading, view pitch and elapsed time. Switching to Station also pauses walking.
+The redesigned interface provides:
 
-Choose Gale at Station to load the prepared 2 × 2 km terrain. On the Tablet, place endpoints or select a science target and **Compare routes**. Alternatives include a separately calculated return, destination stop and conditions. **Walk selected route** starts or resumes the selected excursion. Editing endpoints, assumptions or departure explicitly clears an incompatible plan; changing view, layer visibility or HUD displays preserves the mission. Selecting another region starts a separate setup.
+- **Station:** choose a region on the globe or in the site list. **Enter surface** starts free exploration on either prepared Gale site without planning a route. **Open tablet** opens the astronaut’s local workspace. **Datasets & map layers** holds basemaps, geology and environmental layers; **Data & history** holds analysis. Jezero supports orbital exploration only.
+- **Tablet:** a flat device overlay above the paused surface. **Map** provides local inspection; **Routes** provides habitat-to-destination comparisons and linked terrain profiles; **Field data** provides saved observations and editing; **Display** configures visor, waypoint selections, minimap, clocks, graphics and simulation pace. Open **Layers** or **Inspect data** when needed. Primary actions remain in the fixed footer, while detailed panels scroll independently.
+- **HUD / Surface:** click the terrain, use WASD or arrow keys to walk, and move the mouse to look. Esc pauses and releases the mouse. **Open tablet** pauses the mission and retains position, heading, pitch, elapsed time and unfinished field drafts. **Close tablet** or **Return to surface** restores the surface; click terrain to resume. **Log here** records your simulated position. **Pause / menu** provides display settings, Station and an explicit restart.
+
+Free exploration retains habitat navigation, independent return estimates, terrain limits and declared restrictions. A route adds guidance, next-waypoint cues and route-progress warnings. A failed return estimate does not prevent walking; use **Retry return estimate** to try again. Route comparisons still start at the habitat, even after you have walked elsewhere. Choosing a target, comparing/adopting a route, and changing ordinary assumptions or display settings preserve position/time. Placing a new habitat or changing departure restarts the excursion; selecting another region starts a separate setup. Current-position replanning is separate future work.
+
+Maps support drag, mouse-wheel zoom, click inspection/placement and keyboard controls (arrows to pan, +/− to zoom, Home to reset, Enter to inspect the center). Existing touch gestures remain available. Selected waypoint labels project through the actual camera; they are navigation coordinates, not confirmed visible outcrops or terrain-occlusion indicators. Mars LMST is simulated site time; **Live Earth UTC** is the current real-world date/time. Each clock can be hidden without changing time. Terrain and imagery provenance remain available under **Inspect data**.
+
+The redesign implements FR-023/024/025/027. See the [design and verification plan](docs/plans/2026-11-15-ui-redesign.md) for acceptance evidence and remaining usability validation.
 
 Version **0.3** adds a geological science workflow:
 
@@ -158,7 +163,7 @@ cd nasa-martian-map
 npm run dev:all
 ```
 
-Open [the local application](http://127.0.0.1:5173) in your browser. This one command starts Vite and the local Python planner API on port 8100. Keep the terminal open while you use the application. `npm run dev` alone starts only the frontend, so route comparison fails and the HUD tab stays locked.
+Open [the local application](http://127.0.0.1:5173) in your browser. This one command starts Vite and the local Python planner API on port 8100. Keep the terminal open while you use the application. `npm run dev` alone starts only the frontend, so route comparison and return estimates fail; prepared-terrain free exploration remains available.
 
 To keep another checkout running, start this workspace on separate ports:
 
@@ -178,6 +183,8 @@ npm run demo
 ```
 
 Open [the production preview](http://127.0.0.1:4173). Global imagery needs internet access; prepared Gale imagery, terrain and environmental observations are bundled locally. No Cesium ion account is needed. A static-only deployment cannot compute routes: host the Python API and proxy `/api` to it, as the local setup does.
+
+After updating the project, stop the running preview, rebuild, and start `npm run demo` again so the frontend and Python planner use the same version. Refreshing the browser alone does not restart the planner. If it rejects a terrain dataset or an unfamiliar setting, the Tablet now shows the rejected field and a restart hint.
 
 ### Step 6: Run Marswalk (hypersimulation prototype)
 
@@ -252,4 +259,4 @@ TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npx playwright ins
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
 ```
 
-The browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
+The UI redesign browser suite checks route-free entry, retained pose/time/drafts, route adoption, return failure/retry, modal keyboard access, unsupported/loading states and bounded laptop layouts. The broader browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.

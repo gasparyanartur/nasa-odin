@@ -119,6 +119,29 @@ export function routeProgress(route: Route, point: Point) {
   return { offRouteM: nearest, remainingM: Math.max(0,total-bestAlong), target: points[Math.min(points.length-1,index+3)] };
 }
 
+function validationMessage(detail: unknown): string | undefined {
+  if (!Array.isArray(detail)) return;
+  const labels: Record<string,string> = {
+    datasetId:'Terrain dataset', start:'Habitat / start', goal:'Destination',
+    speedMps:'Walking speed', maxSlopeDeg:'Slope limit', maxDurationMin:'Time budget',
+    doseRateMicroGyH:'Detector rate proxy', maxDoseMicroGy:'Dose proxy budget',
+    temperatureK:'Temperature', minTemperatureK:'Minimum temperature', windMps:'Wind assumption',
+    maxWindMps:'Maximum wind', conditionsMode:'Conditions mode', departureHour:'Departure hour',
+    dwellMin:'Destination stop', exclusions:'Travel restrictions', radius:'Restriction radius',
+    elapsedS:'Elapsed mission time', mode:'Return route mode',
+  };
+  let incompatible=false;
+  const messages=detail.flatMap(issue=>{
+    if (!issue || typeof issue!=='object' || typeof issue.msg!=='string') return [];
+    const path: (string|number)[]=Array.isArray(issue.loc)?issue.loc.filter((part:unknown)=>typeof part==='string'||typeof part==='number'):[];
+    if ((path.includes('datasetId')&&issue.type==='literal_error') || issue.type==='extra_forbidden') incompatible=true;
+    const field=path.filter(part=>part!=='body'&&part!=='settings').map(part=>typeof part==='number'?`#${part+1}`:labels[part]??part).join(' · ');
+    return [`${field||'Request'}: ${issue.msg}.`];
+  });
+  if (!messages.length) return;
+  return `Cannot plan route. ${messages.join(' ')}${incompatible?' The planner may be running an older version. Restart the planner from the current project and try again.':''}`;
+}
+
 export async function api<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   let r: Response;
   try { r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal}); }
@@ -126,7 +149,7 @@ export async function api<T>(path: string, body: unknown, signal?: AbortSignal):
   if (!r.ok) {
     let detail: unknown, diagnostics: RouteDiagnostics | undefined;
     try { const failure=await r.json(); detail=failure.detail; diagnostics=failure.diagnostics??undefined; } catch { /* Development proxy may return an empty 502. */ }
-    throw new RoutePlanningError(typeof detail==='string'?detail:r.status===422?'Invalid mission settings or endpoints.':'Route planning is temporarily unavailable. Please try again.',diagnostics);
+    throw new RoutePlanningError(typeof detail==='string'?detail:validationMessage(detail)??(r.status===422?'The planner rejected this request without specifying a setting. Restart the planner from the current project and try again.':'Route planning is temporarily unavailable. Please try again.'),diagnostics);
   }
   return r.json();
 }

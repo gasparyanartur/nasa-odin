@@ -14,7 +14,7 @@ interface Props {
   imagery?:'colour'|'grey';
   environmentLayer?:ScalarLayer; environmentOpacity?:number;
   mapLabel?:string; fields?:FieldRecord[]; selectedField?:string; onFieldSelect?:(id:string)=>void; draft?:FieldRecord; active?:boolean; geology?: GeologySettings; targetId?:string; onTargetSelect?:(id:string)=>void; highlightedEdge?:number;
-  data: TerrainData; start: Point; goal: Point; routes?: Alternative[]; selected: number;
+  data: TerrainData; start: Point; goal?: Point; routes?: Alternative[]; selected: number;
   pose?: Pose; exclusions: Exclusion[]; overlays: OverlaySettings;
   mode?: PickMode; onPick?: (p: Point) => void; onInspect?: (p: Point) => void; mini?: boolean;
 }
@@ -37,7 +37,10 @@ export default function SurfaceMap(p: Props) {
       const constrained=['auto','scroll'].includes(getComputedStyle(parent).overflowY);
       // Use the unscrolled content position, so panning/scrolling never resizes the map.
       const top=constrained?el.getBoundingClientRect().top+parent.scrollTop+window.scrollY:(document.querySelector('.context-bar')?.getBoundingClientRect().bottom??0);
-      const side=Math.floor(Math.min(width,Math.max(Math.min(160,width),window.innerHeight-top-controls-20)));
+      const tablet=parent.closest('.tablet-device');
+      const siblings=Array.from(parent.children).filter(node=>node!==el).reduce((sum,node)=>sum+(node as HTMLElement).offsetHeight,0);
+      const available=tablet?parent.clientHeight-siblings-controls-60:window.innerHeight-top-controls-20;
+      const side=Math.floor(Math.min(width,Math.max(Math.min(160,width),available)));
       setDisplaySize(previous=>previous===side?previous:side);
     };
     const schedule=()=>{cancelAnimationFrame(scheduled);scheduled=requestAnimationFrame(fit);};
@@ -92,7 +95,7 @@ export default function SurfaceMap(p: Props) {
     const markerScale=p.mini?1:800/(el.clientWidth||800)/viewport.zoom;
     if(!p.mini)for(const target of SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury'))){const[x,y]=pixel(target.point);ctx.beginPath();ctx.arc(x,y,10*markerScale,0,Math.PI*2);ctx.fillStyle=target.id===p.targetId?'#ecd09c':'#26382e';ctx.fill();ctx.strokeStyle='#e4d2a2';ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=target.id===p.targetId?'#1c2922':'#ffe8b9';ctx.font=`bold ${11*markerScale}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(target.id==='rocknest'?'R':'Y',x,y);}
     for(const [label,v,color] of [['H',p.start,'#a9debd'],['D',p.goal,'#f4bc81']] as const){
-      const[x,y]=pixel(v);ctx.beginPath();ctx.arc(x,y,12*markerScale,0,Math.PI*2);ctx.fillStyle='#14201c';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=color;ctx.font=`bold ${13*markerScale}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,x,y);
+      if(!v)continue;const[x,y]=pixel(v);ctx.beginPath();ctx.arc(x,y,12*markerScale,0,Math.PI*2);ctx.fillStyle='#14201c';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=color;ctx.font=`bold ${13*markerScale}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,x,y);
     }
     for(const record of [...(p.fields??[]).filter(r=>r.visible),...(p.draft?[p.draft]:[])]){
       if(!record.points.length)continue;

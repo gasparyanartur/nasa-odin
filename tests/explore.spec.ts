@@ -1,3 +1,4 @@
+import { uiRoutes, uiStation, uiStationData, uiLayers } from './ui-helpers';
 import { test, expect } from '@playwright/test';
 
 const nav=(page:import('@playwright/test').Page)=>page.getByRole('navigation',{name:'Main navigation'});
@@ -5,13 +6,13 @@ const card=(page:import('@playwright/test').Page,name:string)=>page.getByRole('r
 
 test('discover regions, choose data, preserve layers and isolate missions',async({page},info)=>{
   const exceptions:string[]=[];page.on('pageerror',e=>exceptions.push(e.message));
-  await page.goto('/');
+  await page.goto('/');await uiStationData(page);
   await expect(nav(page).getByRole('button',{name:/Tablet/})).toBeDisabled();
   const gale=page.getByRole('button',{name:'Explore Gale · Bradbury on map',exact:true});
   await expect(gale).toBeVisible();
   await expect(page.getByRole('button',{name:'Explore Jezero on map',exact:true})).toBeVisible();
   await expect(page.getByRole('status',{name:'Layer status'})).toHaveText('Layer active',{timeout:60000});
-  await page.screenshot({path:info.outputPath('explore-regions.png')});
+  await page.screenshot({timeout:60_000,path:info.outputPath('explore-regions.png')});
   await gale.click();
   await expect(page.getByRole('region',{name:'Selected region'})).toContainText('2 × 2 KM');
   await expect(page.locator('.map-region-context .primary')).toBeEnabled();
@@ -25,39 +26,39 @@ test('discover regions, choose data, preserve layers and isolate missions',async
   await expect(page.getByRole('region',{name:'Selected region'})).toContainText('Gale');
   await expect(page.getByLabel('Explore Slope opacity',{exact:true})).toHaveValue('40');
   await expect(page.locator('.observation-card')).toContainText('Historical site observations');
-  await page.screenshot({path:info.outputPath('gale-explore-layers.png')});
-  await page.locator('.map-region-context .primary').click();
-  await expect(page.getByRole('heading',{name:'Gale · Bradbury landing area',exact:true})).toBeVisible();
+  await page.screenshot({timeout:60_000,path:info.outputPath('gale-explore-layers.png')});
+  await page.locator('.map-region-context .secondary').click();await uiLayers(page);
+  await expect(page.getByRole('heading',{name:'Gale · Bradbury',exact:true})).toBeVisible();
   await expect(page.getByLabel('Slope',{exact:true})).toBeChecked();
   await expect(page.getByLabel('Slope opacity',{exact:true})).toHaveValue('40');
   await page.getByLabel('Slope opacity',{exact:true}).fill('55');
-  await page.getByRole('button',{name:'Compare routes →'}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
-  await nav(page).getByRole('button',{name:/Station/}).click();
+  await uiStation(page);
   await expect(page.getByLabel('Explore Slope opacity',{exact:true})).toHaveValue('55');
   await card(page,'Jezero').click();
   await expect(page.getByRole('region',{name:'Selected region'})).toContainText('Local numeric terrain is not prepared');
   await expect(nav(page).getByRole('button',{name:/Tablet/})).toBeEnabled();
   await expect(nav(page).getByRole('button',{name:/HUD/})).toBeDisabled();
   await expect(page.getByRole('region',{name:'Regional data'})).not.toContainText('Curiosity');
-  await page.waitForTimeout(1500);await page.screenshot({path:info.outputPath('jezero-explore.png')});
+  await page.waitForTimeout(1500);await page.screenshot({timeout:60_000,path:info.outputPath('jezero-explore.png')});
   await card(page,'Gale · Bradbury').click();
   await expect(page.locator('.map-region-context .primary')).toBeEnabled();
   await nav(page).getByRole('button',{name:/Tablet/}).click();
   await expect(page.locator('.route-card')).toHaveCount(0);
   // A result arriving after region change must never restore the previous mission.
   await page.route('**/api/routes',async route=>{await new Promise(resolve=>setTimeout(resolve,800));try{await route.continue();}catch{/* request was cancelled */}});
-  await page.getByRole('button',{name:'Compare routes →'}).click();
-  await nav(page).getByRole('button',{name:/Station/}).click();await card(page,'Jezero').click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
+  await uiStation(page);await card(page,'Jezero').click();
   await page.waitForTimeout(1200);await expect(nav(page).getByRole('button',{name:/HUD/})).toBeDisabled();
-  await page.setViewportSize({width:390,height:844});
-  await page.screenshot({path:info.outputPath('explore-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:800,height:700});
+  await page.screenshot({timeout:60_000,path:info.outputPath('explore-mobile.png'),fullPage:true});
   expect(exceptions).toEqual([]);
 });
 
 test('regional data failure recovers without enabling another region’s planner',async({page})=>{
   await page.route('**/gale/height.f32',route=>route.abort());
-  await page.goto('/');await card(page,'Gale · Bradbury').click();
+  await page.goto('/');await uiStationData(page);await card(page,'Gale · Bradbury').click();
   await expect(page.getByRole('alert')).toContainText('Local Gale data could not load');
   await expect(page.locator('.map-region-context .primary')).toBeDisabled();
   await page.unroute('**/gale/height.f32');await page.getByRole('button',{name:'Retry local data'}).click();

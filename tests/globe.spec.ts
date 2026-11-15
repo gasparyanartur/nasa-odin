@@ -1,12 +1,13 @@
+import { uiStation, uiStationData } from './ui-helpers';
 import { test, expect } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 test('production globe, controls, invalid import, live real-data swap and recovery', async ({ page }, testInfo) => {
   const exceptions: string[] = [];
   const responses: string[] = [];
   page.on('pageerror', (error) => exceptions.push(error.message));
   page.on('response', (response) => { if (response.ok()) responses.push(response.url()); });
-  await page.goto('/');
+  await page.goto('/');await uiStationData(page);
   await expect(page.getByRole('heading', { name: 'Viking · Mars color' })).toBeVisible();
   await expect.poll(() => responses.some(url => url.includes('Viking') && url.includes('.jpg')), { timeout: 60_000 }).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('viking-desktop.png') });
@@ -24,7 +25,9 @@ test('production globe, controls, invalid import, live real-data swap and recove
   await page.getByRole('switch').uncheck();
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer hidden', { timeout: 15_000 });
 
-  const hiddenView = await canvas.screenshot();
+  // Wheel inertia can outlive the visibility toggle; establish a settled baseline.
+  let hiddenView=Buffer.alloc(0);
+  await expect.poll(async()=>{const frame=await canvas.screenshot();const settled=frame.equals(hiddenView);hiddenView=frame;return settled;},{timeout:30_000}).toBe(true);
   await page.getByText('Advanced: import a dataset', {exact:true}).click();
   const upload = page.getByLabel('Load dataset JSON');
   await upload.setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{bad') });
@@ -35,7 +38,10 @@ test('production globe, controls, invalid import, live real-data swap and recove
   await expect(page.getByRole('heading', { name: 'CTX · Orbital imagery' })).toBeVisible();
   await expect(page.getByRole('slider', {name:'Basemap opacity'})).toHaveValue('42');
   await expect(page.getByRole('switch')).not.toBeChecked();
-  expect(await canvas.screenshot()).toEqual(hiddenView);
+  const hiddenAfter=await canvas.screenshot();
+  await writeFile(testInfo.outputPath('hidden-before.png'),hiddenView);
+  await writeFile(testInfo.outputPath('hidden-after.png'),hiddenAfter);
+  expect(hiddenAfter.equals(hiddenView),'hidden basemap replacement preserves the globe view').toBe(true);
   await page.getByRole('switch').check();
   await expect.poll(() => responses.some((url) => url.includes('OnMars/CTX/MapServer/tile/')), { timeout: 60_000 }).toBe(true);
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText(/Layer active|Needs attention/, { timeout: 60_000 });
@@ -68,9 +74,9 @@ test('production globe, controls, invalid import, live real-data swap and recove
   await upload.setInputFiles('public/datasets/mola.json');
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer active', { timeout: 60_000 });
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 800, height: 700 });
   await expect(page.getByRole('status', { name: 'Layer status' })).toHaveText('Layer active', { timeout: 60_000 });
-  await expect(page.getByRole('heading', { name: 'See the bigger picture.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your next horizon.' })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('mola-mobile.png'), fullPage: true });
   expect(exceptions).toEqual([]);
 });

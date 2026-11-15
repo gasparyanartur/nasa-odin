@@ -1,9 +1,10 @@
+import { uiRoutes, uiDisplay, uiClose } from './ui-helpers';
 import {test,expect} from '@playwright/test';
 test('missing detail and WebGL context loss preserve the Boxwork mission and recover on the Tablet',async({page})=>{
   test.setTimeout(180_000);
   await page.route('**/boxwork/detail/dem_core.bin',r=>r.abort());
-  await page.goto('/?demo=boxwork');
-  await page.getByRole('button',{name:'Compare current excursion →',exact:true}).click();
+  await page.goto('/?demo=boxwork');await uiRoutes(page);
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await expect(page.locator('.route-card')).toHaveCount(2);
   const route=await page.locator('.route-card.selected').textContent();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
@@ -27,25 +28,25 @@ test('full Boxwork detail and responsive HUD use the same real dataset',async({p
   const tiles=new Set<string>(),errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',r=>{if(r.ok()&&/colour_core_\d_\d\.webp/.test(r.url()))tiles.add(r.url());});
-  await page.goto('/?demo=boxwork');
-  await page.getByRole('button',{name:'HUD setup',exact:true}).click();
+  await page.goto('/?demo=boxwork');await uiRoutes(page);
+  await uiDisplay(page);
   await page.getByLabel('Graphics quality',{exact:true}).selectOption('high');
   await page.getByRole('button',{name:'Explore local map →'}).click();
-  await page.getByRole('button',{name:'Compare current excursion →',exact:true}).click();
+  await uiRoutes(page);await page.getByRole('button',{name:'Compare routes',exact:true}).click();
   await page.getByRole('button',{name:'Walk selected route →'}).click();
   await expect(page.locator('.walk-instructions')).toBeVisible({timeout:60000});
   await expect(page.locator('.surface-status')).toHaveCount(0,{timeout:60000});
   expect(tiles.size).toBe(4);
-  await page.screenshot({path:info.outputPath('boxwork-high-desktop.png'),timeout:60000});
-  await page.getByRole('button',{name:'HUD setup',exact:true}).click();
+  await page.screenshot({timeout:60_000,path:info.outputPath('boxwork-high-desktop.png')});
+  await uiDisplay(page);
   await page.getByLabel('Graphics quality',{exact:true}).selectOption('medium');
-  await page.getByRole('button',{name:'Resume surface HUD →'}).click();
+  await uiClose(page);
   await expect(page.locator('.walk-instructions')).toBeVisible({timeout:60000});
-  for(const [width,height,name] of [[1024,900,'tablet'],[390,844,'phone']] as const){
+  for(const [width,height,name] of [[1366,768,'laptop'],[800,700,'narrow-window']] as const){
     await page.setViewportSize({width,height});
     await expect(page.getByTestId('hud-lmst')).toHaveText('12:00 LMST');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await page.screenshot({path:info.outputPath(`boxwork-${name}.png`),timeout:60000});
+    await page.screenshot({timeout:60_000,path:info.outputPath(`boxwork-${name}.png`)});
   }
   expect(errors).toEqual([]);
 });

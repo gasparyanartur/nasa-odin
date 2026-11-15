@@ -15,7 +15,7 @@ async function caption(text){await page.evaluate(text=>{let el=document.querySel
 async function clip(title,action){await caption(title);const start=(Date.now()-began)/1000;if(action)await action();const remaining=4000-(Date.now()-began-start*1000);if(remaining>0)await page.waitForTimeout(remaining);segments.push({title,start,end:(Date.now()-began)/1000});await page.locator('#demo-caption').evaluate(el=>{el.style.display='none';});const names=['explore-regions','gale-region','gale-layers','ctx-gale-layers','integrated-planner','integrated-hud','jezero-region'];await page.screenshot({path:`docs/evidence/${names[segments.length-1]}.png`});}
 async function active(){await page.getByRole('status',{name:'Layer status'}).filter({hasText:/Layer active|Needs attention/}).waitFor({timeout:60000});}
 try{
-  await page.goto(baseURL);await active();
+  await page.goto(baseURL);await page.locator('.station-data > summary').click();await active();
   await clip('Martian Map · Discover regions, inspect real data, plan a Marswalk.');
   await clip('Choose Gale–Bradbury on the globe. Its outline shows prepared planning coverage.',async()=>{await page.getByRole('button',{name:'Explore Gale · Bradbury on map',exact:true}).click();});
   await page.locator('.map-region-context .primary').waitFor();
@@ -23,14 +23,14 @@ try{
   await clip('Inspect real USGS imagery and terrain-derived slope. Historical REMS/RAD stay site context.');
   await page.getByLabel('Global basemap').selectOption('ctx-global-imagery');await active();
   await clip('Select MRO/CTX imagery; source tile gaps are reported while local overlays remain available.');
-  await page.locator('.map-region-context .primary').click();await page.getByRole('button',{name:'Compare routes →'}).click();await page.locator('.route-card').last().waitFor({timeout:60000});
+  await page.locator('.map-region-context .secondary').click();await page.getByRole('navigation',{name:'Tablet tools'}).getByRole('button',{name:'Routes',exact:true}).click();await page.getByRole('button',{name:'Compare routes',exact:true}).click();await page.locator('.route-card').last().waitFor({timeout:60000});
   await page.locator('.route-card').last().click();
   await clip('Compare shortest and gentler routes, including return time and explicit assumptions.');
-  await page.getByRole('button',{name:'Walk selected route →'}).click();await page.locator('.walking-scene canvas').waitFor();await page.getByRole('button',{name:'HUD setup',exact:true}).click();await page.getByLabel('Simulation pace').selectOption('20');await page.getByRole('button',{name:'Resume surface HUD →'}).click();await page.waitForTimeout(1500);
+  await page.getByRole('button',{name:'Walk selected route →'}).click();await page.locator('.walking-scene canvas').waitFor();await page.getByRole('button',{name:'Open tablet',exact:true}).click();await page.getByRole('navigation',{name:'Tablet tools'}).getByRole('button',{name:'Display',exact:true}).click();await page.getByLabel('Simulation pace').selectOption('20');await page.getByRole('dialog').getByRole('button',{name:'Close tablet',exact:false}).first().click();await page.waitForTimeout(1500);
   await clip('Walk the measured terrain with a minimap, waypoints, and return estimate · 20× demo pace.',async()=>{await page.locator('.walking-scene canvas').click({position:{x:450,y:350}});await page.locator('.walk-instructions').waitFor({state:'hidden'});const before=await page.getByTestId('position').textContent();await page.keyboard.down('w');await page.waitForTimeout(3000);await page.keyboard.up('w');await page.keyboard.press('Escape');if((await page.getByTestId('position').textContent())===before)throw new Error('Recording did not capture actual walking movement.');});
   await nav().getByRole('button',{name:/Station/}).click();await page.getByRole('region',{name:'Regions'}).getByRole('button',{name:/Jezero/}).click();await page.waitForTimeout(1800);await active();
   await clip('Explore Jezero too. Planning is enabled only where numeric terrain is prepared.');
-  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'docs/evidence/integrated-mobile.png',fullPage:true});
+  await page.setViewportSize({width:800,height:700});await page.screenshot({path:'docs/evidence/integrated-mobile.png',fullPage:true});
   const video=page.video();await context.close();const raw=await video.path();await rename(raw,'tmp/demo-video/walkthrough-raw.webm');
   await writeFile('tmp/demo-video/segments.json',JSON.stringify({baseURL,segments},null,2)+'\n');
   const filters=segments.map((s,i)=>`[0:v]trim=start=${s.start.toFixed(3)}:end=${(s.start+4).toFixed(3)},setpts=PTS-STARTPTS[v${i}]`).join(';')+';'+segments.map((_,i)=>`[v${i}]`).join('')+`concat=n=${segments.length}:v=1:a=0,fps=24,format=yuv420p[out]`;

@@ -34,30 +34,18 @@ The [Fable simulator integration plan](plans/2026-11-14-hypersimulation-integrat
 | FR-022 | Location-linked voice notes from the HUD | Extend “Note here” with audio recording so astronauts can log observations without typing in the HUD. Attach recordings to mission location and time, show them on the map and support playback from the tablet/station. Keep original audio; transcription is optional. Extends FR-016 rather than replacing its completed text-note workflow. See the scope below. | Requested |
 | FR-026 | Integrate the Fable surface simulator | Keep the current Station, Tablet, HUD and shared mission workflows; integrate the detailed Boxwork terrain, imagery and rendering from `hypersimulation-prototype`. Preserve manual walking, routing, field data and environmental provenance. Boxwork is a separate site from Bradbury. | Integrated locally · [0.7 review](plans/2026-11-14-hypersimulation-integration.md) · startup/laptop performance gates open |
 
-FR-023: Better Screen Compatability UX (requested)
+## UI redesign — FR-023/024/025/027
 
-Currently, the app does not scale well on smaller screens. You need to scroll a lot, and it's not clear what part comes next. Completely unintuitive. Investigate and figure out how to create a better version for smaller screens. 
+**Device clarification (2026-11-15):** the simulation runs on a laptop with mouse and keyboard. Tablet represents the astronaut’s simulated device, shown as an overlay above the paused surface. It is not a physical-tablet device target. Smaller-screen compatibility primarily means smaller laptop viewports and browser windows.
 
+These four requests are implemented together under the [UI redesign plan](plans/2026-11-15-ui-redesign.md); local implementation and technical/visual verification are complete. Unfamiliar-user walkthrough validation remains pending; these requests stay open until it is recorded.
 
-FR-024: Better Design (requested)
-
-* Non-intuitive, need to scroll at lot, but that's not clear
-* It's not obvious how to enter HUD mode (We need to scroll to bottom, plan a route, start out an excursion, and only then can we see HUD mode)
-* Tablet mode is not tablet-friendly at all, too much side-bars, buttons ,etc
-
-FR-025: Improve HUD Realism (requested)
-
-* We need rounded Astronaut-helmet like display, not screen display
-* Information should not have fat non-opaque border, make it more subtle
-* Don't put things too close to edges, too much eyeball movement for astronauts
-
-FR-027: Debloat interface (requested)
-
-* Currently our three interfaces are bloated and hard to navigate for users
-* We need to consider where things like collapsible tabs, hamburger menus, etc, can simplify
-* It must be obvious how to reach core functionality
-* Especially tablet view needs to be streamlined
-* There should also be better helpers (especially on mouse hovers, info buttons, etc)
+| ID | Request | Intended outcome | Status |
+| --- | --- | --- | --- |
+| FR-023 | Better screen compatibility | Bounded laptop workspaces, persistent navigation/actions and scrolling confined to detailed panels. | Implemented locally; usability validation pending |
+| FR-024 | Better design and HUD entry | Direct free exploration without route planning; clear Station, simulated Tablet and HUD navigation. | Implemented locally; usability validation pending |
+| FR-025 | Improve HUD realism | Subtle curved helmet visor, translucent compact status, comfortable insets and clear terrain view. | Implemented locally; usability validation pending |
+| FR-027 | Debloat interface | Map, Routes, Field data and Display tools; one task panel at a time; on-demand layers/evidence and help available on hover, focus and click. | Implemented locally; usability validation pending |
 
 ## Science and demo scope
 
@@ -87,7 +75,7 @@ FR-013/020 should build on FR-016's shared saved records. Users annotate locatio
 
 Published evidence and user observations are the default. The user also raised a possible synthetic-moisture exception because current local moisture readings are missing. If included, it must be an optional, clearly identified demo layer; its identity stays with logged entries and exports. Regional water-equivalent hydrogen, atmospheric humidity, hydrated minerals and actual soil moisture remain different quantities. See the [joint investigation and implementation proposal](plans/2026-11-15-journey-journal-science.md). This is a proposal, not an implemented journal, mineral HUD or replanning comparison.
 
-### FR-017–FR-019: Station, tablet and HUD split (done?)
+### FR-017–FR-019: Station, Tablet and HUD contexts
 
 | View | Intended context and functionality |
 | --- | --- |
@@ -95,7 +83,7 @@ Published evidence and user observations are the default. The user also raised a
 | Astronaut tablet | Explore the local region through its map, layers, science targets and route information. Access location-linked logging/editing (FR-016) and configure what appears in the HUD. |
 | Simulator HUD | Show transparent/translucent navigation and time information over the surface scene, including waypoints projected at their scene locations. Use the selections and visibility settings configured on the tablet. |
 
-Explore is available in the tablet context; broad data exploration and history remain available on the station computer. The tablet interface should be astronaut touch friendly: large, well-spaced controls, readable labels, touch pan/zoom and inspection, and access to actions without requiring hover or precise mouse input. These are functional views, not just screen-size variants.
+Local map exploration and route planning are available in Tablet; broad data exploration and history remain available at Station. The Tablet represents an astronaut’s touch-friendly device inside a laptop simulation, operated primarily with mouse and keyboard. Its visual design should suggest readable, well-spaced controls. Mouse drag/wheel/click and keyboard controls are primary; existing touch gestures remain supported. Help is available on hover, focus and click. These are functional views, not just screen-size variants.
 
 Tablet controls should include waypoint visibility/selection and time-display visibility. Toggling a display must not reset the mission, change the underlying scenario clock or lose collected data. Keep region, mission position, route, waypoint selections, observations and time context consistent when moving between tablet and HUD.
 

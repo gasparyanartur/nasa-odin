@@ -2,15 +2,15 @@ import {test,expect} from '@playwright/test';
 
 test('Tablet maps fit the available display without changing full-area coverage',async({page},info)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?demo=yellowknife');
-  await expect(page.getByRole('button',{name:'Compare science routes →'})).toBeEnabled();
-  for(const viewport of [{width:1440,height:1000},{width:1024,height:768},{width:800,height:700},{width:390,height:844}]){
+  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
+  for(const viewport of [{width:1440,height:1000},{width:1024,height:768},{width:800,height:700},{width:800,height:700}]){
     await page.setViewportSize(viewport);
-    for(const [tab,label] of [['Explore','Gale terrain selection map'],['Field data','Field observation map']]){
+    for(const [tab,label] of [['Map','Gale terrain selection map'],['Field data','Field observation map']]){
       await page.getByRole('button',{name:tab,exact:true}).click();const map=page.getByRole('img',{name:label,exact:true});
       await expect(map).toHaveAttribute('data-zoom','1.00');
       await expect.poll(async()=>map.evaluate(el=>{const r=el.getBoundingClientRect(),parent=el.parentElement!,pane=parent.parentElement!;return Math.abs(r.width-r.height)<1&&r.width<=parent.clientWidth&&r.height<innerHeight-160&&(!['auto','scroll'].includes(getComputedStyle(pane).overflowY)||parent.getBoundingClientRect().bottom<=innerHeight+1);})).toBe(true);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-      await page.screenshot({path:info.outputPath(`tablet-map-${viewport.width}-${tab.replace(' ','-')}.png`)});
+      await page.screenshot({timeout:60_000,path:info.outputPath(`tablet-map-${viewport.width}-${tab.replace(' ','-')}.png`)});
     }
   }
   await page.setViewportSize({width:1440,height:1000});await page.getByRole('button',{name:'Field data',exact:true}).click();
@@ -22,7 +22,7 @@ test('Tablet maps fit the available display without changing full-area coverage'
 
 test('Tablet map supports keyboard selection, mouse wheel zoom, drag and click placement',async({page})=>{
   await page.goto('/?demo=yellowknife');const map=page.getByRole('img',{name:'Gale terrain selection map',exact:true});
-  await expect(page.getByRole('button',{name:'Compare science routes →'})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Compare routes',exact:true})).toBeEnabled();
   await map.focus();await page.keyboard.press('+');await expect(map).toHaveAttribute('data-zoom','1.50');
   await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowDown');
   const goal=page.locator('.endpoint').nth(1);await goal.getByRole('button',{name:'Place',exact:true}).click();await map.focus();await page.keyboard.press('Enter');
