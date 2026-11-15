@@ -2,11 +2,11 @@
 
 This folder holds the combined app: the team app's Station, Tablet and HUD with the combined design system, the quiet HUD and the Marswalk content. The Marswalk content is the walk presets, the science stops with their tasks, the hazard areas with a legend, the prepared science walk, the solar storm scenario, the suit limits, saved walks, the sharp imagery and a ground panorama. It was built from the team review call of 2026-11-15, as a full copy of branch `design/exhibit-system-team-feedback`.
 
-The team app in the repository root stays as it is. The two apps sit side by side and can run at the same time.
+**This is the one current app of the repository.** The earlier Martian Map app that used to be in the repository root is now in `../archive/martian-map-v1/`. Where the text below says "root app" or port 5173, it means that archived app. To run this app: `npm install` and `npm run dev` in this folder, then open http://localhost:5174.
 
 **It replaces the old static Marswalk app.** That app was in this folder before; it remains in git history at commit 66ee212 (`git show 66ee212:hypersimulation-prototype/README.md`, or `git worktree add ../marswalk-old 66ee212` from the repository root for the full folder).
 
-**`app/` is not part of this app.** `app/public/data/` with `app/DATA-LICENSE.md`, `app/LICENSE` and `app/sources.json` is the donor data of the old app, kept at its old path. The root app's `npm run prepare:boxwork` (`scripts/prepare_boxwork.py`) rebuilds `public/boxwork/` from it, and `docs/evidence/hyper-integration/source-inventory.json` lists its hashes. Do not move or edit these files. Their licence and credit are in `app/DATA-LICENSE.md`.
+**Old source data:** the source data of the first static Marswalk prototype, with its `DATA-LICENSE.md`, `LICENSE` and `sources.json`, is in `../archive/marswalk-static-data/`. This app does not read it; its own data is in `public/`.
 
 ## What it adds to the team app
 
