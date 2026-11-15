@@ -25,6 +25,14 @@ export function savedSetup(get: GetStorage = () => globalThis.localStorage): Set
   catch { return null; }
 }
 
+/** False when the browser blocks storage, checked once on load before any choice is saved. */
+export function canStore(get: GetStorage = () => globalThis.localStorage): boolean {
+  const s = storage(get);
+  if (!s) return false;
+  const probe = `${SETUP_KEY}.probe`;
+  try { s.setItem(probe, '1'); s.removeItem(probe); return true; } catch { return false; }
+}
+
 /** False when the browser blocks storage: the choice then lives until the page reloads. */
 export function saveSetup(setup: Setup, get: GetStorage = () => globalThis.localStorage): boolean {
   const s = storage(get);

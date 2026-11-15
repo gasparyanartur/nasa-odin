@@ -42,7 +42,7 @@ export default function ScienceWalkCard({ state, selected, source, habitat, user
     </button>}
     <div className="caption science-walk__why">
       {showPlanned ? 'The team planner returned every leg.' : `Prepared route. It starts and ends at the crew rover, ${Math.round(fromHabitat)} m from the habitat H, and avoids the ${HAZARD_ZONES.length} hazard outlines exactly.`}
-      <InfoMark title="Why a prepared route" does={<>This route comes from the Marswalk planner, which checks every 1 m cell against a 15 degree slope limit. The team planner checks a coarser 5 m grid and takes the steepest ground around each 5 m point, so on these narrow ridges it is stricter and can refuse the same walk.</>} source={<>{PREPARED.origin}, Marswalk commit {PREPARED.marswalk.commit.slice(0, 8)}, inputs {PREPARED.marswalk.inputs}. {sourceLine('slope_cap')}. {sourceLine('walking_speed')}. {sourceLine('work_time_per_stop')}.</>} coverage="Time in the suit is distance over walking speed plus the work time at each stop, as the Marswalk app computes it. No temperature or dose conditions were evaluated for it." />
+      <InfoMark title="Why a prepared route" does={<>This route comes from the Marswalk planner, which checks every 1 m cell against a 15 degree slope limit. The team planner checks a coarser 5 m grid and takes the steepest ground around each 5 m point, so on these narrow ridges it is stricter and can refuse the same walk.</>} source={<>{PREPARED.origin}, Marswalk commit {PREPARED.marswalk.commit.slice(0, 8)}, inputs {PREPARED.marswalk.inputs}. {sourceLine('slope_cap')}. {sourceLine('walking_speed')}. {sourceLine('work_time_per_stop')}.</>} coverage="Time in the suit is distance over walking speed plus the work time at each stop, as the Marswalk app computes it. No temperature or dose conditions were evaluated for it. While you follow this route, each step is checked on the same 1 m slope map against your own slope limit under Mission assumptions and limits; free walking and the other routes use the 5 m grid. Marked hazard areas never stop a step: the helmet shows the hazard symbol." />
     </div>
     {showPlanned
       ? <button type="button" className="text-button" onClick={onSelectPrepared}>Use the prepared route instead</button>
@@ -56,7 +56,7 @@ export default function ScienceWalkCard({ state, selected, source, habitat, user
     </div>
     {plan && far.length > 0 && <p className="caption">Legs end within {ARRIVAL_M} m of a stop where the stop itself is steeper than the slope limit: {far.map(a => `Stop ${a.stop.id} ${a.gapM.toFixed(1)} m`).join(', ')}.</p>}
     {state.status === 'failed' && <div className="science-walk__failure">
-      <strong>{state.failure.leg ? `Leg ${state.failure.leg.index + 1} of 9, ${state.failure.leg.from} to ${state.failure.leg.to}, has no permitted path.` : 'The science walk could not be planned.'}</strong>
+      <strong>{state.failure.leg ? `Leg ${state.failure.leg.index + 1} of 9, ${state.failure.leg.from} to ${state.failure.leg.to}, ${state.failure.diagnostics ? 'has no permitted path' : 'could not be planned'}.` : 'The science walk could not be planned.'}</strong>
       {failure ?? <p role="alert">{state.failure.message}</p>}
       <p className="caption">No route is drawn for a walk the planner did not return. The prepared route above stays available. The slope limit is under Mission assumptions and limits.</p>
     </div>}

@@ -86,4 +86,22 @@ describe('prepared science route', () => {
     expect(alt.metrics.distanceM).toBe(PREPARED.totals.distanceM);
     expect(alt.conditions.status).toBe('unknown');
   });
+
+  it('stops a step on the 1 m walking grid where the ground is steeper than the walker limit', () => {
+    const meta = JSON.parse(readFileSync('public/boxwork/manifest.json', 'utf8')) as Meta;
+    const scene = JSON.parse(readFileSync('public/boxwork/detail/scene.json', 'utf8'));
+    const b = readFileSync('public/boxwork/full/height.f32'), grid = heightGrid(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
+    const slope: SlopeCells = { cells: scene.core.slope_cells, sizeM: scene.core.size_m, scaleDeg: scene.slope.scale_deg, nodata: scene.slope.nodata, groundScaleX: scene.ground_scale.x, values: new Uint8Array(readFileSync('public/boxwork/detail/slope_core.bin')) };
+    const walk = walkTerrain({ meta } as TerrainData, (x, y) => heightAt(grid, x, y), slope);
+    const cell = slope.sizeM / slope.cells, half = slope.sizeM / 2;
+    let steep: Point | undefined;
+    for (let j = 100; j < slope.cells - 100 && !steep; j++) for (let i = 100; i < slope.cells - 100; i++) {
+      const v = slope.values[j * slope.cells + i];
+      if (v !== slope.nodata && v * slope.scaleDeg >= 25) { steep = { x: (-half + (i + .5) * cell) * slope.groundScaleX, y: half - (j + .5) * cell }; break; }
+    }
+    expect(steep, 'a cell of 25 degrees or more inside the area').toBeDefined();
+    const from = { x: steep!.x - 3, y: steep!.y };
+    expect(canMove(walk, from, steep!, { maxSlopeDeg: 15, exclusions: [] })).toBe(false);
+    expect(canMove(walk, from, steep!, { maxSlopeDeg: 89, exclusions: [] })).toBe(true);
+  });
 });

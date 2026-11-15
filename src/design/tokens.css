@@ -19,6 +19,14 @@
   font-style: normal;
   font-display: swap;
 }
+/* The Overpass file gives the middle dot (U+00B7) no advance width, so "A · B" renders as "A ·B"; this face lends it a system dot. */
+@font-face {
+  font-family: "Overpass";
+  src: local("Helvetica Neue"), local("Helvetica"), local("Arial"), local("DejaVu Sans");
+  font-weight: 100 900;
+  font-style: normal;
+  unicode-range: U+00B7;
+}
 
 :root {
   /* Gallery wall */

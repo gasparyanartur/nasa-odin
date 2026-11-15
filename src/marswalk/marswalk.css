@@ -22,7 +22,7 @@
 .walk-choice__cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;pointer-events:auto}
 .walk-card{position:relative;display:flex;flex-direction:column;min-width:0;padding:10px 12px 8px;background:rgba(21,20,18,.9);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall)}
 .walk-card.is-chosen{background:var(--card);border-color:transparent;box-shadow:var(--brass-top-inset),var(--shadow-card);color:var(--label-ink)}
-.walk-card__pick{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:8px;row-gap:2px;align-items:center;padding:0 22px 0 0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer}
+.walk-card__pick{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:8px;row-gap:2px;align-items:center;padding:0 40px 0 0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer}
 .walk-card__pick .pict{width:20px;height:20px;color:var(--brass-hi)}
 .walk-card.is-chosen .walk-card__pick .pict{color:var(--label-ink-2)}
 .walk-card__pick strong{font:700 var(--fs-sm)/1.25 var(--font-text)}
@@ -117,7 +117,6 @@
 .science-walk-card b{font:700 var(--fs-sm)/1 var(--font-text);color:var(--brass-hi)}
 .science-walk-card.selected b{color:var(--label-ink)}
 .science-walk-card>strong{display:flex;align-items:center;gap:8px;margin-top:10px;font:400 var(--fs-2)/1.1 var(--font-display)}
-.science-walk-card.is-empty>strong{font:700 var(--fs-0)/1.2 var(--font-text)}
 .science-walk-card>strong small{font:600 var(--fs-xs) var(--font-text)}
 .science-walk-card>small{display:block;margin-top:6px;font-size:var(--fs-xs);color:var(--on-wall-2)}
 .science-walk-card.selected>small{color:var(--label-ink-2)}

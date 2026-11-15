@@ -6,7 +6,7 @@ import { HAZARD_ZONES } from './hazards';
 import { appendSample, closeWalk, listWalks, localStore, saveWalk, startWalk, type Walk, type WalkRegion } from './pathlog';
 import { effective, pickMission, pickRegion, toggleFeature, type FeatureId, type MissionId, type Setup } from './presets';
 import { isFailure, planScienceWalk, type LegResult, type ScienceWalkFailure, type ScienceWalkPlan } from './sciencewalk';
-import { loadSetup, saveSetup } from './setupStore';
+import { canStore, loadSetup, saveSetup } from './setupStore';
 import { IDLE, advance, cancelReturn, dismiss, fade, message, reopen, reset as resetStorm, resumeReturn, trigger, AUTO_FADE, type StormState } from './storm';
 import { WALK_STOPS } from './sciencewalk';
 import { cellSlope, loadWalkTerrain, type SlopeCells } from './preparedRoute';
@@ -28,7 +28,7 @@ const walkable = (r?: RegionId): r is WalkRegion => r === 'gale-bradbury' || r =
 /** Marswalk state that lives beside the team app's mission state: walk choice, science walk, stops, storm, walked paths. */
 export function useMarswalk({ regionId, data, pose, walking, session }: Args) {
   const [setup, setSetupState] = useState<Setup>(() => loadSetup());
-  const [persistent, setPersistent] = useState(true);
+  const [persistent, setPersistent] = useState(() => canStore());
   const setSetup = useCallback((next: Setup) => { setSetupState(next); setPersistent(saveSetup(next)); }, []);
   useEffect(() => { if (regionId && regionId !== setup.region) setSetup(pickRegion(setup, regionId)); }, [regionId]);
   const on = useMemo(() => effective(setup), [setup]);

@@ -225,7 +225,7 @@ export default function App(){
   const mapStops=useMemo(()=>mw.boxwork&&mw.on.stops?WALK_STOPS.map(s=>({id:s.id,x:s.x,y:s.y,kind:s.kind,visited:mw.visited.has(s.id)})):undefined,[mw.boxwork,mw.on.stops,mw.visited]);
   const drills=useMemo(()=>mw.boxwork&&mw.on.drill?placedDrillSites().map(d=>({x:d.x,y:d.y})):undefined,[mw.boxwork,mw.on.drill]);
   const wayBack=useMemo(()=>mw.storm.returning&&back?.route?back.route.points.map(([x,y])=>({x,y})):undefined,[mw.storm.returning,back]);
-  const alertCount=uniqueAlerts.length+(returnError?1:0);
+  const alertCount=uniqueAlerts.length+(returnError?1:0)+(mw.stormMessage?1:0);
   const headingDeg=((pose.heading*180/Math.PI+360)%360).toFixed(0);
   const nextDistance=progress?distance(Math.hypot(progress.target[0]-pose.x,progress.target[1]-pose.y)):undefined;
   const nextLine=progress?`${((Math.atan2(progress.target[0]-pose.x,progress.target[1]-pose.y)*180/Math.PI+360)%360).toFixed(0)}° bearing · ${distance(progress.remainingM)} remaining`:undefined;

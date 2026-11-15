@@ -290,7 +290,7 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 @media (prefers-reduced-motion:reduce){.hud-toast{animation:none}}
 /* small status symbols, low and centred */
 .hud-page .hud-bottom{position:absolute;bottom:calc(1.2vh + clamp(52px,7.4vh,64px));left:50%;right:auto;transform:translateX(-50%);display:flex;gap:8px;justify-content:center;background:transparent;border:0;border-radius:0;overflow:visible;pointer-events:auto}
-.hud-page .hud-bottom>div{flex:none;padding:0;border:0}
+.hud-page .hud-bottom>div{flex:none;padding:3px 10px;border:1px solid var(--hud-plate-line)}
 .hud-chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:3px 10px;background:var(--hud-plate);border:1px solid var(--hud-plate-line);border-radius:var(--radius-pill);color:var(--eng);white-space:nowrap}
 .hud-chip .pict{width:17px;height:17px}
 .hud-page .hud-bottom strong{display:inline;margin:0;font:700 var(--hud-text)/1.2 var(--font-text);color:var(--eng)}
@@ -323,7 +323,7 @@ button:disabled{opacity:1;color:var(--on-wall-2);border-color:var(--plinth-line)
 .pause-menu h2{font-size:var(--fs-2);color:var(--on-wall)}
 .pause-menu p{color:var(--on-wall-2);font-size:var(--fs-sm)}
 .pause-menu button:not(.primary){background:transparent;border:1px solid var(--plinth-line);color:var(--on-wall);font-size:var(--fs-sm);border-radius:var(--radius)}
-.hud-page .hud-field-inspector{top:calc(var(--hud-top) + 6vh + 46px);left:var(--hud-side);width:min(300px,30vw);max-height:calc(100% - 260px);overflow:auto;padding:12px;background:rgba(21,20,18,.82);border:1px solid var(--hud-plate-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
+.hud-page .hud-field-inspector{top:calc(var(--hud-top) + 6vh + 46px);left:var(--hud-side);width:min(270px,26vw);max-height:calc(100% - 260px);overflow:auto;padding:12px;background:rgba(21,20,18,.82);border:1px solid var(--hud-plate-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
 
 @media (max-width:800px){
   .hud-page{--hud-side:clamp(28px,5vw,56px)}
