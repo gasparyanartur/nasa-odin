@@ -1,5 +1,6 @@
 # NASA Space Apps 2026 - Interplanetary Survival Guide: Martian Map
 
+
 This repository holds one current app. Older versions are kept in `archive/` for reference.
 
 ## The current app: `hypersimulation-prototype/`
