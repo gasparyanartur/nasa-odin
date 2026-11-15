@@ -53,7 +53,7 @@ import MarswalkCloser from './marswalk/MarswalkCloser';
 import StormNotice from './marswalk/StormNotice';
 import MarswalkCredits from './marswalk/MarswalkCredits';
 import type { ExtraMark } from './mission/WalkingScene';
-import { PREVIEW_SPEEDS, liveWalk, previewPose, previewProgressText, previewReducer, startPreview, type PreviewState } from './mission/routePreview';
+import { PREVIEW_SPEEDS, liveWalk, routeSubject, previewPose, previewProgressText, previewReducer, startPreview, type PreviewState } from './mission/routePreview';
 import { savePace, storedPace } from './mission/pace';
 import { TourStartButton } from './tour/Tour';
 
@@ -273,10 +273,11 @@ export default function App(){
   // Before the first step the walker turns to face Stop 1, so the helmet shows the next stop mark; a walk under way keeps its heading.
   function startPrepared(){mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};if(pose.elapsed===0){const first=WALK_STOPS[0];setPose(p=>({...p,heading:Math.atan2(first.x-p.x,first.y-p.y)}));setSession(v=>v+1);}}
   function openTablet(tab:typeof tabletTab='explore'){setMapPanel(undefined);setTabletTab(tab);setView('plan');}
-  // Previous paths: the first path shown on the map. Otherwise the selected route, or the prepared walk that Walk this route starts.
+  // Previous paths: the first path shown on the map. Otherwise the selected route, or the prepared walk that Walk this route starts. routeSubject decides, so preview and walk agree.
   const shownPath=routeWorkflow==='saved'?savedTraces[0]:undefined;
+  const subject=routeSubject(routeWorkflow,shownPath,route,prepared);
   const previewRoute=route??prepared;
-  const previewSource=shownPath?{name:shownPath.label,points:shownPath.points}:previewRoute?{name:science||!route?PREPARED_NAME:route.mode==='shortest'?'Shortest permitted route':'Gentler terrain route',points:previewRoute.points.map(([x,y])=>({x,y}))}:undefined;
+  const previewSource=subject==='previous'&&shownPath?{name:shownPath.label,points:shownPath.points}:previewRoute?{name:science||!route?PREPARED_NAME:route.mode==='shortest'?'Shortest permitted route':'Gentler terrain route',points:previewRoute.points.map(([x,y])=>({x,y}))}:undefined;
   function beginPreview(){if(!previewSource)return;const next=startPreview(previewSource.name,previewSource.points);if(!next)return;setPauseMenu(false);setMapPanel(undefined);setPreview(next);setView('walk');}
   function stopPreview(){setPreview(undefined);setView('plan');}
   const previewPlay=useRef<HTMLButtonElement>(null);
@@ -661,8 +662,8 @@ export default function App(){
 <div>
 <span data-testid="tablet-explore-position">E {pose.x.toFixed(1)} · N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</span>
 <span className="restriction-summary">{missionSettings.exclusions.length} active restrictions · {route?'Route selected':'Free exploration'}</span>
-</div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}{routeWorkflow==='new'&&<button className="secondary plan-route-button" data-tour="plan-route" title="Calculate terrain route alternatives from habitat to destination using your current mission constraints." disabled={!data||busy} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</button>}{previewSource&&<button className="secondary" data-tour="preview-route" title={`Watch ${previewSource.name} from start to end in about one minute. Nothing is walked or saved.`} disabled={!data} onClick={beginPreview}><Icon name="play"/>Preview route</button>}
-<button className="primary" data-tour="walk-route" disabled={!data} onClick={()=>{if(!route&&prepared)startPrepared();setView('walk');}}>{science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
+</div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}{routeWorkflow==='new'&&<button className="secondary plan-route-button" data-tour="plan-route" title="Calculate terrain route alternatives from habitat to destination using your current mission constraints." disabled={!data||busy} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</button>}{previewSource&&<button className="secondary" data-tour="preview-route" title={`Watch ${previewSource.name} from start to end in about a minute and a half. Nothing is walked or saved.`} disabled={!data} onClick={beginPreview}><Icon name="play"/>Preview route</button>}
+<button className="primary" data-tour="walk-route" disabled={!data} onClick={()=>{if(subject==='prepared')startPrepared();setView('walk');}}>{subject==='previous'?'Walk this path →':science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
 </>:<button className="primary" data-tour="return-to-surface" disabled={!data} onClick={()=>setView('walk')}>Return to surface</button>}</footer>
     </TabletShell>
   </>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PREVIEW_SECONDS, advancePreview, headingAt, liveWalk, pointAt, previewPath, previewPose, previewProgressText, previewReducer, startPreview, turnTowards } from './routePreview';
+import { PREVIEW_SECONDS, advancePreview, headingAt, liveWalk, pointAt, previewPath, previewPose, previewProgressText, previewReducer, startPreview, turnTowards, routeSubject } from './routePreview';
 
 const L = [{ x: 0, y: 0 }, { x: 0, y: 300 }, { x: 300, y: 300 }];
 
@@ -29,7 +29,7 @@ describe('route preview path', () => {
 });
 
 describe('route preview pace', () => {
-  it('runs a whole route in about one minute at 1x, half that at 2x, a quarter at 4x', () => {
+  it('runs a whole route in about 90 seconds at 1x, half that at 2x, a quarter at 4x', () => {
     for (const [speed, seconds] of [[1, PREVIEW_SECONDS], [2, PREVIEW_SECONDS / 2], [4, PREVIEW_SECONDS / 4]]) {
       let done = 0, t = 0;
       while (done < 600 && t < 1000) { done = advancePreview(done, 600, 1 / 60, speed); t += 1 / 60; }
@@ -38,7 +38,34 @@ describe('route preview pace', () => {
     }
   });
   it('caps a long frame gap so a hidden tab does not jump to the end', () => {
-    expect(advancePreview(0, 600, 30, 4)).toBeCloseTo(.1 * 10 * 4);
+    expect(advancePreview(0, 600, 30, 4)).toBeCloseTo(.5 * (600 / PREVIEW_SECONDS) * 4);
+  });
+  it('is 90 s, 45 s and 22.5 s whatever the route length', () => {
+    expect(PREVIEW_SECONDS).toBe(90);
+    for (const len of [50, 600, 1680, 9000]) {
+      let done = 0, t = 0;
+      while (done < len && t < 1000) { done = advancePreview(done, len, 1 / 30, 4); t += 1 / 30; }
+      expect(Math.abs(t - 22.5)).toBeLessThan(.2);
+    }
+  });
+  it('keeps pace at a low frame rate', () => {
+    let done = 0, t = 0;
+    while (done < 1680 && t < 1000) { done = advancePreview(done, 1680, .4, 1); t += .4; }
+    expect(Math.abs(t - 90)).toBeLessThan(.5);
+  });
+});
+
+describe('route subject', () => {
+  it('uses the shown previous path for preview and walk when Load previous path is open', () => {
+    expect(routeSubject('saved', { id: 'p' }, { id: 'r' }, { id: 'x' })).toBe('previous');
+  });
+  it('falls back to the route, then the prepared walk, when no previous path is shown', () => {
+    expect(routeSubject('saved', undefined, { id: 'r' }, { id: 'x' })).toBe('route');
+    expect(routeSubject('new', { id: 'p' }, undefined, { id: 'x' })).toBe('prepared');
+    expect(routeSubject('new', undefined, undefined, undefined)).toBe('none');
+  });
+  it('ignores a shown path while Plan new route is open', () => {
+    expect(routeSubject('new', { id: 'p' }, { id: 'r' }, { id: 'x' })).toBe('route');
   });
 });
 

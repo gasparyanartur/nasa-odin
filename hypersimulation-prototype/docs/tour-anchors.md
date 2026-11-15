@@ -54,8 +54,8 @@ AI-written (Claude, Anthropic), 2026-11-15.
 - `inspect-data` - Map or Routes, map tool bar, Inspect data. Opens the data evidence panel.
 - `log-here` - Map or Routes, map tool bar, Log here. Starts a field record at the astronaut's position.
 - `plan-route` - Routes footer (Plan new route only), Plan route. Plans the shortest and gentler routes.
-- `preview-route` - Routes footer (when a route, the prepared science walk or a shown previous path exists), Preview route. Runs the helmet camera along it in about one minute; nothing is walked or saved.
-- `walk-route` - Routes footer, Walk selected route (or Walk this route, or Enter surface). Enters the surface on that route.
+- `preview-route` - Routes footer (when a route, the prepared science walk or a shown previous path exists), Preview route. Runs the helmet camera along it in about 90 seconds; nothing is walked or saved.
+- `walk-route` - Routes footer, Walk selected route (or Walk this path with a previous path shown, Walk this route, or Enter surface). Enters the surface on that route.
 - `return-to-surface` - footer of the other tools, Return to surface. Closes the tablet.
 - `display-features` - Display, the feature switches with the helmet preview. Turns features on or off.
 - `display-helmet` - Display, the visor, waypoint and clock switches. Sets what the helmet shows.

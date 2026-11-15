@@ -44,6 +44,6 @@ describe('tour steps', () => {
   it('never triggers a hazard, a walk or pointer lock by itself', () => {
     const clicked = STEPS.filter(s => s.action === 'click').flatMap(s => [s.target, ...(s.via ?? [])]);
     for (const banned of ['trigger-event', 'walk-route', 'enter-surface', 'explore-freely', 'hud-tab', 'return-to-surface', 'display-return']) expect(clicked).not.toContain(banned);
-    expect(STEPS.filter(s => s.chapter === 'Helmet' && s.action !== 'click').every(s => s.pointer === false)).toBe(true);
+    expect(STEPS.filter(s => s.chapter === 'Helmet').every(s => s.pointer === false)).toBe(true);
   });
 });

@@ -4,10 +4,12 @@ import type { Point, Pose } from './data';
  * Route preview: the helmet camera runs along a route by itself. It moves the camera only; the walk state (position,
  * elapsed suit time, walked-path log, stop arrivals, saved traverses) never sees a preview position.
  */
-export const PREVIEW_SECONDS = 60;
+export const PREVIEW_SECONDS = 90;
 export const PREVIEW_SPEEDS = [1, 2, 4] as const;
 export type PreviewSpeed = typeof PREVIEW_SPEEDS[number];
 const LOOK_AHEAD_M = 12;
+/** Longest frame gap that counts; a slow frame rate must not stretch the preview, a hidden tab must not jump it. */
+const MAX_FRAME_S = 0.5;
 
 export interface PreviewPath { points: Point[]; cum: number[]; totalM: number }
 
@@ -54,7 +56,7 @@ export const previewPace = (totalM: number) => totalM / PREVIEW_SECONDS;
 
 /** The next distance after dtS real seconds; dt is capped so a hidden tab does not jump the camera to the end. */
 export function advancePreview(doneM: number, totalM: number, dtS: number, speed: number): number {
-  const dt = Math.max(0, Math.min(0.1, dtS));
+  const dt = Math.max(0, Math.min(MAX_FRAME_S, dtS));
   return Math.min(totalM, doneM + dt * previewPace(totalM) * speed);
 }
 
@@ -84,6 +86,16 @@ export function previewReducer(state: PreviewState, action: PreviewAction): Prev
       return { ...state, doneM, phase: doneM >= state.path.totalM ? 'ended' : state.phase };
     }
   }
+}
+
+/**
+ * What a route action acts on. With Load previous path open and a path shown, both Preview route and Walk this route
+ * use that path; otherwise the selected planned route, else the prepared science walk.
+ */
+export function routeSubject(workflow: 'new' | 'saved', shownPath: unknown, route: unknown, prepared: unknown): 'previous' | 'route' | 'prepared' | 'none' {
+  if (workflow === 'saved' && shownPath) return 'previous';
+  if (route) return 'route';
+  return prepared ? 'prepared' : 'none';
 }
 
 /** Walking is live only in the helmet view, with no pause menu and no preview; every walk record keys off this. */

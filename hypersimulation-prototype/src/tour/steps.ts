@@ -42,7 +42,7 @@ export const STEPS: TourStep[] = [
     caption: 'Top right, the minimap. Hatched areas mark hazards to keep away from.', doIt: 'Look at the minimap, then press Next.' },
   { id: 'notices', chapter: 'Helmet', target: 'hud-notices', action: 'point', pointer: false, optional: true,
     caption: 'Notices show briefly under the compass, then wait here. Key N lists them.', doIt: 'Look at the notice symbol, then press Next.' },
-  { id: 'stop', chapter: 'Helmet', target: 'preview-stop', action: 'click', expect: 'walk-route',
+  { id: 'stop', chapter: 'Helmet', target: 'preview-stop', action: 'click', pointer: false, expect: 'walk-route',
     caption: 'Stop ends the preview and brings you back to the tablet.', doIt: 'Click Stop.' },
   { id: 'ready', chapter: 'Tablet', target: 'walk-route', action: 'point', pointer: false, optional: true, final: true,
     caption: 'The tour ends here on Tablet Routes. Walk this route, or explore freely.', doIt: 'The tour ends here on Tablet Routes. Walk this route, or explore freely.' },
