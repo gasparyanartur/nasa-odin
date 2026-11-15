@@ -1,0 +1,13 @@
+
+> martian-map@0.7.0 test:planner:reference
+> node scripts/check-planner-reference.mjs
+
+
+ RUN  v5.1.0 /home/gasparyanartur/dev/nasa-martian-map
+
+
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  17:56:22
+   Duration  12.23s (import 78%, tests 22%)
+

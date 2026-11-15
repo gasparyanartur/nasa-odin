@@ -1,0 +1,31 @@
+{
+  "reviewDate": "2026-11-15",
+  "status": "complete locally",
+  "scope": "Unified Routes planning and previous-path loading",
+  "buildPassed": true,
+  "frontendTestsPassed": 86,
+  "browser": {
+    "passedAcrossRuns": 4,
+    "initial": {
+      "passed": 1,
+      "output": "tmp/routes-unified-browser",
+      "note": "Run interrupted after the saved-walk scenario passed."
+    },
+    "final": {
+      "passed": 3,
+      "output": "tmp/routes-unified-final",
+      "scenarios": [
+        "Suggested Boxwork and previous-path switching/reload",
+        "Both-site curved visor containment",
+        "Planning/adoption preserves pose, layers and profile access"
+      ]
+    }
+  },
+  "visualEvidence": "previous-paths-followup.png",
+  "assetSha256": {
+    "assets/worker-CQ4zK1WU.js": "7cbab526ef7584bc174815e0c66d6dfcfe009c258c8d7251466f710ba90fff85",
+    "assets/index-m7ohGlkQ.js": "40cecec515151eef6f9934d7a74c8ea4a3141f700b83e3b82238bcbb34863ffb",
+    "assets/WalkingScene-DL-_dpjG.js": "81a42546268d7ffc2a1854a54d7a0eef0f98fcd5c042432df8e005d42d3cc6fe",
+    "assets/index-CP5BZzp_.css": "d8cb6d36c83a1490d42593b5d65fce96f925e2663a4eb09d8c969fadb07a466e"
+  }
+}

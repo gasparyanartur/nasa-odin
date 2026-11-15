@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-15",
+  "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+  "browser": "158.0.8127.18",
+  "renderer": "ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 3090/PCIe/SSE2, OpenGL 4.5.0)",
+  "viewport": {
+    "width": 1366,
+    "height": 768
+  },
+  "quality": "Medium, Bradbury POV",
+  "baseline": {
+    "elapsedMs": 3042.0999999046326,
+    "rafSamples": 40,
+    "rafPerSecond": 13.148811676556972,
+    "rafP95Ms": 283.40000000000055,
+    "heartbeatTicks": 29,
+    "maxHeartbeatGapMs": 367
+  },
+  "whilePlanning": {
+    "elapsedMs": 2605.699999809265,
+    "rafSamples": 90,
+    "rafPerSecond": 34.53966304892655,
+    "rafP95Ms": 66.60000000000036,
+    "heartbeatTicks": 62,
+    "maxHeartbeatGapMs": 147.59999990463257
+  },
+  "routeRoundTripMs": [
+    686.6999998092651,
+    322,
+    239.59999990463257,
+    243.7000002861023,
+    288.40000009536743,
+    345.40000009536743,
+    216.40000009536743,
+    225.40000009536743
+  ],
+  "terrainArrayBytes": 1447209,
+  "limitations": "Local headless desktop sample with an artificial burst of eight route comparisons during stationary POV. RAF cadence is not calibrated rendered FPS. Not intended-laptop or network-startup acceptance.",
+  "comparisonLimitations": "Uncontrolled warm-up and concurrent QA make the baseline/burst RAF rates unsuitable for causal comparison. This verifies background calculation during POV, not a speedup or laptop FPS guarantee."
+}

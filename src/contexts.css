@@ -149,8 +149,6 @@ kbd{font:10px monospace;color:var(--ui-muted);border:1px solid var(--ui-line);bo
 .tablet-device .field-notice{margin:0;padding:8px 18px;font-size:12px;flex-shrink:0}
 .tablet-device .empty-context{padding:30px;overflow:auto;flex:1}
 .help{position:relative;margin-left:auto;display:inline-flex}
-.help [role=tooltip]{display:none;position:absolute;right:0;top:calc(100% + 8px);width:280px;padding:14px;background:#30403d;border:1px solid #82968a;border-radius:8px;box-shadow:0 8px 20px #0005;color:var(--ui-text);font:12px/1.7 Arial,sans-serif;z-index:30}
-.help:hover [role=tooltip],.help:focus-within [role=tooltip],.help-pinned [role=tooltip]{display:block}
 
 /* Field editing and display configuration share the bounded device shell. */
 .tablet-device .field-workspace{flex:1;min-height:0;display:grid;grid-template-columns:350px minmax(0,1fr);background:var(--ui-bg)}
@@ -361,3 +359,135 @@ kbd{font:10px monospace;color:var(--ui-muted);border:1px solid var(--ui-line);bo
 .tablet-device select{min-height:32px;max-width:100%;padding:6px 8px;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--ui-line);border-radius:5px;font-size:12px}
 .tablet-device .mission-sidebar>label{display:grid;gap:8px;margin:12px 0}
 .tablet-device .mission-sidebar>label small{font-size:10px;line-height:1.6;color:var(--ui-muted)}
+
+/* Feedback bundle: contextual explanations, actual traverses and shared events. */
+.context-guide{flex-shrink:0;padding:0 18px;border-bottom:1px solid var(--ui-line)}
+.context-guide-content{max-height:230px;overflow:auto;padding:0 6px 12px;font-size:12px;line-height:1.65;overscroll-behavior:contain}
+.context-guide-content h2{font-size:19px;margin:10px 0}
+.context-guide-content h3{font-size:13px;margin:12px 0 4px;color:var(--ui-accent)}
+.context-guide-content p{margin:0;color:var(--ui-muted)}
+.explorer .context-guide{padding:0;margin:12px 0}
+.explorer .help,.section-label .help,.map-toolbar .help{margin:0 4px}
+.help>button{font-size:13px;line-height:1;min-height:25px;padding:4px 7px;color:var(--ui-accent);background:transparent;border:1px solid var(--ui-line);border-radius:50%}
+.traverse-history h2{font-size:21px;display:flex;align-items:center;gap:6px}
+.traverse-history>label{display:grid;gap:6px;margin:10px 0}
+.traverse-history input:not([type=checkbox]){width:100%;padding:9px;background:var(--ui-bg);border:1px solid var(--ui-line);color:var(--ui-text);border-radius:5px}
+.saved-traverse{border:1px solid var(--ui-line);border-radius:7px;padding:12px;margin:12px 0}
+.saved-traverse label,.rover-toggle{display:flex;align-items:center;gap:8px;line-height:1.5}
+.saved-traverse p,.saved-traverse small,.traverse-comparison,.traverse-history>a{font-size:11px;line-height:1.65}
+.saved-traverse small{color:var(--ui-muted)}
+.traverse-comparison{padding:12px;background:#e4bc8612;border:1px solid #e4bc8660;border-radius:6px}
+.trace-legend{display:flex;gap:6px 14px;flex-wrap:wrap;color:#b9dad7;font-size:10px;flex-shrink:0}
+.hazard-legend{color:#ffab85}
+.events-workspace{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;padding:24px;overscroll-behavior:contain}
+.events-workspace h1{font-size:28px;margin:8px 0;display:flex;align-items:center;gap:10px}
+.events-workspace h2{font-size:21px}
+.events-workspace h3{font-size:18px;margin:8px 0}
+.events-workspace p{font-size:12px;line-height:1.7}
+.events-workspace aside{border-left:1px solid var(--ui-line);padding-left:22px}
+.event-generator,.event-entry{padding:16px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-panel);margin-bottom:14px}
+.event-generator label{display:grid;gap:6px;margin:12px 0;font-size:12px}
+.event-generator select,.event-generator input{padding:10px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-bg);color:var(--ui-text);width:100%}
+.event-generator input{max-width:140px}
+.event-entry.active{border-color:#ffa47766}
+.event-entry small{font-size:11px;color:var(--ui-muted);line-height:1.6}
+.event-entry .button-row{margin-top:10px}
+.event-entry.ended{opacity:.75}
+.event-warning{padding:12px;border:1px solid #e4bc8655;background:#e4bc860a;border-radius:7px}
+/* Keep all peripheral content in the visor's straight, readable interior. */
+.hud-page{--visor-side:clamp(58px,7.5vw,140px)}
+.hud-page .hud-heading{left:var(--visor-side);top:52px;max-width:250px}
+.hud-page .hud-heading h2{font-size:17px;margin:5px 0}
+.hud-page .hud-heading>span:last-child{display:none}
+.hud-page .hud-map{top:52px;right:var(--visor-side);width:120px;height:120px;border-radius:50%;overflow:visible;border:0;background:transparent;opacity:.95}
+.hud-map .surface-map{width:120px;height:120px;border-radius:50%;overflow:hidden;border:1px solid #f5e6c588;background:#16221d88;box-shadow:0 0 0 4px #16221d33}
+.hud-map .surface-map canvas{height:100%;display:block}
+.hud-map>div:last-child{font-size:8px;position:absolute;top:100%;left:-20px;right:-20px;justify-content:center;gap:12px;white-space:nowrap;background:transparent}
+.hud-map .image-warning{display:none}
+.hud-page .hud-clock-panel{top:207px;right:var(--visor-side);width:180px}
+.hud-page .hud-clock-panel .mission-clocks span{display:none}
+.hud-page .hud-bottom{left:15%;right:15%;bottom:112px;border-radius:8px;background:#16221d55}
+.hud-page .hud-bottom>div{padding:9px 12px}
+.hud-page .hud-bottom strong{font-size:17px;margin:5px 0}
+.hud-page .hud-bottom span{font-size:9px}
+.hud-page .hud-actions{bottom:65px}
+.hud-page .pose-readout{bottom:42px;right:18%}
+.hud-page .surface-status{bottom:42px;left:18%;font-size:9px;max-width:40%}
+.hud-page .hud-events{position:absolute;left:var(--visor-side);top:155px;width:240px;max-height:calc(100% - 400px);overflow:auto;display:grid;gap:8px;pointer-events:auto;scrollbar-width:thin}
+.hud-event-card{padding:11px 12px;border:1px solid #c9e4d03b;border-left:2px solid #c9e4d080;border-radius:3px 10px 10px 3px;background:linear-gradient(100deg,#15271f9c,#172c2340);backdrop-filter:blur(5px);color:#f2eddb}
+.hud-event-card.danger{border-color:#ffba8d55;border-left-color:#ffb38c;background:linear-gradient(100deg,#492c2299,#39291f35)}
+.hud-event-card>.eyebrow{font-size:8px;color:#f1d8ad;letter-spacing:1px}
+.hud-event-card strong{display:block;font-size:13px;font-weight:500;line-height:1.5;margin-top:6px}
+.hud-event-card p,.hud-events>.success{font-size:11px;line-height:1.55;margin:6px 0;color:#f0e7d3}
+.hud-event-card button,.event-overflow{border:0;background:transparent;color:#f4d4a4;text-align:left;padding:4px 0;font-size:10px;display:block;min-height:24px}
+.hud-page .hud-field-inspector{left:var(--visor-side);top:150px;z-index:3}
+.hud-page .walk-instructions{width:310px;padding:18px;top:43%}
+.hud-page .walk-instructions h2{font-size:22px}
+@media(max-height:760px){
+ .hud-page .hud-heading{top:43px;max-width:210px}.hud-page .hud-heading h2{font-size:15px}
+ .hud-page .hud-events{top:126px;max-height:calc(100% - 325px);width:210px;gap:5px}
+ .hud-event-card{padding:8px 10px}.hud-event-card p{margin:3px 0}
+ .hud-page .hud-map{top:43px;width:100px;height:100px}.hud-map .surface-map{width:100px;height:100px}
+ .hud-page .hud-clock-panel{top:181px;width:155px}.hud-clock-panel .mission-clocks strong{font-size:18px}
+ .hud-page .hud-bottom{bottom:102px}.hud-page .hud-bottom>div{padding:8px}.hud-page .hud-bottom strong{font-size:15px}
+ .hud-page .hud-actions{bottom:58px}.hud-page .pose-readout,.hud-page .surface-status{bottom:35px}
+ .hud-page .hud-heading .eyebrow{font-size:8px}
+}
+@media(max-width:900px){
+ .hud-page{--visor-side:65px}.hud-page .hud-heading{max-width:195px}.hud-page .hud-heading h2{font-size:15px}
+ .hud-page .hud-events{width:190px}.hud-page .hud-bottom{left:12%;right:12%}
+ .hud-page .hud-bottom>div:last-child{display:none}.hud-page .hud-bottom strong{font-size:14px}
+ .hud-page .visor-compass{width:160px}.events-workspace{grid-template-columns:minmax(0,1fr) 210px;padding:18px;gap:16px}
+ .tablet-device .tablet-tabs button{padding:7px 10px}.map-toolbar .help{margin:0}.map-toolbar>div{gap:3px}
+ .hud-page .walk-instructions{width:260px}.hud-page .walk-instructions p{font-size:11px}
+}
+.help-tooltip{position:fixed;z-index:60;width:min(310px,calc(100vw - 24px));padding:14px;background:#30403df5;border:1px solid #82968a;border-radius:8px;box-shadow:0 8px 20px #0005;color:var(--ui-text);font:12px/1.7 Arial,sans-serif;max-height:calc(100dvh - 24px);overflow:auto;text-align:left}
+@media(max-width:900px){.hud-page .visor-compass{top:25px}.hud-page .hud-map{right:65px}.hud-page .hud-clock-panel{right:65px}}
+
+/* Follow-up: keep peripheral controls clear of the actual curved visor edge. */
+.hud-page{--visor-side:13vw}
+.hud-page .hud-bottom{left:16%;right:16%;bottom:146px}
+.hud-page .hud-actions{bottom:101px}
+.hud-page .pose-readout{bottom:75px;right:18%}
+.hud-page .surface-status{position:absolute;bottom:75px;left:18%;max-width:32%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-page .hud-events{max-height:calc(100% - 430px)}
+.hud-page .hud-field-inspector{max-height:calc(100% - 430px)}
+.hud-page.visor-enabled .projected-waypoints{clip-path:inset(14px 26px round 28% 28% 32% 32% / 14% 14% 22% 22%)}
+.waypoint-caption b,.waypoint-caption button{max-height:40px;overflow:hidden;overflow-wrap:anywhere}
+.hud-page .scene-unavailable{position:absolute;inset:16% 17% 28%;padding:24px;overflow:auto;background:#172523e8;border:1px solid var(--ui-line);border-radius:10px}
+.tablet-device button.plan-route-button{background:#8ac9e5;color:#102d3b;border:1px solid #b7e7fb;min-height:38px;padding:10px 18px;border-radius:6px;font-weight:600}
+.suggested-example{border-color:#9bcbb75c;background:#a9c9b70c}
+.region-card[aria-pressed=true] small{color:var(--ui-green)}
+.path-swatch{display:inline-block;width:18px;height:3px;margin-right:7px;vertical-align:middle}
+.saved-traverse .data-kind{display:block;color:var(--ui-accent);margin-top:12px}
+.saved-traverse a{font-size:11px;display:block;margin:8px 0}
+.traverse-history h3{font-size:19px;margin-top:24px}
+.route-workflow{position:sticky;top:0;z-index:3;padding:12px 0;margin-bottom:22px;background:var(--ui-panel);border-bottom:1px solid var(--ui-line)}
+.route-workflow-switch{display:flex;gap:6px;margin-top:10px}
+.tablet-device .route-workflow-switch button{flex:1;min-height:42px;padding:8px;font-size:12px;background:transparent;border:1px solid var(--ui-line);color:var(--ui-muted);border-radius:6px}
+.tablet-device .route-workflow-switch button[aria-pressed=true]{background:#8ac9e51a;border-color:#8ac9e5;color:#b7e7fb}
+.map-toolbar>div{flex-wrap:wrap;justify-content:flex-end}
+@media(max-height:760px){
+ .hud-page .hud-bottom{bottom:140px}.hud-page .hud-actions{bottom:96px}
+ .hud-page .pose-readout,.hud-page .surface-status{bottom:70px}
+ .hud-page .hud-events{max-height:calc(100% - 400px)}
+}
+@media(max-width:900px){
+ .hud-page .hud-heading{left:var(--visor-side);max-width:185px}
+ .hud-page .hud-map,.hud-page .hud-clock-panel{right:var(--visor-side)}
+ .hud-page .hud-events{width:160px;left:var(--visor-side)}
+ .hud-page .visor-compass{left:50%;top:25px;transform:translateX(-50%);width:160px}
+ .hud-page .hud-bottom{left:15%;right:15%}
+}
+
+.hud-page .hud-heading,.hud-page .hud-map{top:max(52px,8%)}
+.hud-page .hud-clock-panel{top:calc(max(52px,8%) + 160px)}
+.hud-page .hud-bottom{bottom:max(146px,15%)}
+.hud-page .hud-actions{bottom:max(101px,10.5%)}
+.hud-page .pose-readout,.hud-page .surface-status{bottom:max(75px,7.5%)}
+.hud-page .hud-events{top:max(155px,15%);bottom:max(290px,30%);max-height:none;align-content:start}
+@media(max-height:760px){
+ .hud-page .hud-clock-panel{top:calc(max(52px,8%) + 137px)}
+ .hud-page .hud-bottom{bottom:max(140px,15%)}.hud-page .hud-actions{bottom:max(96px,10.5%)}
+ .hud-page .pose-readout,.hud-page .surface-status{bottom:max(70px,7.5%)}
+}

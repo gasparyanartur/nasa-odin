@@ -1,37 +1,43 @@
 # Demo deployment and release
 
-Status: prepared locally; public hosting and final submission remain pending. The user does not yet have a Render account. No public URL or submitted project is claimed here.
+Status: FR-028 migrates the integrated app to a static client-side runtime. FR-029 tracks actual hosting setup and publication; no public URL is claimed here. See the [deployment plan](plans/2026-11-15-demo-deployment.md).
 
-## Run alongside the existing checkout
-
-This branch is `codex/integrated-explore` in the separate managed workspace. The original checkout is unchanged. A baseline checkpoint was committed before implementation.
-
-For development:
+## Run and verify the static build
 
 ```bash
 nvm use
-API_PORT=8200 WEB_PORT=5273 npm run dev:all
+npm ci
+npm run build
+node scripts/serve-static.mjs --port 8373
 ```
 
-For the container demo:
+Open <http://127.0.0.1:8373>. The server serves files only. Route comparison, return estimates and conditions evaluation run in browser Web Workers; Python is retained only for offline data tools and reference tests. Global tiles and optional Google Fonts still use external services.
+
+For development use `npm run dev`. To run beside another checkout, use `WEB_PORT=5273 npm run dev:all`; for a separate production preview use `WEB_PORT=4273 npm run demo`. `API_PORT` is no longer used.
+
+The optional container serves the same static files without Python or FastAPI:
 
 ```bash
-docker build -t martian-map:explore .
-docker run --rm -p 127.0.0.1:8373:10000 martian-map:explore
+docker build -t martian-map:static .
+docker run --rm -p 127.0.0.1:8373:10000 martian-map:static
 ```
 
-Open <http://127.0.0.1:8373>. This uses separate ports from the original checkout. Prepared assets and the Python planner share the same origin. Global tiles and optional Google Fonts still use external services.
+Its health check requests `/`. The old `/api/health`, `/api/routes` and `/api/return` endpoints are absent. The retained Python implementation is an offline test oracle, not a deployment dependency.
 
-## Publish on Render
+## Hosting handoff — FR-029
 
-1. Create a [Render account](https://dashboard.render.com/), preferably using GitHub sign-in. Grant access to this repository.
-2. Push the reviewed `codex/integrated-explore` branch to the repository; keep the original branch unchanged.
-3. In Render, create a **Blueprint**, choose the repository and branch, and use `render.yaml`. Alternatively create a **Web Service**, select **Docker**, choose the **Free** instance, and set health check `/api/health`.
-4. Deploy. The Dockerfile builds with Node 22.23.4, installs the Python runtime dependencies, and starts Uvicorn on `0.0.0.0:$PORT`. It serves `/`, `/assets`, `/cesium`, `/gale` and `/api` together. No separate static site, database, token or dataset download is needed.
-5. In a fresh private browser, visit the assigned `https://…onrender.com` URL. Check both markers, MOLA/CTX selection, Gale overlays, route computation, manual walking and Jezero's capability explanation. Check `/api/health` and a Cesium worker response; confirm no localhost asset requests.
-6. Wait at least 15 minutes without incoming traffic, then revisit and verify startup and route computation. Record the observed delay. Do not treat the local container check as this public idle-start check.
+Publish the reviewed `dist/` directory using Cloudflare static hosting or an equivalent provider. No runtime application code, database, secret, API proxy or VPS is required. The existing `render.yaml` is an optional legacy container-host configuration, not the selected hosting direction.
 
-Render supports [Docker deployment](https://render.com/docs/docker). Its [Free web services](https://render.com/docs/free) sleep after 15 minutes without traffic and can take about one minute to resume. Choose Free; no paid service is assumed. A failed or slow public service must not be the sole demonstration artifact.
+Before publication, verify the final build's asset limits, MIME types and caching. Avoid an HTML fallback for missing worker/binary files. Preserve direct `?demo=yellowknife` and `?demo=boxwork` links and all local datasets/Cesium runtime assets. Verify actual tiles in the deployed browser; an accessible capabilities page alone does not establish usable coverage.
+
+Acceptance at the real public URL must include both Gale sites, route comparison, return estimates, POV walking, field save/reload/export, Jezero capability limits and upstream-layer failure recovery. Test on the intended laptop with hardware acceleration. Software-rendered browser checks establish functionality, not acceptable POV frame rates. Records belong to each browser origin; export/import is needed to move records between hostnames.
+
+For an isolated hardware-accelerated acceptance run, build to a separate directory and use separate test outputs/ports. Omit `TEST_HARDWARE=1` for the slower SwiftShader functional path; this does not establish acceptable POV performance:
+
+```bash
+npm run build -- --outDir tmp/fr028/dist
+STATIC_DIR="$PWD/tmp/fr028/dist" TEST_PORT=8388 TEST_HARDWARE=1 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser -- --output tmp/fr028/browser-results
+```
 
 ## Reproduce the video
 
@@ -43,7 +49,7 @@ TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" DEMO_URL=http://12
 
 `ffmpeg` must be installed. The script records the actual application and concatenates seven four-second chapters into `docs/evidence/demo-walkthrough.mp4`. Slow network/loading intervals are omitted; the walking segment labels its 20× simulation pace. Raw video and timing evidence remain under ignored `tmp/demo-video/`. The output is a technical walkthrough with English captions, not a claim about real astronaut localization or operational safety.
 
-Upload the final recording to publicly accessible hosting and verify it in a private window. A local file path is not a public demo link. Confirm team/title details before submission and regenerate against the final deployed release if it differs from the local image.
+Upload the final recording to publicly accessible hosting and verify it in a private window. A local file path is not a public demo link. Confirm team/title details before submission and regenerate against the final deployed release if it differs from the local build.
 
 ## Submission requirements checked on 13 November 2026
 
@@ -57,7 +63,7 @@ Sources: [official project submission guide](https://www.spaceappschallenge.org/
 
 ## Remaining external steps
 
-Render account setup, public deployment and idle-start verification, public video hosting, confirmation of the Team Owner/timezone and eligibility, and final project submission. The release branch must be available in the connected GitHub repository before Render can build it. No credentials or private correspondence belong in this repository.
+FR-029: hosting account setup, static-site publication and public-URL verification. Public video hosting, confirmation of the Team Owner/timezone and eligibility, and final project submission also remain external steps. Select the reviewed release snapshot explicitly; do not rely on an old branch name. No credentials or private correspondence belong in this repository.
 
 ## Observed upstream CTX failure
 

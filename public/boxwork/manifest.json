@@ -75,5 +75,6 @@
     "public/data/team-inputs.default.json": "68e9ec2e21693e0de0e703702f487e5a14a29a548c921bca9642c652f9a1312b",
     "public/data/team-inputs.json": "68e9ec2e21693e0de0e703702f487e5a14a29a548c921bca9642c652f9a1312b",
     "public/data/waypoints.json": "eca53cae0756b549534576cf5d34316c57af156b813f1714e0ad4f9546a27a5b"
-  }
+  },
+  "pathsFile": "previous-paths.json"
 }
