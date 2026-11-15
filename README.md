@@ -2,7 +2,7 @@
 
 Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
-**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the Marswalk hypersimulation prototype.
+**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the combined app in `hypersimulation-prototype/`.
 
 Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5173/?demo=boxwork). Compare routes, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
 
@@ -59,7 +59,7 @@ The optional Explore exclusion tool marks user-declared 40 m restricted areas; *
 The repository holds two separate apps:
 
 - **Martian Map** (repository root): the Station, Tablet and HUD app described above. It needs Git, Node.js and Python.
-- **Marswalk** (`hypersimulation-prototype/`): the hypersimulation prototype, a guided five-step walk at the Gale boxwork ridges. It needs Git and Python only.
+- **Combined app** (`hypersimulation-prototype/`): this Station, Tablet and HUD app with the combined design system, the quiet HUD and the Marswalk content (walk presets, science stops, hazard areas, the prepared science walk, the storm scenario). It uses the same setup as Martian Map. It replaces the old static Marswalk app, which remains in git history at commit 66ee212. See [its README](hypersimulation-prototype/README.md).
 
 These steps assume a computer with none of these tools installed. Skip any step you have already done.
 
@@ -152,7 +152,7 @@ python3 -m venv .venv
 
 `npm ci` installs the website's packages into `node_modules/`. The next two lines create a Python environment for this project in `.venv/` and install the route planner's packages into it. Each step can take a few minutes. If you use nvm, run `nvm use` first to switch to the Node.js version in `.nvmrc`.
 
-Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. Marswalk needs no setup.
+Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. The combined app uses this same setup.
 
 ### Step 5: Run Martian Map
 
@@ -186,20 +186,20 @@ Open [the production preview](http://127.0.0.1:4173). Global imagery needs inter
 
 After updating the project, stop the running preview, rebuild, and start `npm run demo` again so the frontend and Python planner use the same version. Refreshing the browser alone does not restart the planner. If it rejects a terrain dataset or an unfamiliar setting, the Tablet now shows the rejected field and a restart hint.
 
-### Step 6: Run Marswalk (hypersimulation prototype)
+### Step 6: Run the combined app (hypersimulation-prototype/)
 
 Open a terminal in the folder where you cloned the repository and run:
 
 ```bash
 cd nasa-martian-map/hypersimulation-prototype
-python3 -I tools/dev_server.py --port 8642
+npm run dev:all
 ```
 
-On Windows, type `python` instead of `python3`. Open [Marswalk](http://127.0.0.1:8642/) in your browser. Press Enter four times to go through the five steps, or open a single step with `?step=1` to `?step=5`. The app is plain HTML and JavaScript, so after you edit a file in `hypersimulation-prototype/app/`, refresh the page to see the change. [hypersimulation-prototype/START-HERE.md](hypersimulation-prototype/START-HERE.md) has more detail, including the checks.
+Open [the combined app](http://127.0.0.1:5174) in your browser. It starts its own Vite on port 5174 and its own planner API on port 8101. It needs no `npm install` of its own: it uses the root `node_modules/` and the root `.venv/` from Step 4, unless that folder has its own `.venv/`. [hypersimulation-prototype/README.md](hypersimulation-prototype/README.md) has more detail, including its known limits.
 
 ### Run both at once, and stop them
 
-Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 and 8642), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
+Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 with 8100, and 5174 with 8101), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
 
 ## Deploy the public demo
 

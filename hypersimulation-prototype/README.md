@@ -1,10 +1,59 @@
+# hypersimulation-prototype: the combined app
+
+This folder holds the combined app: the team app's Station, Tablet and HUD with the combined design system, the quiet HUD and the Marswalk content. The Marswalk content is the walk presets, the science stops with their tasks, the hazard areas with a legend, the prepared science walk, the solar storm scenario, the suit limits, saved walks and the sharp imagery. It was built from the team review call of 2026-11-15, as a full copy of branch `design/exhibit-system-team-feedback`.
+
+The team app in the repository root stays as it is. The two apps sit side by side and can run at the same time.
+
+**It replaces the old static Marswalk app.** That app was in this folder before; it remains in git history at commit 66ee212 (`git show 66ee212:hypersimulation-prototype/README.md`, or `git worktree add ../marswalk-old 66ee212` from the repository root for the full folder).
+
+**`app/` is not part of this app.** `app/public/data/` with `app/DATA-LICENSE.md`, `app/LICENSE` and `app/sources.json` is the donor data of the old app, kept at its old path. The root app's `npm run prepare:boxwork` (`scripts/prepare_boxwork.py`) rebuilds `public/boxwork/` from it, and `docs/evidence/hyper-integration/source-inventory.json` lists its hashes. Do not move or edit these files. Their licence and credit are in `app/DATA-LICENSE.md`.
+
+## Run it beside the root app
+
+From the repository root, after the root setup in [Step 4](#step-4-set-up-martian-map-once):
+
+```bash
+cd hypersimulation-prototype
+npm run dev:all
+```
+
+Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the root app, so both can run at once:
+
+| | Root app | This folder |
+|---|---|---|
+| Web (`npm run dev:all`) | 5173 | 5174 |
+| Planner API | 8100 | 8101 |
+| Production preview (`npm run demo`) | 4173 | 4174 |
+| Browser tests server | 8273 | 8274 |
+
+`API_PORT` and `WEB_PORT` still override the defaults, as in Step 5 below.
+
+- **No `npm install` needed here.** Node finds the root `node_modules/` from this folder. Running `npm ci` in this folder is optional; it gives the folder its own copy.
+- **Python:** the planner and every Python script here use `hypersimulation-prototype/.venv` when it exists, otherwise the root `.venv` (through `scripts/python.mjs`). The root setup is enough. To give this folder its own environment, run the Step 4 Python lines inside this folder.
+
+## Known limits
+
+- The planner works on a 5 m grid. The default science walk is a prepared route, planned ahead of time by the old Marswalk planner on the 1 m grid. Re-planning with the 5 m planner can refuse it, because the stops sit on steep ridge walls.
+- Hazard areas reach the planner as circles, which can also block open ground just outside an area.
+- Hazard areas are drawn and announced, but walking into one is not stopped.
+- The server tests (`npm run test:api`) were not run on the author's machine.
+- Four browser tests that need pointer lock fail in headless Chromium on macOS.
+
+## AI use
+
+Built with Claude (Anthropic) under Arda's direction. The code and these texts are AI-written, reviewed by a separate AI pass, and not yet reviewed by a human.
+
+The rest of this file is the team app's README as it was copied. Its run steps now cover both apps: Step 5 runs the root app, Step 6 runs this folder. The example links open this folder's app on port 5174.
+
+---
+
 # Martian Map
 
 Explore Mars through selectable real datasets, inspect geological evidence, choose a science destination, and follow a planned excursion with an astronaut HUD. Gale–Bradbury connects orbital imagery and numeric terrain to route comparison and walking. Jezero offers orbital exploration around Perseverance’s landing site; local planning terrain is not prepared there.
 
-**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the Martian Map app and the Marswalk hypersimulation prototype.
+**Run it on your computer:** [Run locally](#run-locally) has every step, from installing Git, Node.js and Python to opening the root app and this combined app.
 
-Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5173/?demo=boxwork). Compare routes, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
+Version **0.7** integrates the detailed Fable Boxwork surface into the same Station → Tablet → HUD workflow. Select **Gale · Mount Sharp Boxwork** at Station, or open [the Boxwork example](http://127.0.0.1:5174/?demo=boxwork). Compare routes, choose colour/greyscale imagery, walk manually and log site-linked field records. Boxwork has its own terrain, Sol 4600 historical scenario and rover evidence; Bradbury/Yellowknife and the environmental explorer remain available. See [coverage, coordinates, licences and data recovery](docs/boxwork-data.md).
 
 ### Marswalk parts (branch `design/exhibit-system-team-feedback`)
 
@@ -30,7 +79,7 @@ Marswalk data sources and licences (from `src/marswalk/README.md`):
 
 ## Try the excursion
 
-Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5173/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
+Choose **Start guided Gale example** at Station, or open [the prepared Yellowknife Bay example](http://127.0.0.1:5174/?demo=yellowknife). It opens the astronaut Tablet with a source-backed science destination and demonstration assumptions. Inspect evidence, compare routes and enter the HUD. **Continue free exploration** keeps your setup; **Reset guided example** restores it.
 
 Version **0.6** adds **Station → Data & history → Environmental explorer**: inspect global Odyssey GRS potassium/thorium composition and water-equivalent hydrogen, dated MCS surface-temperature soundings, and 19 sols of Curiosity temperature/radiation records. Compare observed values with an explicitly simulated Sol 29 daily-profile outlook and its held-out errors. Select layers on the atlas or Tablet; inspect source, scale, timestamps and uncertainty. **Use snapshot as fixed mission assumptions** explicitly applies an available Gale reading/forecast without changing the mission clock. Composition is separate from radiation dose, and sparse observations remain unknown. See [environmental data, model and validation](docs/environment-data.md).
 
@@ -80,8 +129,8 @@ The optional Explore exclusion tool marks user-declared 40 m restricted areas; *
 
 The repository holds two separate apps:
 
-- **Martian Map** (repository root): the Station, Tablet and HUD app described above. It needs Git, Node.js and Python.
-- **Marswalk** (`hypersimulation-prototype/`): the hypersimulation prototype, a guided five-step walk at the Gale boxwork ridges. It needs Git and Python only.
+- **Martian Map** (repository root): the team's Station, Tablet and HUD app. It needs Git, Node.js and Python.
+- **Combined app** (`hypersimulation-prototype/`, this folder): the same app with the combined design system and the Marswalk content. It uses the root setup.
 
 These steps assume a computer with none of these tools installed. Skip any step you have already done.
 
@@ -174,7 +223,7 @@ python3 -m venv .venv
 
 `npm ci` installs the website's packages into `node_modules/`. The next two lines create a Python environment for this project in `.venv/` and install the route planner's packages into it. Each step can take a few minutes. If you use nvm, run `nvm use` first to switch to the Node.js version in `.nvmrc`.
 
-Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. Marswalk needs no setup.
+Run this step again after a `git pull` that changes `package-lock.json` or a `requirements*.txt` file. The combined app in `hypersimulation-prototype/` uses this same setup.
 
 ### Step 5: Run Martian Map
 
@@ -195,7 +244,7 @@ API_PORT=8200 WEB_PORT=5273 npm run dev:all
 
 In PowerShell, run `$env:API_PORT=8200; $env:WEB_PORT=5273; npm run dev:all` instead. Then open [the separate workspace](http://127.0.0.1:5273).
 
-On Windows, `npm run test:api` and the `prepare:*` scripts still call `.venv/bin/python`. Run their commands from `package.json` directly, using `.venv\Scripts\python.exe` in its place.
+On Windows, `npm run test:api` and the `prepare:*` scripts still call `.venv/bin/python`. Run their commands from `package.json` directly, using `.venv\Scripts\python.exe` in its place. In `hypersimulation-prototype/` these scripts go through `scripts/python.mjs`, which also finds the Windows path.
 
 For a production preview:
 
@@ -208,20 +257,20 @@ Open [the production preview](http://127.0.0.1:4173). Global imagery needs inter
 
 After updating the project, stop the running preview, rebuild, and start `npm run demo` again so the frontend and Python planner use the same version. Refreshing the browser alone does not restart the planner. If it rejects a terrain dataset or an unfamiliar setting, the Tablet now shows the rejected field and a restart hint.
 
-### Step 6: Run Marswalk (hypersimulation prototype)
+### Step 6: Run the combined app (hypersimulation-prototype/)
 
 Open a terminal in the folder where you cloned the repository and run:
 
 ```bash
 cd nasa-martian-map/hypersimulation-prototype
-python3 -I tools/dev_server.py --port 8642
+npm run dev:all
 ```
 
-On Windows, type `python` instead of `python3`. Open [Marswalk](http://127.0.0.1:8642/) in your browser. Press Enter four times to go through the five steps, or open a single step with `?step=1` to `?step=5`. The app is plain HTML and JavaScript, so after you edit a file in `hypersimulation-prototype/app/`, refresh the page to see the change. [hypersimulation-prototype/START-HERE.md](hypersimulation-prototype/START-HERE.md) has more detail, including the checks.
+Open [the combined app](http://127.0.0.1:5174) in your browser. It starts its own Vite on port 5174 and its own planner API on port 8101. It uses the root `node_modules/` and the root `.venv/` from Step 4, unless this folder has its own `.venv/`. For its production preview, run `npm run build` and `npm run demo` in this folder and open [the preview](http://127.0.0.1:4174).
 
 ### Run both at once, and stop them
 
-Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 and 8642), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
+Each app keeps running in its own terminal. To run both, open two terminals: run Step 5 in the first and Step 6 in the second. They use different ports (5173 with 8100, and 5174 with 8101), so both can stay open. To stop an app, click its terminal and press Ctrl+C, or close that terminal.
 
 ## Deploy the public demo
 
@@ -281,4 +330,4 @@ TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npx playwright ins
 TMPDIR="$PWD/tmp" PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/browser" npm run test:browser
 ```
 
-The UI redesign browser suite checks route-free entry, retained pose/time/drafts, route adoption, return failure/retry, modal keyboard access, unsupported/loading states and bounded laptop layouts. The broader browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273. It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.
+The UI redesign browser suite checks route-free entry, retained pose/time/drafts, route adoption, return failure/retry, modal keyboard access, unsupported/loading states and bounded laptop layouts. The broader browser suite also checks the guided/direct science example, geology/target state, profile/map linkage, provenance and region isolation, plus bounded historical replay, departure-dependent warnings, scrubbing invalidation, stationary mission-clock/return updates, visor controls and drawing resolution changes without position resets. The browser suite starts the same-origin production server on port 8273 (8274 when run in `hypersimulation-prototype/`). It checks region discovery, shared layers, region switching and recovery, real global layer replacement, and Gale routes, manual walking/HUD, pause, reset, exclusions and planner failure. Screenshots are saved under `test-results/`. The global-layer check requires internet access and WebGL.

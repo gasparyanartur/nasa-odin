@@ -1,14 +1,18 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { venvPython } from './python.mjs';
 
-const venvPython=process.platform==='win32'?'.venv/Scripts/python.exe':'.venv/bin/python';
-if(!existsSync(venvPython)){console.error('Create .venv and install requirements.txt first; see README.');process.exit(1);}
+// Defaults differ from the root app (5173, 4173, 8100) so both apps can run at the same time.
+const python=venvPython();
+if(!python){console.error('Create .venv here or in the repository root and install requirements.txt first; see README.');process.exit(1);}
 if(!existsSync('public/gale/manifest.json')){console.error('Prepared Gale assets are missing. Run npm run prepare:data.');process.exit(1);}
+const vite=['node_modules/vite/bin/vite.js','../node_modules/vite/bin/vite.js'].find(existsSync);
+if(!vite){console.error('Vite is missing. Run npm ci in the repository root (or in this folder) first.');process.exit(1);}
 const preview=process.argv.includes('--preview');
-const apiPort=process.env.API_PORT??'8100',webPort=process.env.WEB_PORT??(preview?'4173':'5173');
+const apiPort=process.env.API_PORT??'8101',webPort=process.env.WEB_PORT??(preview?'4174':'5174');
 const children=[
-  spawn(venvPython,['-m','uvicorn','server.app:app','--host','127.0.0.1','--port',apiPort],{stdio:'inherit'}),
-  spawn(process.execPath,['node_modules/vite/bin/vite.js',...(preview?['preview']:[]),'--host','127.0.0.1','--port',webPort,'--strictPort'],{stdio:'inherit'}),
+  spawn(python,['-m','uvicorn','server.app:app','--host','127.0.0.1','--port',apiPort],{stdio:'inherit'}),
+  spawn(process.execPath,[vite,...(preview?['preview']:[]),'--host','127.0.0.1','--port',webPort,'--strictPort'],{stdio:'inherit',env:{...process.env,API_PORT:apiPort}}),
 ];
 let closing=false;
 function stop(code=0){if(closing)return;closing=true;children.forEach(c=>c.kill('SIGTERM'));setTimeout(()=>process.exit(code),500).unref();}

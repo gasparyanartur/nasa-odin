@@ -1,6 +1,11 @@
 """Prepare the full-resolution Boxwork package (public/boxwork/full/ and the panorama in public/marswalk/).
 
-Usage: .venv/bin/python scripts/prepare_boxwork_full.py <Marswalk app folder>
+Usage: node scripts/python.mjs scripts/prepare_boxwork_full.py <Marswalk app folder>
+
+The Marswalk app folder must hold public/data/, public/media/ and sources.json. Only public/data/ and sources.json are
+still in this repository (hypersimulation-prototype/app/); public/media/ left with the old static app. Take the full
+old folder from git history: in the repository root run git worktree add ../marswalk-old 66ee212, then, in this
+folder, pass ../../marswalk-old/hypersimulation-prototype/app.
 
 Needs only numpy. No downloads, no image re-encoding: the 0.25 m tiles stay the byte-identical webp files that
 scripts/prepare_boxwork.py already copied into public/boxwork/detail/ortho/, and this script checks that they match

@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT/'hypersimulation-prototype/app'
+SOURCE = ROOT/'app'  # the donor data kept at hypersimulation-prototype/app/ (ROOT is this folder)
 OUT = ROOT/'public/boxwork'
 
 def prepare():

@@ -1,6 +1,8 @@
 // AI-written (Claude, Anthropic) for the team's NASA Space Apps 2026 project.
 // Plans the default Marswalk science walk with the Marswalk planner itself and writes it in the team frame.
 // Usage: node scripts/export_marswalk_route.mjs <path to the Marswalk app folder>
+// The old Marswalk app (its src/planner.js) is no longer in this repository's tree; it remains in git history.
+// In the repository root run: git worktree add ../marswalk-old 66ee212; then, in this folder, pass ../../marswalk-old/hypersimulation-prototype/app.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
