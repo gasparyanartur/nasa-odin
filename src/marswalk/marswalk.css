@@ -189,3 +189,17 @@
 .stop-waypoint .stop-waypoint__mark::before{content:"";position:absolute;inset:4px;transform:rotate(45deg);border:1.5px solid var(--eng);box-shadow:0 0 0 1px var(--halo),inset 0 0 0 1px var(--halo)}
 .stop-waypoint.is-compact .waypoint-caption{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .stop-waypoint.is-compact{opacity:.85}
+
+/* ---------- Look closer: Curiosity ground panorama ---------- */
+.closer-panorama{grid-column:1 / -1}
+.closer-panorama h2 .info-wrap{margin-left:6px;vertical-align:middle}
+.closer-panorama figure{margin:8px 0}
+.closer-panorama img{display:block;width:100%;height:auto;border-radius:var(--radius-case)}
+.closer-panorama figcaption{margin-top:6px}
+.closer-panorama figcaption a,.panorama-full a{color:inherit}
+.closer-panorama .secondary{display:inline-flex;align-items:center;gap:8px}
+.closer-panorama .secondary .pict{width:16px;height:16px}
+.panorama-full{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;gap:10px;padding:18px 22px;background:color-mix(in srgb,var(--wall-2) 96%,transparent)}
+.panorama-full__bar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--brass-hi);font-size:var(--fs-sm)}
+.panorama-full__scroll{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;display:flex;align-items:center}
+.panorama-full__scroll img{display:block;height:min(100%,1083px);width:auto;max-width:none}

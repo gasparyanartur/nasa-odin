@@ -26,6 +26,7 @@ import { LMST_HOUR_SECONDS, historicalAt, lmstLabel, type GraphicsQuality } from
 import SurfaceMap, { type PickMode } from './mission/SurfaceMap';
 import { BASEMAPS, OVERLAYS, canPlan, defaultOverlays, getRegion, type RegionId, type OverlayId, type OverlaySettings } from './datasets/catalog';
 const WalkingScene = lazy(() => import('./mission/WalkingScene'));
+import { DEFAULT_QUALITY } from './mission/surface/plan';
 import { RoutePlanningError, type RouteDiagnostics, api, loadTerrain, localToGeo, routeProgress, sample, type Point, type Pose, type ReturnResult, type RouteResult, type Settings, type TerrainData } from './mission/data';
 import { useMarswalk } from './marswalk/useMarswalk';
 import { hudPatch, overlaysFor, type FeatureId, type Setup } from './marswalk/presets';
@@ -79,7 +80,7 @@ export default function App(){
   const weatherHour=settings.departureHour??12;
   const [playing,setPlaying]=useState(false);
   const [imagery,setImagery]=useState<'colour'|'grey'>('colour');
-  const [quality,setQuality]=useState<GraphicsQuality>('medium');
+  const [quality,setQuality]=useState<GraphicsQuality>(DEFAULT_QUALITY);
   const [hud,setHud]=useState(DEFAULT_HUD),[stationTab,setStationTab]=useState<'atlas'|'history'>('atlas'),[tabletTab,setTabletTab]=useState<'explore'|'routes'|'setup'|'field'|'closer'>(directDemo?'routes':'explore');
   const [noticeList,setNoticeList]=useState(false);
   const visor=hud.visor;
@@ -296,7 +297,7 @@ export default function App(){
 </header>
 {mw.stormMessage&&mw.storm.warning==='shown'?<div className="hud-alerts" aria-live="polite"><StormNotice storm={mw.storm} msg={mw.stormMessage} onDismiss={mw.dismissStorm} onCancel={mw.cancelReturn} onResume={mw.resumeReturn}/></div>:<HudToast toasts={hudNotices.toasts} onDismiss={hudNotices.dismiss}/>}
 <div className="hud-corner">{hud.minimap&&<aside className="hud-map">
-<SurfaceMap imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={pose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mini/>
+<SurfaceMap imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={pose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mapStops={mw.boxwork?mapStops:undefined} follow={mw.boxwork?{keep:[...(next?[next]:[]),...(progress?[{x:progress.target[0],y:progress.target[1]}]:[])],marks:[{...start,label:'H'},...(next?[{x:next.x,y:next.y,label:String(next.id)}]:[])]}:undefined} mini/>
 <span className="hud-map__north" aria-hidden="true">N</span>
 <div className="sr-only">
 <span>H HABITAT</span>{route&&<span>D DESTINATION</span>}</div>

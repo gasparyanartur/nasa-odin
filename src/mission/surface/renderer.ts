@@ -3,6 +3,7 @@ import { createTerrain, toUint16 } from './terrain.js';
 import { sample, type Point, type Pose, type TerrainData } from '../data';
 import type { GraphicsQuality } from '../conditions';
 import { drawingRatio } from '../conditions';
+import { surfacePlan } from './plan';
 
 export const projectedPoint=(p:Point,scale:{x:number;y:number})=>({x:p.x/scale.x,y:p.y/scale.y});
 export const groundPoint=(p:Point,scale:{x:number;y:number})=>({x:p.x*scale.x,y:p.y*scale.y});
@@ -35,7 +36,7 @@ export async function createSurface(canvas:HTMLCanvasElement,data:TerrainData,si
       overview=await image(`${data.baseUrl}/ortho.jpg`);
     }
     if(signal.aborted)throw new DOMException('Aborted','AbortError');
-    native=createScene3d(canvas,{scene,terrain,textures:{overview},sky:'#c6a58a',background:'#17231f',maxPixelRatio:2,adaptiveDisplay:!!data.meta.detail,lowDetail:quality==='low'||(!!data.meta.detail&&quality==='medium')});
+    native=createScene3d(canvas,{scene,terrain,textures:{overview},sky:'#c6a58a',background:'#17231f',maxPixelRatio:2,adaptiveDisplay:!!data.meta.detail,lowDetail:surfacePlan(quality,!!data.meta.detail).lowDetail});
     const renderer=native;
     renderer.setView('walk');renderer.setHillshade(true);renderer.setDrawingRatio(drawingRatio(quality,devicePixelRatio||1));
     let disposed=false;
@@ -55,7 +56,7 @@ export async function createSurface(canvas:HTMLCanvasElement,data:TerrainData,si
       void (async()=>{
         const surround=await image(`${base}/${cfg.surround}`);if(disposed)return;renderer.setCoreTile('surround',surround);
         const half=await image(`${base}/${cfg.half_res}`);if(disposed)return;renderer.setCoreTile('core_half',half);
-        if(quality==='high')for(let r=0;r<cfg.tiles.length;r++)for(let c=0;c<cfg.tiles[r].length;c++){
+        if(surfacePlan(quality,true).coreTiles)for(let r=0;r<cfg.tiles.length;r++)for(let c=0;c<cfg.tiles[r].length;c++){
           const bitmap=await image(`${base}/${cfg.tiles[r][c]}`);if(disposed)return;renderer.setCoreTile(`core_${r}_${c}`,bitmap);
         }
         progress('');

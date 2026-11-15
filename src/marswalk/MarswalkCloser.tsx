@@ -6,6 +6,7 @@ import { CAUTION_FRACTION, LIMITS, checkPath, type LimitCheck } from './limits';
 import { CURIOSITY_PATH, compareWithReference, curiosityLine, walkLengthM, type Separation, type Walk } from './pathlog';
 import { AUTO_FADE, HAZARD_START, SEP_EVENT, type StormMessage, type StormState } from './storm';
 import { fmt } from './ui';
+import GroundPanorama from './GroundPanorama';
 
 const STATUS_WORD: Record<LimitCheck['status'], string> = { ok: 'Within', caution: 'Close to limit', over: 'Over the limit', 'no data': 'No data' };
 const sep = (s: Separation) => s.maxM === null ? 'No data' : `max ${s.maxM.toFixed(0)} m · mean ${s.meanM!.toFixed(0)} m`;
@@ -25,6 +26,7 @@ export default function MarswalkCloser(p: Props) {
   const checks = p.route ? checkPath({ path, rover: p.habitat, durationH: p.route.roundTripS / 3600, slope: { at: q => sample(p.data, q)?.slope, stepM: p.data.meta.stepM / 2 } }) : [];
   const chosenWalk = p.walks.find(w => w.id === compare);
   return <section className="closer-marswalk" aria-label="Limits, saved walks and scenario">
+    {p.boxwork && <GroundPanorama />}
     <div className="wall-label closer-limits">
       <h2>Suit limits for the chosen route</h2>
       {p.route ? <>
