@@ -1,0 +1,179 @@
+/* Marswalk parts inside the team app: walk choice, feature switches with helmet preview, hazard legend, stop card,
+   science walk option, Look closer additions and helmet marks. Exhibit tokens only (src/design/tokens.css). */
+
+/* ---------- shared ---------- */
+.origin-tag{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid currentColor;border-radius:var(--radius-pill);font:700 var(--fs-xs)/1.3 var(--font-text);letter-spacing:.04em;text-transform:lowercase;vertical-align:middle}
+.origin-tag.is-assumption{color:var(--lamp)}
+.origin-tag.is-source{color:var(--cobalt-hi)}
+.origin-tag.is-scenario{color:var(--alarm-ink)}
+.wall-label .origin-tag.is-assumption{color:var(--label-ink-2)}
+.wall-label .origin-tag.is-scenario{color:var(--alarm-ink-card)}
+.wall-label .origin-tag.is-source{color:var(--cobalt)}
+
+/* ---------- Station: choose your walk ---------- */
+.map-panel:has(.walk-choice) .map-region-context{bottom:calc(36px + var(--walk-h) + 12px)}
+.map-panel:has(.walk-choice) .map-guide{display:none}
+.map-panel{--walk-h:0px}
+.map-panel:has(.walk-choice) .map-footnote{display:none}
+.walk-choice{position:absolute;left:24px;right:24px;bottom:36px;display:flex;flex-direction:column;gap:6px;z-index:2;pointer-events:none}
+.walk-choice__head{align-self:flex-start;display:flex;align-items:baseline;gap:14px;padding:5px 10px;background:rgba(21,20,18,.86);border-radius:var(--radius);pointer-events:auto}
+.walk-choice__head .eyebrow{color:var(--on-wall);font:700 var(--fs-xs)/1 var(--font-text);letter-spacing:var(--track-caps)}
+.walk-choice__note{font-size:var(--fs-xs);color:var(--on-wall)}
+.walk-choice__cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;pointer-events:auto}
+.walk-card{position:relative;display:flex;flex-direction:column;min-width:0;padding:10px 12px 8px;background:rgba(21,20,18,.9);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall)}
+.walk-card.is-chosen{background:var(--card);border-color:transparent;box-shadow:var(--brass-top-inset),var(--shadow-card);color:var(--label-ink)}
+.walk-card__pick{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:8px;row-gap:2px;align-items:center;padding:0 22px 0 0;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer}
+.walk-card__pick .pict{width:20px;height:20px;color:var(--brass-hi)}
+.walk-card.is-chosen .walk-card__pick .pict{color:var(--label-ink-2)}
+.walk-card__pick strong{font:700 var(--fs-sm)/1.25 var(--font-text)}
+.walk-card__pick span{grid-column:1 / -1;font-size:var(--fs-xs);line-height:1.4;color:var(--on-wall-2)}
+.walk-card.is-chosen .walk-card__pick span{color:var(--label-ink-2)}
+.walk-card__pick:focus-visible{outline:var(--focus-ring);outline-offset:3px}
+.walk-card>.info-wrap{position:absolute;top:8px;right:8px}
+.walk-card.is-chosen .info{color:var(--label-ink-2);border-color:var(--label-ink-2)}
+.walk-card__words{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:2px 10px;font:600 var(--fs-xs)/1.35 var(--font-text);color:var(--on-wall)}
+.walk-card.is-chosen .walk-card__words{color:var(--label-ink)}
+.walk-card__words li.is-off{color:var(--on-wall-2)}
+.walk-card__words li.is-off s{text-decoration-thickness:1px}
+.walk-card__words li.is-off em{font-style:normal;font-weight:700}
+.walk-card.is-chosen .walk-card__words li.is-off{color:var(--label-ink-2)}
+@media (max-width:1100px){.walk-choice__cards{grid-template-columns:repeat(2,minmax(0,1fr))}.walk-card__words{display:none}}
+@media (max-width:700px){.walk-choice{display:none}.map-panel:has(.walk-choice) .map-region-context{bottom:52px}}
+
+/* ---------- Tablet Display: feature switches and the helmet preview ---------- */
+.setup-stack{display:flex;flex-direction:column;gap:28px;min-width:0}
+.mission-features{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:22px;align-items:start}
+.mission-features__main{min-width:0}
+.mission-features__aside{position:sticky;top:0}
+.mission-features h1{font-size:var(--fs-3);margin:6px 0 6px}
+.mission-pick{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tablet-device .mission-pick__item{gap:7px;min-height:34px;padding:4px 12px;border-radius:var(--radius-pill)}
+.tablet-device .mission-pick__item[aria-pressed=true]{background:var(--card);color:var(--label-ink);border-color:var(--card)}
+.mission-pick__item .pict{width:17px;height:17px}
+.mission-features__groups{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));align-items:start;margin-top:18px}
+.feature-row .hud-setting{padding:7px 0}
+.feature-row__state{font-weight:700}
+.feature-row[data-state="On"] .feature-row__state,.feature-row[data-state="Always on"] .feature-row__state{color:var(--label-ink)}
+.feature-row.is-fixed .hud-setting{cursor:default}
+.feature-row[data-state="Not in this region"] .hud-setting strong,.feature-row[data-state="Not built yet"] .hud-setting strong{color:var(--label-ink-2);font-weight:500}
+.feature-row[data-state="Not in this region"] input,.feature-row[data-state="Not built yet"] input{opacity:.45}
+.feature-row[data-state="Always on"] input{opacity:.7}
+
+.helmet-preview{margin:0;display:grid;gap:8px}
+.helmet-preview__view{position:relative;aspect-ratio:16/9;border-radius:var(--radius-frame);overflow:hidden;background:linear-gradient(180deg,#3a352f 0 52%,#2b2825 52% 100%);border:1px solid var(--plinth-line);color:var(--eng);--p:clamp(10px,.9vw,12px)}
+.helmet-preview__horizon{position:absolute;left:0;right:0;top:52%;height:1px;background:color-mix(in srgb,var(--on-wall) 22%,transparent)}
+.helmet-preview__rim{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px)}
+.helmet-preview__rim path{fill:none;stroke:var(--shell-hi);stroke-width:1px;opacity:.75;vector-effect:non-scaling-stroke}
+.helmet-preview__compass{position:absolute;top:9%;left:50%;transform:translateX(-50%);width:30%;display:flex;justify-content:space-between;align-items:flex-start;border-top:1.5px solid var(--eng);padding-top:2px}
+.helmet-preview__compass i{width:1.5px;height:5px;background:var(--eng)}
+.helmet-preview__compass b{font:800 var(--p)/1 var(--font-text)}
+.helmet-preview__corner{position:absolute;top:9%;right:9%;display:flex;flex-direction:column;align-items:center;gap:4px}
+.helmet-preview__map{position:relative;width:clamp(34px,4.6vw,56px);aspect-ratio:1;border-radius:50%;background:#4b463d;box-shadow:0 0 0 1.5px var(--eng),0 0 0 3px var(--halo);overflow:hidden}
+.helmet-preview__map b{position:absolute;top:2px;left:50%;transform:translateX(-50%);font:800 9px/1 var(--font-text)}
+.helmet-preview__zone{position:absolute;left:14%;top:46%;width:34%;height:34%;clip-path:polygon(0 10%,80% 0,100% 60%,60% 100%,10% 90%);background-size:9px 9px}
+.helmet-preview__pill{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;background:var(--hud-plate);border-radius:var(--radius-pill);font:700 var(--p)/1.2 var(--font-text)}
+.helmet-preview__pill .pict{width:11px;height:11px}
+.helmet-preview__stop{position:absolute;left:30%;top:40%;display:flex;flex-direction:column;align-items:center;gap:3px;max-width:44%}
+.helmet-preview__stop b{position:relative;display:grid;place-items:center;width:20px;height:20px;font:800 var(--p)/1 var(--font-text)}
+.helmet-preview__stop b::before{content:"";position:absolute;inset:3px;transform:rotate(45deg);border:1.5px solid var(--eng)}
+.helmet-preview__stop small{padding:1px 5px;background:var(--hud-plate);border-radius:var(--radius);font:700 var(--p)/1.25 var(--font-text);text-align:center}
+.helmet-preview__status{position:absolute;bottom:9%;left:50%;transform:translateX(-50%);display:flex;gap:4px}
+.helmet-preview__status span{display:inline-flex;padding:2px 5px;background:var(--hud-plate);border:1px solid var(--hud-plate-line);border-radius:var(--radius-pill)}
+.helmet-preview__status span.is-warning{border-color:var(--lamp);color:var(--lamp)}
+.helmet-preview__status .pict{width:12px;height:12px}
+.helmet-preview figcaption{display:grid;gap:2px;font-size:var(--fs-xs);line-height:1.45;color:var(--on-wall-2)}
+.helmet-preview figcaption strong{color:var(--on-wall);font-weight:700;margin-top:4px}
+.helmet-preview figcaption small{font-size:var(--fs-xs);color:var(--on-wall-2);margin-top:2px}
+@media (max-width:1100px){.mission-features{grid-template-columns:1fr}.mission-features__aside{position:static;grid-row:1}}
+
+/* ---------- Tablet Map: legend and stop card ---------- */
+.tablet-main .terrain-workspace{position:relative}
+/* Zero height: the map sizes itself from its siblings' heights (SurfaceMap fit), so these overlays must not count. */
+.map-overlays{position:absolute;top:0;left:0;right:0;height:0;z-index:3}
+.hazard-legend{position:absolute;left:24px;top:62px;width:min(290px,40%);padding:6px 10px 8px;background:rgba(21,20,18,.9);border:1px solid var(--plinth-line);border-radius:var(--radius-case);color:var(--on-wall);font-size:var(--fs-xs)}
+.hazard-legend summary{cursor:pointer;font:700 var(--fs-xs)/1.4 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--on-wall)}
+.hazard-legend table{border-collapse:collapse;margin-top:4px}
+.hazard-legend th{font:700 var(--fs-xs)/1.3 var(--font-text);color:var(--on-wall-2);text-align:left;padding:2px 8px 2px 0}
+.hazard-legend td{padding:3px 6px 3px 0;vertical-align:middle;line-height:1.35}
+.hazard-legend td:nth-child(2){min-width:0}
+.hazard-legend td .info-wrap{margin-left:4px;vertical-align:middle}
+.hazard-legend td:last-child{white-space:nowrap}
+.hazard-legend .origin-tag{margin-left:0}
+.hazard-legend__swatch{display:block;width:30px;height:18px;background-color:#6b5a4a;border:1px dashed var(--eng)}
+.map-mark{display:grid;place-items:center;width:18px;height:18px;font:700 var(--fs-xs)/1 var(--font-text)}
+.map-mark--stop{background:var(--eng);color:var(--label-ink);box-shadow:0 0 0 2px var(--halo)}
+.map-mark--drill{border-radius:50%;border:1.5px solid var(--eng);box-shadow:0 0 0 2px var(--halo);background:radial-gradient(circle,var(--eng) 0 2px,transparent 2.5px)}
+.stop-card{position:absolute;top:62px;right:24px;width:min(270px,42%);max-height:380px;overflow:auto;padding:12px 14px}
+.stop-card .stop-card__task{font:600 var(--fs-sm2)/1.45 var(--font-text);color:var(--label-ink);margin:8px 0}
+.stop-card .secondary{color:var(--label-ink);border-color:var(--brass-lo);margin-top:8px}
+@media (max-width:900px){.hazard-legend{left:12px}.stop-card{right:12px;width:min(270px,60%)}}
+
+/* ---------- Tablet Routes: science walk ---------- */
+.science-walk{margin-top:16px}
+.science-walk-card{display:block;width:100%;margin-top:10px;padding:14px;text-align:left;background:var(--plinth);border:1px solid transparent;border-radius:var(--radius-case);color:var(--on-wall);cursor:pointer}
+.science-walk-card:hover:not(:disabled){border-color:var(--brass-lo)}
+.science-walk-card.selected{background:var(--card);color:var(--label-ink);box-shadow:var(--brass-top-inset),var(--shadow-card)}
+.science-walk-card>span{display:flex;justify-content:space-between;font:700 var(--fs-xs)/1.3 var(--font-text);letter-spacing:.08em}
+.science-walk-card b{font:700 var(--fs-sm)/1 var(--font-text);color:var(--brass-hi)}
+.science-walk-card.selected b{color:var(--label-ink)}
+.science-walk-card>strong{display:flex;align-items:center;gap:8px;margin-top:10px;font:400 var(--fs-2)/1.1 var(--font-display)}
+.science-walk-card.is-empty>strong{font:700 var(--fs-0)/1.2 var(--font-text)}
+.science-walk-card>strong small{font:600 var(--fs-xs) var(--font-text)}
+.science-walk-card>small{display:block;margin-top:6px;font-size:var(--fs-xs);color:var(--on-wall-2)}
+.science-walk-card.selected>small{color:var(--label-ink-2)}
+.science-walk-card .pict{width:20px;height:20px}
+.science-walk .text-button{padding:6px 0;font-size:var(--fs-xs)}
+.science-walk__circles .pict{width:15px;height:15px;vertical-align:-3px;margin-right:4px}
+.science-walk__circles .info-wrap{margin-left:4px;vertical-align:middle}
+.science-walk__failure{margin-top:8px;display:grid;gap:6px}
+.science-walk__failure>strong{font-size:var(--fs-sm);color:var(--alarm-ink)}
+
+/* ---------- Look closer additions ---------- */
+.closer-marswalk{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px;align-items:start}
+.closer-limits{grid-column:1 / -1}
+.limits-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);margin-top:6px}
+.limits-table th,.limits-table td{text-align:left;padding:6px 8px 6px 0;border-bottom:var(--rule-card);color:var(--label-ink);font-weight:400}
+.limits-table thead th{font:700 var(--fs-xs)/1.3 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--label-ink-2)}
+.limits-table tbody th{font-weight:600}
+.limits-table .info-wrap{margin-left:6px;vertical-align:middle}
+.limits-table tr.is-over td:last-child{color:var(--alarm-ink-card);font-weight:700}
+.limits-table tr.is-caution td:last-child{font-weight:700}
+.limits-table tr.is-no-data td{color:var(--label-ink-2)}
+.saved-walks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.saved-walks li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:var(--rule-card)}
+.saved-walks li span{display:grid;gap:2px;min-width:0}
+.saved-walks strong{font:600 var(--fs-sm)/1.3 var(--font-text)}
+.saved-walks small{font-size:var(--fs-xs)}
+.wall-label .saved-walks .secondary{margin-top:0}
+.wall-label .saved-walks .secondary[aria-pressed=true]{background:var(--card-2);border-color:var(--label-ink-2)}
+.walk-compare{margin:10px 0 0;display:grid;gap:6px;font-size:var(--fs-sm)}
+.walk-compare div{display:flex;justify-content:space-between;gap:12px}
+.walk-compare dt{color:var(--label-ink-2)}
+.walk-compare dd{margin:0;color:var(--label-ink);font-weight:600}
+.closer-storm h2{display:flex;align-items:center;gap:6px}
+.closer-storm__state{display:flex;align-items:flex-start;gap:6px;color:var(--alarm-ink-card)!important;font-weight:700}
+.closer-storm__state .pict{flex:none;width:18px;height:18px}
+.wall-label .closer-storm__run{gap:8px}
+.closer-storm .button-row{flex-wrap:wrap;margin-top:6px}
+.closer-storm .button-row .secondary{margin-top:0}
+.wall-label .text-button{color:var(--label-ink-2)}
+
+/* ---------- Provenance ---------- */
+.marswalk-credits{margin-top:12px;padding-top:10px;border-top:var(--rule-wall)}
+.marswalk-credits ul{margin:4px 0 8px;padding-left:18px;display:grid;gap:4px}
+.marswalk-credits strong{color:var(--on-wall)}
+
+/* ---------- HUD: storm notice, hazard chip, stop marks ---------- */
+.hud-page .hud-alerts p.hud-storm,.hud-storm{display:flex;align-items:center;gap:8px;max-width:min(520px,52vw);margin:0;padding:4px 6px 4px 12px;background:rgba(21,20,18,.78);border:1.5px solid var(--alarm);border-radius:var(--radius-pill);color:var(--eng);font:700 var(--hud-text)/1.2 var(--font-text)}
+.hud-storm>.pict{width:18px;height:18px;color:var(--alarm-ink)}
+.hud-storm__text{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.hud-storm__text b{color:var(--alarm-ink);letter-spacing:.06em}
+.hud-storm__text em{font:700 var(--fs-xs)/1 var(--font-text);font-style:normal;padding:2px 6px;border:1px solid var(--alarm-ink);border-radius:var(--radius-pill);color:var(--alarm-ink)}
+.hud-storm__key{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:0 6px 0 9px;background:transparent;border:1px solid color-mix(in srgb,var(--eng) 45%,transparent);border-radius:var(--radius-pill);color:var(--eng);font:700 var(--fs-xs)/1 var(--font-text);cursor:pointer;white-space:nowrap}
+.hud-storm__key kbd{height:1.4em;min-width:1.4em}
+.hud-chip.is-alarm{border-color:var(--alarm)}
+.hud-chip.is-alarm .pict{color:var(--alarm-ink)}
+.stop-waypoint .stop-waypoint__mark{position:relative;display:grid;place-items:center;width:26px;height:26px;margin:2px auto 0;font:800 var(--fs-xs)/1 var(--font-text);color:var(--eng);text-shadow:0 0 3px var(--halo),0 0 2px var(--halo)}
+.stop-waypoint .stop-waypoint__mark::before{content:"";position:absolute;inset:4px;transform:rotate(45deg);border:1.5px solid var(--eng);box-shadow:0 0 0 1px var(--halo),inset 0 0 0 1px var(--halo)}
+.stop-waypoint.is-compact .waypoint-caption{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.stop-waypoint.is-compact{opacity:.85}
