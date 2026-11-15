@@ -27,13 +27,13 @@ export default function ScienceWalkCard({ state, selected, isDefault, source, ha
   const fromHabitat = distance(PREPARED.base, habitat);
   return <section className="science-walk" data-tour="science-walk" aria-label="Science walk">
     <div className="section-label">SCIENCE WALK · BOXWORK<span className="tag">{selected ? 'SELECTED' : isDefault ? 'DEFAULT' : ''}</span></div>
-    {showPlanned ? <button type="button" className={`science-walk-card${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onSelectPlanned}>
+    {showPlanned ? <button type="button" className={`science-walk-card${selected ? ' selected' : ''}`} data-tour="science-walk-card" aria-pressed={selected} onClick={onSelectPlanned}>
       <span>SCIENCE WALK, 8 STOPS<b>{km(plan.route.metrics.distanceM)}</b></span>
       <strong>{min(plan.route.metrics.durationS)} <small>walking, habitat to habitat</small></strong>
       <small>{plan.route.metrics.maxSlopeDeg.toFixed(1)}° max slope · {Math.round(plan.route.metrics.ascentM)} m ascent · time at the stops not counted</small>
       <small className={`condition-status ${plan.route.conditions.status}`}>{plan.route.conditions.status === 'within' ? 'Within configured limits' : plan.route.conditions.status === 'unknown' ? 'Conditions unknown' : 'Limits exceeded'}</small>
       <small className="science-walk__origin">Planned now by the team route planner on the 5 m grid</small>
-    </button> : <button type="button" className={`science-walk-card${selected ? ' selected' : isDefault ? ' is-default' : ''}`} aria-pressed={selected} aria-label={`Prepared science walk, 8 stops: ${kilometres(t.distanceM)}, ${hoursMinutes(t.timeInSuitS)} in the suit`} data-testid="prepared-science-walk" onClick={onSelectPrepared}>
+    </button> : <button type="button" className={`science-walk-card${selected ? ' selected' : isDefault ? ' is-default' : ''}`} aria-pressed={selected} aria-label={`Prepared science walk, 8 stops: ${kilometres(t.distanceM)}, ${hoursMinutes(t.timeInSuitS)} in the suit`} data-testid="prepared-science-walk" data-tour="science-walk-card" onClick={onSelectPrepared}>
       <span>SCIENCE WALK, 8 STOPS<b>{kilometres(t.distanceM)}</b></span>
       <strong><span className="science-walk__value">{hoursMinutes(t.timeInSuitS)}</span> <small>in the suit, crew rover to crew rover</small></strong>
       <small>{min(parts.walkingS)} walking at {parts.walkingSpeedMps} m/s + {parts.stopCount} stops × {parts.workMinPerStop} min · both assumptions of the Marswalk team</small>

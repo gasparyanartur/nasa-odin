@@ -15,7 +15,7 @@ export default function FeatureSwitches({ setup, hud, onToggle, onMission }: { s
         <h1>What your walk shows.</h1>
         <p className="subtle">A walk choice switches a set of features on. Change any switch and the walk becomes Custom. Nothing switches by itself at a stop.</p>
         <div className="mission-pick" role="group" aria-label="Walk choice">{MISSIONS.map(m =>
-          <button key={m.id} type="button" className="mission-pick__item" aria-pressed={setup.mission === m.id} onClick={() => onMission(m.id)}><Icon name={MISSION_ICON[m.id]} />{m.label}</button>)}</div>
+          <button key={m.id} type="button" className="mission-pick__item" data-tour={`mission-pick-${m.id}`} aria-pressed={setup.mission === m.id} onClick={() => onMission(m.id)}><Icon name={MISSION_ICON[m.id]} />{m.label}</button>)}</div>
       </div>
     <div className="configuration-grid mission-features__groups">{GROUPS.map(g =>
       <fieldset key={g.id}><legend>{g.label}</legend>{FEATURES.filter(f => f.group === g.id).map(f => {
@@ -23,7 +23,7 @@ export default function FeatureSwitches({ setup, hud, onToggle, onMission }: { s
         const live = a.available && !f.locked;
         return <div className={`setting-row feature-row${live ? '' : ' is-fixed'}`} key={f.id} data-state={word}>
           <label className="hud-setting">
-            <input type="checkbox" aria-label={`${f.label} feature`} checked={on[f.id]} disabled={!live} onChange={() => onToggle(f.id)} />
+            <input type="checkbox" data-tour={`feature-${f.id}`} aria-label={`${f.label} feature`} checked={on[f.id]} disabled={!live} onChange={() => onToggle(f.id)} />
             <Icon name={f.locked ? 'lock' : FEATURE_ICON[f.id]} />
             <span><strong>{f.label}</strong><small className="feature-row__state">{word}</small></span>
           </label>

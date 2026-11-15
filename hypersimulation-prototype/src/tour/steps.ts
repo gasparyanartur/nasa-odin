@@ -1,0 +1,56 @@
+import type { Chapter, TourStep } from './engine';
+
+/**
+ * The tour, one entry per card. Edit captions here. Rules: one sentence of at most 14 words, plain English,
+ * only numbers the app itself shows. Targets are data-tour names (docs/tour-anchors.md); a renamed anchor fails
+ * src/tour/steps.test.ts.
+ */
+export const STEPS: TourStep[] = [
+  // Station
+  { id: 'globe', chapter: 'Station', target: 'globe', action: 'drag', via: ['close-tablet', 'station-tab', 'atlas-tab'],
+    caption: 'This globe is Mars. Drag it to turn it.', doIt: 'Drag the globe to turn it.' },
+  { id: 'region', chapter: 'Station', target: 'region-boxwork', action: 'click', expect: 'task-geology', timeoutMs: 8000,
+    caption: 'Choose Gale · Boxwork, the suggested region. The globe flies there.', doIt: 'Click Gale · Boxwork in the region list.' },
+  { id: 'task', chapter: 'Station', target: 'task-geology', action: 'click',
+    caption: 'Under 02 / Choose your task, pick the Geology walk.', doIt: 'Click Geology walk.' },
+  { id: 'task-info', chapter: 'Station', target: 'task-info-geology', action: 'click', expect: 'task-info-geology-pop', show: 'task-info-geology-pop',
+    leave: { reclickIfExpanded: true },
+    caption: 'Each small i opens the details, only when you ask for them.', doIt: 'Click the small i beside Geology walk.' },
+  { id: 'open-tablet', chapter: 'Station', target: 'open-tablet', action: 'click', expect: 'routes-tab', timeoutMs: 20000,
+    caption: 'The blue bar opens the tablet. You plan the walk there.', doIt: 'Click the blue Open tablet bar.' },
+
+  // Tablet
+  { id: 'routes', chapter: 'Tablet', target: 'routes-tab', action: 'click', expect: 'plan-new-route',
+    caption: 'Routes: plan a new walk, or load an earlier one.', doIt: 'Click Routes in the tablet tool bar.' },
+  { id: 'science-walk', chapter: 'Tablet', target: 'science-walk-card', action: 'point', via: ['plan-new-route'],
+    caption: 'The prepared science walk: 8 stops, its length and the time in the suit.', doIt: 'Read the science walk card, then press Next.' },
+  { id: 'previous', chapter: 'Tablet', target: 'load-previous-path', action: 'click', expect: 'previous-paths', show: 'previous-paths',
+    leave: { restorePressed: ['plan-new-route', 'load-previous-path'] },
+    caption: "Load previous path shows Curiosity's path and your saved walks.", doIt: 'Click Load previous path.' },
+  { id: 'display', chapter: 'Tablet', target: 'feature-stops', action: 'click', via: ['display-tab'], show: 'helmet-preview',
+    leave: { restorePressed: ['mission-pick-geology', 'mission-pick-safety', 'mission-pick-water', 'mission-pick-custom'] },
+    caption: 'In Display, flip a switch. The helmet preview changes with it.', doIt: 'Open Display, then flip the Science stops switch.' },
+  { id: 'events', chapter: 'Tablet', target: 'events-tab', action: 'click', expect: 'trigger-event', show: 'trigger-event',
+    caption: 'Events simulate a hazard, such as local dust. Trigger now starts one.', doIt: 'Click Events in the tablet tool bar.' },
+  { id: 'preview', chapter: 'Tablet', target: 'preview-route', action: 'click', via: ['routes-tab'], expect: 'preview-controls', timeoutMs: 8000,
+    caption: 'Preview route plays the walk in the helmet. Nothing is walked or saved.', doIt: 'Open Routes, then click Preview route.' },
+
+  // Helmet: the route preview runs; the pointer stays away from the view.
+  { id: 'compass', chapter: 'Helmet', target: 'hud-compass', action: 'point', pointer: false, optional: true,
+    caption: 'Top centre, the compass shows where you are facing.', doIt: 'Look at the compass, then press Next.' },
+  { id: 'minimap', chapter: 'Helmet', target: 'hud-minimap', action: 'point', pointer: false, optional: true,
+    caption: 'Top right, the minimap. Hatched areas mark hazards to keep away from.', doIt: 'Look at the minimap, then press Next.' },
+  { id: 'notices', chapter: 'Helmet', target: 'hud-notices', action: 'point', pointer: false, optional: true,
+    caption: 'Notices show briefly under the compass, then wait here. Key N lists them.', doIt: 'Look at the notice symbol, then press Next.' },
+  { id: 'stop', chapter: 'Helmet', target: 'preview-stop', action: 'click', expect: 'walk-route',
+    caption: 'Stop ends the preview and brings you back to the tablet.', doIt: 'Click Stop.' },
+  { id: 'ready', chapter: 'Tablet', target: 'walk-route', action: 'point', pointer: false, optional: true, final: true,
+    caption: 'You are ready. Walk the route, or explore freely.', doIt: 'You are ready. Walk the route, or explore freely.' },
+];
+
+/** Used by Resume tour: the way back into a chapter from wherever the visitor went. */
+export const RECOVER: Record<Chapter, string[]> = {
+  Station: ['close-tablet', 'station-tab', 'atlas-tab'],
+  Tablet: ['tablet-tab'],
+  Helmet: ['tablet-tab', 'routes-tab', 'preview-route'],
+};

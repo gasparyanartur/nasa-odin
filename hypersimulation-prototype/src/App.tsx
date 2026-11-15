@@ -55,6 +55,7 @@ import MarswalkCredits from './marswalk/MarswalkCredits';
 import type { ExtraMark } from './mission/WalkingScene';
 import { PREVIEW_SPEEDS, liveWalk, previewPose, previewProgressText, previewReducer, startPreview, type PreviewState } from './mission/routePreview';
 import { savePace, storedPace } from './mission/pace';
+import { TourStartButton } from './tour/Tour';
 
 const directDemo=new URLSearchParams(window.location.search).get('demo')==='yellowknife';
 const directBoxwork=new URLSearchParams(window.location.search).get('demo')==='boxwork';
@@ -335,7 +336,7 @@ export default function App(){
 </div>
 <div className="context-tabs">
 <button data-tour="atlas-tab" title="Inspect global map layers, coverage and available excursion regions." aria-pressed={stationTab==='atlas'} onClick={()=>setStationTab('atlas')}>Planetary atlas</button>
-<button data-tour="history-tab" title="Inspect dated environmental records and the labeled simulated outlook." aria-pressed={stationTab==='history'} onClick={()=>setStationTab('history')}>Data & history</button><Help tour="station-help" label="About Station tools">The atlas selects datasets and sites. Data &amp; history compares dated observations and simulated outlooks. Local walking/planning requires prepared terrain. Use Tablet for local map, route history and expedition events.</Help>
+<button data-tour="history-tab" title="Inspect dated environmental records and the labeled simulated outlook." aria-pressed={stationTab==='history'} onClick={()=>setStationTab('history')}>Data & history</button><Help tour="station-help" label="About Station tools">The atlas selects datasets and sites. Data &amp; history compares dated observations and simulated outlooks. Local walking/planning requires prepared terrain. Use Tablet for local map, route history and expedition events. Tour plays the 2 minute tour on this app.</Help><TourStartButton tour="station-tour"/>
 </div>
 </header>}
     {view==='globe'&&stationTab==='history'&&<div className="station-analysis">
@@ -360,7 +361,7 @@ export default function App(){
 </div>
 </header>
 {mw.stormMessage&&mw.storm.warning==='shown'?<div className="hud-alerts" aria-live="polite"><StormNotice storm={mw.storm} msg={mw.stormMessage} onDismiss={mw.dismissStorm} onCancel={mw.cancelReturn} onResume={mw.resumeReturn}/></div>:<HudToast toasts={hudNotices.toasts} onDismiss={hudNotices.dismiss}/>}
-<div className="hud-corner">{hud.minimap&&<aside className="hud-map">
+<div className="hud-corner">{hud.minimap&&<aside className="hud-map" data-tour="hud-minimap">
 <SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} data={data} start={start} goal={route&&!science?goal:undefined} routes={science?[science]:result?.routes} fields={sharedFields} selected={science?0:selected} pose={shownPose} exclusions={missionSettings.exclusions} overlays={{...defaultOverlays(),imagery:{visible:true,opacity:1}}} zones={mw.zones} wayBack={wayBack} mapStops={mw.boxwork?mapStops:undefined} follow={mw.boxwork?{keep:[...(next?[next]:[]),...(progress?[{x:progress.target[0],y:progress.target[1]}]:[])],marks:[{...start,label:'H'},...(next?[{x:next.x,y:next.y,label:String(next.id)}]:[])]}:undefined} mini/>
 <span className="hud-map__north" aria-hidden="true">N</span>
 <div className="sr-only">
@@ -435,7 +436,7 @@ export default function App(){
 </button>
 </header>
       <nav className="tablet-tabs" aria-label="Tablet tools">{([['explore','Map','area'],['routes','Routes','route'],['field','Field data','note'],['setup','Display','helmet'],['events','Events','warning'],['closer','Look closer','look']] as const).map(([id,label,icon])=>
-<button key={id} data-tour={TAB_TOUR[id]} title={TAB_TITLES[id]} aria-label={label} disabled={id!=='explore'&&!canPlan(region)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</button>)}<Help tour="tablet-help" label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume.</Help>
+<button key={id} data-tour={TAB_TOUR[id]} title={TAB_TITLES[id]} aria-label={label} disabled={id!=='explore'&&!canPlan(region)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</button>)}<Help tour="tablet-help" label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume. Tour plays the 2 minute tour on this app.</Help><TourStartButton tour="tablet-tour"/>
 </nav>
       {tabletTab!=='closer'&&<ContextGuide key={tabletTab} topic={tabletTab}/>}{fieldNotice&&<p className="field-notice" role="status">{fieldNotice}</p>}{dataError&&<div className="tablet-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
@@ -451,7 +452,7 @@ export default function App(){
 <button data-tour="plan-new-route" aria-pressed={routeWorkflow==='new'} onClick={()=>{setRouteWorkflow('new');setMapPanel(undefined);}}>Plan new route</button>
 <button data-tour="load-previous-path" aria-pressed={routeWorkflow==='saved'} onClick={()=>{setRouteWorkflow('saved');setMapPanel(undefined);setMode('inspect');}}>Load previous path</button>
 </div></div>
-{routeWorkflow==='saved'?<section aria-label="Previous paths panel"><h1>Previous paths</h1>{data&&<TraverseHistory store={traverses} library={pathLibrary} data={data} onSave={name=>{const id=traverses.save(name,missionSettings,start,goal,!!reached,route?.mode);if(id)pathLibrary.toggle(id,true);}}/>}</section>:<>{guide&&<section className="science-guide" aria-label="Guided science example">
+{routeWorkflow==='saved'?<section aria-label="Previous paths panel" data-tour="previous-paths"><h1>Previous paths</h1>{data&&<TraverseHistory store={traverses} library={pathLibrary} data={data} onSave={name=>{const id=traverses.save(name,missionSettings,start,goal,!!reached,route?.mode);if(id)pathLibrary.toggle(id,true);}}/>}</section>:<>{guide&&<section className="science-guide" aria-label="Guided science example">
 <details>
 <summary>Guided Gale example · {scienceTarget?.name??'Choose a target'}</summary>
 <h3>{scienceTarget?.question??'Choose a geological question.'}</h3>

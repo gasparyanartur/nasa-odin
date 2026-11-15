@@ -1,0 +1,62 @@
+/* First-start tour: drawn pointer, ring and caption card. Reads only tokens.css. No dim, tint or filter over Mars imagery. */
+
+.tour-layer{position:fixed;inset:0;z-index:90;pointer-events:none}
+.tour-layer .tour-ui{pointer-events:auto}
+
+/* Ring: a lit lamp line around the real control, with a slow pulse */
+.tour-ring{position:fixed;border-radius:var(--radius-frame);box-shadow:0 0 0 2px var(--lamp),0 0 0 5px var(--halo);pointer-events:none}
+.tour-ring[hidden]{display:none}
+.tour-ring::after{content:"";position:absolute;inset:-2px;border-radius:inherit;box-shadow:0 0 0 2px var(--lamp);opacity:0;animation:tour-pulse 1.8s var(--ease) infinite}
+@keyframes tour-pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.06)}}
+
+/* Pointer: an engraved arrow, tip at its own origin */
+.tour-pointer{position:fixed;left:0;top:0;width:28px;height:32px;margin:-2px 0 0 -3px;pointer-events:none;opacity:0;transition:opacity var(--dur-2) var(--ease);will-change:transform}
+.tour-pointer[data-shown=true]{opacity:1}
+.tour-pointer svg{display:block;overflow:visible}
+.tour-pointer path{fill:var(--eng);stroke:var(--label-ink);stroke-width:1.8px;paint-order:stroke;stroke-linejoin:round;transition:transform var(--dur-1) var(--ease);transform-origin:3px 2px}
+.tour-pointer.is-pressing path{transform:scale(.88)}
+.tour-pointer__tap{position:absolute;left:3px;top:2px;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid var(--lamp);opacity:0;transform:scale(.3)}
+.tour-pointer.is-pressing .tour-pointer__tap{animation:tour-tap .45s var(--ease) forwards}
+@keyframes tour-tap{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(1.15)}}
+
+/* Caption card: a cream wall label */
+.tour-card{position:fixed;left:0;top:0;width:min(340px,calc(100vw - 24px));padding:14px 16px 12px;background:var(--card);color:var(--label-ink);border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-pop);font:400 var(--fs-sm2)/var(--lh-text) var(--font-text);transition:transform var(--dur-2) var(--ease)}
+.tour-card__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:2px}
+.tour-card__chapter{font:400 var(--fs-md)/1.1 var(--font-display);color:var(--label-ink)}
+.tour-card__count{font:700 var(--fs-xs)/1.2 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--label-ink-2);white-space:nowrap}
+.tour-card__text{margin:8px 0 10px;color:var(--label-ink);font-size:var(--fs-sm2);line-height:var(--lh-text);text-wrap:pretty}
+.tour-card__track{height:2px;margin:0 0 10px;background:var(--card-line);border-radius:var(--radius-pill);overflow:hidden}
+.tour-card__track>span{display:block;height:100%;background:var(--brass-lo);transition:width var(--dur-2) var(--ease)}
+
+.tour-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tour-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 12px;border-radius:var(--radius-case);font:700 var(--fs-sm)/1 var(--font-text);letter-spacing:.02em;cursor:pointer}
+.tour-actions .pict{width:16px;height:16px}
+.tour-actions .tour-primary{background:var(--cobalt);color:#fff;border:0;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+.tour-actions .tour-primary:hover{background:color-mix(in srgb,var(--cobalt) 86%,#fff)}
+.tour-actions .tour-primary:active{background:var(--cobalt-lo)}
+.tour-actions .tour-quiet{background:transparent;color:var(--label-ink);border:1px solid var(--brass-lo)}
+.tour-actions .tour-quiet:hover{background:color-mix(in srgb,var(--brass) 18%,transparent)}
+.tour-actions .tour-link{margin-left:auto;padding:0 4px;background:transparent;border:0;color:var(--label-ink-2);text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:.3em}
+.tour-actions button:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+
+/* First-visit invitation on the Station */
+.tour-invite{position:fixed;right:24px;bottom:24px;width:min(320px,calc(100vw - 32px));padding:16px 18px 14px;background:var(--card);color:var(--label-ink);border-radius:var(--radius);box-shadow:var(--brass-top-inset),var(--shadow-label);animation:tour-rise var(--dur-2) var(--ease)}
+.tour-invite .eyebrow{color:var(--label-ink-2)}
+.tour-invite h2{margin:6px 0 6px;font:400 var(--fs-1)/1.15 var(--font-display);color:var(--label-ink)}
+.tour-invite p{margin:0 0 12px;font-size:var(--fs-sm2);line-height:var(--lh-text);color:var(--label-ink-2)}
+@keyframes tour-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* The Tour entry beside the Station and Tablet help marks */
+button.tour-entry,.tablet-device .tablet-tabs button.tour-entry,.context-tabs button.tour-entry{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;background:transparent;border:1px solid var(--plinth-line);border-radius:var(--radius-pill);color:var(--on-wall);font:700 var(--fs-xs)/1 var(--font-text);letter-spacing:var(--track-caps);text-transform:uppercase;cursor:pointer}
+button.tour-entry .pict{width:14px;height:14px;color:var(--brass-hi)}
+button.tour-entry:hover:not(:disabled){border-color:var(--brass)}
+.tablet-device .tablet-tabs button.tour-entry{align-self:center;min-height:30px;margin-right:6px}
+
+@media (prefers-reduced-motion: reduce){
+  .tour-card,.tour-pointer,.tour-pointer path{transition:none}
+  .tour-ring::after,.tour-pointer.is-pressing .tour-pointer__tap,.tour-invite{animation:none}
+}
+@media (max-width:600px){
+  .tour-invite{right:12px;bottom:12px}
+  .tour-actions button{padding:0 9px}
+}

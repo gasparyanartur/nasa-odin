@@ -6,8 +6,8 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 // The label is position: fixed in the window, so a scrolling panel never clips it; no ancestor may carry a transform.
 let closeOpen: (() => void) | null = null;
 
-export default function InfoMark({ title, does, source, coverage, children, align = 'end' }: {
-  title: string; does?: ReactNode; source?: ReactNode; coverage?: ReactNode; children?: ReactNode; align?: 'start' | 'end';
+export default function InfoMark({ title, does, source, coverage, children, align = 'end', tour }: {
+  title: string; does?: ReactNode; source?: ReactNode; coverage?: ReactNode; children?: ReactNode; align?: 'start' | 'end'; tour?: string;
 }) {
   const id = useId(), popId = `info-${id.replace(/:/g, '')}`;
   const [open, setOpen] = useState(false), [pinned, setPinned] = useState(false);
@@ -64,11 +64,11 @@ export default function InfoMark({ title, does, source, coverage, children, alig
   const rows: [string, ReactNode][] = [['What it does', does], ['Source', source], ['Coverage', coverage]];
 
   return <span className="info-wrap" ref={wrap} data-open={open || undefined} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
-    <button ref={button} type="button" className="info" aria-label={`About ${title}`} aria-expanded={open} aria-controls={popId}
+    <button ref={button} type="button" className="info" data-tour={tour} aria-label={`About ${title}`} aria-expanded={open} aria-controls={popId}
       onClick={e => { e.stopPropagation(); if (open && pinned) close(); else show(true); }}>
       <span className="info__glyph" aria-hidden="true">i</span>
     </button>
-    <div ref={pop} id={popId} className="info-pop" hidden={!open}>
+    <div ref={pop} id={popId} className="info-pop" data-tour={tour && `${tour}-pop`} hidden={!open}>
       <p className="info-pop__title">{title}</p>
       <dl className="info-pop__rows">{rows.filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) =>
         <div className="info-pop__row" key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>

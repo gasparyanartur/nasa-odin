@@ -15,6 +15,7 @@ The three places stay the same: Station, Tablet and HUD. The [Marswalk parts](#m
 - **Station:** after you pick a prepared region, step **02 / Choose your task** offers the walk presets (`src/marswalk/WalkChoice.tsx`).
 - **Tablet:** the tools are Map, Routes, Field data, Display and Look closer. Look closer is new: suit limits, Curiosity's path, saved walks, the solar storm scenario and the ground panorama.
 - **HUD:** a quiet HUD. A notice shows for 10 seconds, then moves to a notice list you open with N (`src/mission/HudNotices.tsx`). A feature that is off shows nothing in the helmet.
+- **Guided tour:** on the first visit the Station offers "Take the 2 minute tour". It never starts by itself; **Tour** beside the Station and Tablet help marks starts it again. A drawn pointer moves to each real control and clicks it, and the app answers as it does for you. **Let me do it** hands the clicks to you; Skip tour or Esc ends it at once. It runs a route preview but never starts a walk, a hazard or pointer lock. Steps and captions: `src/tour/steps.ts`; anchors: `docs/tour-anchors.md`.
 
 ### HUD keys
 
@@ -78,7 +79,7 @@ Open [the combined app](http://127.0.0.1:5174). Its defaults differ from the roo
 
 ## Tests
 
-- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 38 test files, 191 tests, all passed on 2026-11-15 after the route preview, the planet-view hint, the Enter surface confirm and the 20x default pace were added.
+- `NODE_OPTIONS=--max-old-space-size=2048 npx vitest run` in this folder: 40 test files, 259 tests, all passed on 2026-11-15 after the guided tour was added (191 before it). The tour's unit tests cover its state machine, its storage and its card placement; the tour itself was not played in a browser for this count.
 - The server tests (`npm run test:api`), the planner reference check (`npm run test:planner:reference`) and the full browser suite (`npm run test:browser`) were not re-run after that port.
 
 ## Known limits
