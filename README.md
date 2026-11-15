@@ -1,5 +1,9 @@
 # NASA Space Apps 2026 - Interplanetary Survival Guide: Martian Map
 
+[![ODIN: a map for an astronaut's first walk on Mars. Three screens: Station, Tablet, Helmet.](docs/readme-hero.png)](https://gasparyanartur.github.io/nasa-odin/)
+
+**Try it in the browser: https://gasparyanartur.github.io/nasa-odin/**
+
 
 This repository holds one current app. Older versions are kept in `archive/` for reference.
 
