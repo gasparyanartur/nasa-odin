@@ -38,10 +38,10 @@ export function missionWords(mission: MissionId, region: RegionId): MissionWord[
   });
 }
 
-export const WORD_STATE_TEXT: Record<Exclude<WordState, 'on'>, string> = { 'not-here': 'Not in this region', 'not-built': 'Not built yet' };
+export const WORD_STATE_TEXT: Record<Exclude<WordState, 'on'>, string> = { 'not-here': 'Not available in this region', 'not-built': 'Not built yet' };
 
 export function stateWord(on: boolean, locked: boolean, available: boolean, note: string): string {
-  if (!available) return note.startsWith('Not built yet') ? 'Not built yet' : 'Not in this region';
+  if (!available) return note.startsWith('Not built yet') ? 'Not built yet' : 'Not available in this region';
   if (locked) return 'Always on';
   return on ? 'On' : 'Off';
 }

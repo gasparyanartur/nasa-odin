@@ -56,6 +56,11 @@ import type { ExtraMark } from './mission/WalkingScene';
 import { PREVIEW_SPEEDS, liveWalk, routeSubject, previewPose, previewProgressText, previewReducer, startPreview, type PreviewState } from './mission/routePreview';
 import { savePace, storedPace } from './mission/pace';
 import { TourStartButton } from './tour/Tour';
+import BlockedButton, { type BlockInfo } from './design/Blocked';
+import MapStatusLayer, { RouteStatusCard, type StatusState } from './mission/MapStatus';
+import { BLOCK_FIX_LABEL, OPTION_LABEL, PAUSED_TABLET, fixLabel, currentOutcome, explainFailure, planBlock, planKey, previewBlock, resultLine, resultWarning, shouldAutoPlan, slopeNeeded, stopText, surfaceTabBlock, tabletTabBlock, toolTabBlock, walkBlock, type Block, type BlockFix, type Fix, type PlanOutcome } from './mission/routeFlow';
+import { SCIENCE } from './datasets/geology';
+import type { StopReason } from './mission/data';
 
 const directDemo=new URLSearchParams(window.location.search).get('demo')==='yellowknife';
 const directBoxwork=new URLSearchParams(window.location.search).get('demo')==='boxwork';
@@ -94,7 +99,11 @@ export default function App(){
   const [guide,setGuide]=useState(directDemo),[targetId,setTargetId]=useState<string|undefined>(directDemo?'yellowknife':undefined);
   const [geology,setGeology]=useState<GeologySettings>({visible:directDemo,opacity:.35,contacts:true}),[geologySelection,setGeologySelection]=useState<GeologySelection>();
   const [profileEdge,setProfileEdge]=useState<number>();
-  const [result,setResult]=useState<RouteResult>(),[selected,setSelected]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState(''),[routeFailure,setRouteFailure]=useState<RouteDiagnostics>();
+  const [outcome,setOutcome]=useState<PlanOutcome>(),[selected,setSelected]=useState(0),[error,setError]=useState('');
+  // The destination counts once the person sets it (map pick, science destination, guided example); the terrain's default spot does not.
+  const [goalChosen,setGoalChosen]=useState(directDemo);
+  const [openMore,setOpenMore]=useState<Record<string,boolean>>({}),[pickNote,setPickNote]=useState('');
+  const more=(id:string)=>({open:!!openMore[id],onToggle:(e:React.SyntheticEvent<HTMLDetailsElement>)=>{const open=e.currentTarget.open;setOpenMore(s=>s[id]===open?s:{...s,[id]:open});}});
   const [mode,setMode]=useState<PickMode>('inspect'),[inspection,setInspection]=useState<Point>(HOME);
   const weatherHour=settings.departureHour??12;
   const [playing,setPlaying]=useState(false);
@@ -105,13 +114,10 @@ export default function App(){
   const visor=hud.visor;
   const [timeScale,setTimeScale]=useState(storedPace);
   function changePace(value:number){setTimeScale(value);savePace(value);}
-  const [pose,setPose]=useState<Pose>({...HOME,heading:0,elapsed:0}),[blocked,setBlocked]=useState(false),[back,setBack]=useState<ReturnResult>(),[returnError,setReturnError]=useState('');
+  const [pose,setPose]=useState<Pose>({...HOME,heading:0,elapsed:0}),[blocked,setBlocked]=useState<StopReason|null>(null),[back,setBack]=useState<ReturnResult>(),[returnError,setReturnError]=useState('');
   const [returnRetry,setReturnRetry]=useState(0);
   const request=useRef<AbortController|null>(null),returnRequest=useRef<AbortController|null>(null),lastReturn=useRef<Point & {elapsed?:number}>({x:Infinity,y:Infinity});
   const mw=useMarswalk({regionId:selectedRegionId,data,pose,walking:walkLive,session});
-  const prepared=useMemo(()=>mw.boxwork&&data?preparedAlternative(data.meta,settings):undefined,[mw.boxwork,data,settings.doseRateMicroGyH]);
-  const science=mw.scienceRoute(prepared),preparedActive=!!science&&science===prepared;
-  const route=science??result?.routes[selected];
   const [stopId,setStopId]=useState<number>();
   // A walk choice sets its layers and helmet switches once, when chosen; the team's own switches stay free after that.
   function applySetup(next:Setup,only?:FeatureId){
@@ -132,7 +138,6 @@ export default function App(){
   const pathLibrary=usePreviousPaths(data);
   const eventPhases=events.map(e=>eventStatus(e,pose.elapsed)).join(',');
   const activeEvents=useMemo(()=>events.filter(e=>eventStatus(e,pose.elapsed)==='active'),[events,eventPhases]);
-  const guidance=returning?back?.route??undefined:route;
   const savedPaths=useMemo(()=>data?[...pathLibrary.paths,...recordedPaths(traverses.records,data)]:[],[data,pathLibrary.paths,traverses.records]);
   const savedTraces=useMemo(()=>savedPaths.map((p,i)=>({...p,label:p.name,color:PATH_COLORS[i%PATH_COLORS.length],dashed:p.kind==='rover'})).filter(pathLibrary.show),[savedPaths,pathLibrary.visibility]);
   const mapTraces=[{id:'current',label:'Current walk',points:traverses.samples,color:CURRENT_WALK_COLOR},...savedTraces,...(returning&&back?.route?[{id:'return',label:'Return guidance',points:back.route.points.map(([x,y])=>({x,y})),color:'#79f0da'}]:[]),...(preview?[{id:'preview',label:'Route preview',points:preview.path.points,color:'#ffe4a3'}]:[])];
@@ -140,12 +145,22 @@ export default function App(){
   function addEvent(kind:EventKind,delay:number){if(events.length>=30)return;setEvents(v=>[...v,{id:crypto.randomUUID(),kind,createdS:pose.elapsed,atS:pose.elapsed+delay,center:{x:pose.x,y:pose.y},radiusM:kind==='solar'?35:60,acknowledged:false}]);}
   function updateEvent(id:string,action:'acknowledge'|'end'|'cancel'){setEvents(v=>action==='cancel'?v.filter(e=>e.id!==id):v.map(e=>e.id===id?{...e,...(action==='acknowledge'?{acknowledged:true}:{endedS:pose.elapsed})}:e));}
   function returnToHabitat(){if(!back?.route)return;setReturning(true);setView('walk');}
-  useEffect(()=>{setEvents([]);setReturning(false);},[session]);
+  useEffect(()=>{setEvents([]);setReturning(false);setBlocked(null);},[session]);
   const fieldStore=useFieldStore(),[fieldDraft,setFieldDraft]=useState<FieldRecord>(),[selectedField,setSelectedField]=useState<string>(),[fieldNotice,setFieldNotice]=useState('');
   const sharedFields=useMemo(()=>fieldStore.records.filter(r=>r.regionId===region?.id),[fieldStore.records,region?.id]);
   const activeField=sharedFields.find(r=>r.id===selectedField);
   const missionSettings=useMemo(()=>({...settings,exclusions:[...settings.exclusions,...fieldExclusions(sharedFields)]}),[settings,fieldStore.records,selectedRegionId]);
   const hazardCircles=useMemo(()=>hazardAvoidance?zoneRestriction(missionSettings.exclusions.length):undefined,[hazardAvoidance,missionSettings.exclusions.length]);
+  const restrictionFields=useMemo(()=>sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel),[sharedFields]);
+  // The planner's restriction list: your no-go areas, saved field restrictions, then the hazard area circles.
+  const planSettings=useMemo(()=>hazardCircles&&!isFailure(hazardCircles)?{...missionSettings,exclusions:[...missionSettings.exclusions,...plannerExclusions(hazardCircles)]}:missionSettings,[missionSettings,hazardCircles]);
+  const key=planKey({dataId:data?`${data.meta.id}@${data.meta.version}`:undefined,start,goal:goalChosen?goal:undefined,settings:missionSettings,hazards:!!hazardAvoidance});
+  const shown=currentOutcome(outcome,key);
+  const result=shown?.status==='done'?shown.result:undefined,busy=shown?.status==='busy',failed=shown?.status==='failed'?shown:undefined;
+  const prepared=useMemo(()=>mw.boxwork&&data?preparedAlternative(data.meta,settings):undefined,[mw.boxwork,data,settings.doseRateMicroGyH]);
+  const science=mw.scienceRoute(prepared),preparedActive=!!science&&science===prepared;
+  const route=science??result?.routes[selected];
+  const guidance=returning?back?.route??undefined:route;
   const fieldContext=useRef({records:sharedFields,settings,data});fieldContext.current={records:sharedFields,settings,data};
   function commitFields(next:FieldRecord[]){
     next=validateRecords(next);
@@ -172,10 +187,10 @@ export default function App(){
     return()=>c.abort();
   },[retry,selectedRegionId]);
   useEffect(()=>()=>{request.current?.abort();returnRequest.current?.abort();},[]);
-  function invalidate(){mw.clearScience();setReturning(false);setProfileEdge(undefined);request.current?.abort();returnRequest.current?.abort();setBusy(false);request.current=null;returnRequest.current=null;setResult(undefined);setBack(undefined);setError('');setRouteFailure(undefined);setReturnError('');}
+  function invalidate(){mw.clearScience();setReturning(false);setProfileEdge(undefined);request.current?.abort();returnRequest.current?.abort();request.current=null;returnRequest.current=null;setOutcome(undefined);setBack(undefined);setError('');setReturnError('');}
   function changeRegion(id?:RegionId){
     if(id===selectedRegionId)return;setMapPanel(undefined);setPauseMenu(false);setSession(v=>v+1);setStopId(undefined);
-    invalidate();setSelectedField(undefined);setFieldDraft(undefined);setFieldNotice('');setTargetId(undefined);setGeologySelection(undefined);setGuide(false);updateDemoUrl(false);setData(undefined);setSelectedRegionId(id);setStart(HOME);setGoal(GOAL);setSelected(0);setSettings(defaults);setPlaying(false);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setView('globe');
+    invalidate();setSelectedField(undefined);setFieldDraft(undefined);setFieldNotice('');setTargetId(undefined);setGeologySelection(undefined);setGuide(false);updateDemoUrl(false);setData(undefined);setSelectedRegionId(id);setStart(HOME);setGoal(GOAL);setGoalChosen(false);setPickNote('');setSelected(0);setSettings(defaults);setPlaying(false);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(null);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setView('globe');
   }
   function changeHour(hour:number){setPlaying(false);restartScenario(hour);}
   useEffect(()=>{
@@ -197,24 +212,75 @@ export default function App(){
     const step=data?.meta.stepM??5,q={x:Math.round(p.x/step)*step,y:Math.round(p.y/step)*step};setInspection(q);
     if(mode==='inspect'&&environmentLayer&&data){const [lon,lat]=localToGeo(data.meta,q);setEnvironmentSelection(s=>({...s,sampleId:sampleAt(environmentLayer,lon,lat)?.id}));}
     if(mode==='inspect'){if(data&&region){const [lon,lat]=localToGeo(data.meta,q),unit=unitAt(region.id,lon,lat);if(unit)setGeologySelection({kind:'unit',id:unit.id});}return;}
-    if(mode==='exclude'&&missionSettings.exclusions.length>=30){setRouteFailure(undefined);setError('At most 30 active restrictions total, including the field layer.');return;}
-    invalidate();lastReturn.current={x:Infinity,y:Infinity};
+    if(mode==='exclude'&&missionSettings.exclusions.length>=30){setPickNote('At most 30 no-go areas in total, field restrictions included. Remove one first.');return;}
+    invalidate();lastReturn.current={x:Infinity,y:Infinity};setPickNote('');
     if(mode==='start'){setStart(q);setPose({...q,heading:0,elapsed:0});setSession(v=>v+1);}
-    if(mode==='goal'){setGoal(q);setTargetId(undefined);}
+    if(mode==='goal'){setGoal(q);setGoalChosen(true);setTargetId(undefined);}
     if(mode==='exclude')setSettings(s=>({...s,exclusions:[...s.exclusions,{...q,radius:40}].slice(-30)}));
     if(mode!=='exclude')setMode('inspect');
   }
   function updateDemoUrl(enabled:boolean){const url=new URL(window.location.href);if(enabled)url.searchParams.set('demo','yellowknife');else url.searchParams.delete('demo');window.history.replaceState(null,'',url);}
-  function selectTarget(id:string){const target=targetById(id);if(!target||target.regionId!==region?.id||!data||!canPlan(region))return;const value=sample(data,target.point);if(!value||value.slope>settings.maxSlopeDeg||missionSettings.exclusions.some(e=>Math.hypot(e.x-target.point.x,e.y-target.point.y)<=e.radius+data.meta.stepM/Math.sqrt(2)))return;invalidate();setTargetId(id);setGoal(target.point);setInspection(target.point);setMode('inspect');setGeology(g=>({...g,visible:true}));const unit=unitAt(target.regionId,target.longitude,target.latitude);if(unit)setGeologySelection({kind:'unit',id:unit.id});}
-  function startDemo(){if(selectedRegionId!=='gale-bradbury')changeRegion('gale-bradbury');invalidate();setPlaying(false);setStart(HOME);setGoal(targetById('yellowknife')!.point);setTargetId('yellowknife');setGuide(true);setMode('inspect');setInspection(targetById('yellowknife')!.point);setSettings({...defaults,dwellMin:10,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH});setGeology({visible:true,opacity:.35,contacts:true});setOverlays({...defaultOverlays(),slope:{visible:true,opacity:.25}});setPose({...HOME,heading:0,elapsed:0});setTimeScale(storedPace());setBlocked(false);lastReturn.current={x:Infinity,y:Infinity};updateDemoUrl(true);setTabletTab('routes');setSession(v=>v+1);setView('plan');}
+  function selectTarget(id:string){const target=targetById(id);if(!target||target.regionId!==region?.id||!data||!canPlan(region))return;const value=sample(data,target.point);
+    if(!value){setPickNote(`${target.name} has no terrain data.`);return;}
+    if(value.slope>settings.maxSlopeDeg){setPickNote(`${target.name} is too steep: ${value.slope.toFixed(1)}°, above your ${settings.maxSlopeDeg}° limit. Raise the limit under Limits.`);return;}
+    if(missionSettings.exclusions.some(e=>Math.hypot(e.x-target.point.x,e.y-target.point.y)<=e.radius+data.meta.stepM/Math.sqrt(2))){setPickNote(`${target.name} is inside a no-go area.`);return;}
+    invalidate();setPickNote('');setTargetId(id);setGoal(target.point);setGoalChosen(true);setInspection(target.point);setMode('inspect');setGeology(g=>({...g,visible:true}));const unit=unitAt(target.regionId,target.longitude,target.latitude);if(unit)setGeologySelection({kind:'unit',id:unit.id});}
+  function startDemo(){if(selectedRegionId!=='gale-bradbury')changeRegion('gale-bradbury');invalidate();setPlaying(false);setStart(HOME);setGoal(targetById('yellowknife')!.point);setGoalChosen(true);setTargetId('yellowknife');setGuide(true);setMode('inspect');setInspection(targetById('yellowknife')!.point);setSettings({...defaults,dwellMin:10,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH});setGeology({visible:true,opacity:.35,contacts:true});setOverlays({...defaultOverlays(),slope:{visible:true,opacity:.25}});setPose({...HOME,heading:0,elapsed:0});setTimeScale(storedPace());setBlocked(null);lastReturn.current={x:Infinity,y:Infinity};updateDemoUrl(true);setTabletTab('routes');setSession(v=>v+1);setView('plan');}
   function openSuggested(){if(selectedRegionId!==SUGGESTED_REGION_ID)changeRegion(SUGGESTED_REGION_ID);setTabletTab('routes');setView('plan');}
+  const failureInput=(diagnostics?:RouteDiagnostics,message?:string)=>({diagnostics,message,slopeLimit:settings.maxSlopeDeg,manual:settings.exclusions.length,fields:restrictionFields.map(r=>({id:r.id,title:r.title})),hazardCircles:hazardCircles&&!isFailure(hazardCircles)?hazardCircles.exclusions.length:0});
   async function plan(){
-    if(!data||!planner||!canPlan(region))return;setPlaying(false);request.current?.abort();const c=new AbortController();request.current=c;setBusy(true);setError('');setRouteFailure(undefined);setResult(undefined);setBack(undefined);
-    let planSettings=missionSettings;
-    if(hazardAvoidance){const zones=zoneRestriction(missionSettings.exclusions.length);if(isFailure(zones)){setBusy(false);request.current=null;setError(zones.message);return;}planSettings={...missionSettings,exclusions:[...missionSettings.exclusions,...plannerExclusions(zones)]};}
-    try{const r=await planner.compare({start,goal,settings:planSettings},c.signal);if(request.current!==c||c.signal.aborted)return;if(r.datasetId!==data.meta.id||r.version!==data.meta.version)throw new Error('Route dataset/version does not match the active terrain. Reload the site and compare again.');setResult(r);setSelected(r.recommendedIndex);setFieldNotice('');lastReturn.current={x:Infinity,y:Infinity};}
-    catch(e){if(request.current===c&&(e as Error).name!=='AbortError'){setError((e as Error).message);setRouteFailure(e instanceof RoutePlanningError?e.diagnostics:undefined);}}
-    finally{if(request.current===c)setBusy(false);}
+    if(!data||!planner||!canPlan(region)||!key)return;
+    const k=key;setPlaying(false);mw.setScienceSelected(false);request.current?.abort();const c=new AbortController();request.current=c;setError('');setBack(undefined);
+    if(hazardCircles&&isFailure(hazardCircles)){request.current=null;setOutcome({key:k,status:'failed',failure:explainFailure(failureInput(undefined,hazardCircles.message))});return;}
+    setOutcome({key:k,status:'busy'});
+    try{const r=await planner.compare({start,goal,settings:planSettings},c.signal);if(request.current!==c||c.signal.aborted)return;if(r.datasetId!==data.meta.id||r.version!==data.meta.version)throw new Error('Route dataset/version does not match the active terrain. Reload the site and compare again.');setOutcome({key:k,status:'done',result:r});setSelected(r.recommendedIndex);setFieldNotice('');lastReturn.current={x:Infinity,y:Infinity};}
+    catch(e){if(request.current===c&&(e as Error).name!=='AbortError'){
+      const diagnostics=e instanceof RoutePlanningError?e.diagnostics:undefined,notes=diagnostics?.notes.join(' ')??'';
+      // Only for a slope-closed corridor: the smallest limit that opens it, from the planner's own grid.
+      const needed=diagnostics?.code==='disconnected'&&/Removing the slope limit restores|Terrain above the/.test(notes)?slopeNeeded(data,start,goal,planSettings.exclusions,settings.maxSlopeDeg):undefined;
+      setOutcome({key:k,status:'failed',failure:explainFailure({...failureInput(diagnostics,(e as Error).message),slopeNeeded:needed}),details:diagnostics});
+    }}
+    finally{if(request.current===c)request.current=null;}
+  }
+  const planNow=useRef(plan);planNow.current=plan;
+  const routesActive=view==='plan'&&tabletTab==='routes'&&routeWorkflow==='new';
+  // Start and destination set: plan by itself, and again after any change to them, a no-go area or a limit (debounced for typing).
+  useEffect(()=>{
+    if(!planner||!shouldAutoPlan(key,routesActive,outcome))return;
+    const t=window.setTimeout(()=>{void planNow.current();},350);
+    return()=>window.clearTimeout(t);
+  },[key,routesActive,planner,outcome]);
+  useEffect(()=>{if(!pickNote)return;const t=window.setTimeout(()=>setPickNote(''),7000);return()=>window.clearTimeout(t);},[pickNote]);
+  function applyFix(f:Fix){
+    if(f.kind==='raise-slope')changeSettings({...settings,maxSlopeDeg:f.to});
+    else if(f.kind==='remove-last-nogo')changeSettings({...settings,exclusions:settings.exclusions.slice(0,-1)});
+    else if(f.kind==='clear-nogo')changeSettings({...settings,exclusions:[]});
+    else if(f.kind==='hazards-off'){setAvoidHazards(false);invalidate();lastReturn.current={x:Infinity,y:Infinity};}
+    else if(f.kind==='change-destination'){setRouteWorkflow('new');setMode('goal');}
+    else if(f.kind==='change-start'){setRouteWorkflow('new');setMode('start');}
+    else if(f.kind==='open-limits'){setRouteWorkflow('new');setTabletTab('routes');setOpenMore(s=>({...s,limits:true}));window.setTimeout(()=>document.querySelector('.route-more--limits')?.scrollIntoView?.({block:'nearest'}),0);}
+    else if(f.kind==='open-field')openFields(f.id);
+  }
+  const step2=useRef<HTMLButtonElement>(null);
+  function pickDestination(){setMapPanel(undefined);setRouteWorkflow('new');setTabletTab('routes');setView('plan');setMode('goal');window.setTimeout(()=>step2.current?.focus(),0);}
+  function clearRoute(){invalidate();setGoalChosen(false);setTargetId(undefined);lastReturn.current={x:Infinity,y:Infinity};}
+  function showRegions(){
+    setView('globe');setStationTab('atlas');
+    window.setTimeout(()=>{const list=document.querySelector<HTMLElement>('.region-section');if(!list)return;list.scrollIntoView?.({block:'nearest'});list.dataset.highlight='true';list.querySelector<HTMLElement>('.region-card')?.focus();window.setTimeout(()=>{delete list.dataset.highlight;},2400);},50);
+  }
+  function chooseSuggested(open?:typeof tabletTab){if(selectedRegionId!==SUGGESTED_REGION_ID)changeRegion(SUGGESTED_REGION_ID);if(open){setMapPanel(undefined);setTabletTab(open);setView('plan');}}
+  function blockInfo(b:Block|undefined,open?:typeof tabletTab):BlockInfo|undefined{
+    if(!b)return undefined;
+    const run=(fix:BlockFix)=>()=>{
+      if(fix==='choose-suggested')chooseSuggested(open);
+      else if(fix==='show-regions')showRegions();
+      else if(fix==='retry-terrain')setRetry(n=>n+1);
+      else if(fix==='pick-destination')pickDestination();
+      else if(fix==='show-first-path'){if(savedPaths[0])pathLibrary.toggle(savedPaths[0].id,true);}
+      else if(fix==='go-surface')setView('walk');
+      else if(fix==='retry-return')retryReturn();
+    };
+    return {reason:b.reason,fix:b.fix&&{label:BLOCK_FIX_LABEL[b.fix],run:run(b.fix)},more:b.more&&{label:BLOCK_FIX_LABEL[b.more],run:run(b.more)}};
   }
   const updatePose=useCallback((p:Pose)=>setPose(p),[]);
   useEffect(()=>{
@@ -225,12 +291,7 @@ export default function App(){
     planner.returnToHabitat({start:{x:pose.x,y:pose.y},goal:start,settings:missionSettings,mode:route?.mode??'shortest',elapsedS:pose.elapsed},c.signal)
       .then(r=>{if(returnRequest.current===c&&!c.signal.aborted)setBack(r);}).catch(e=>{if(returnRequest.current===c&&e.name!=='AbortError')setReturnError(e.message);});
   },[view,previewing,route,data,planner,pose,start,missionSettings,returnRetry]);
-  function reset(){setSession(v=>v+1);setPauseMenu(false);const HOME=data?.meta.defaultStart??{x:0,y:0},GOAL=data?.meta.defaultGoal??{x:600,y:450};setTargetId(undefined);setGuide(false);updateDemoUrl(false);setPlaying(false);invalidate();setStart(HOME);setGoal(GOAL);setSelected(0);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(false);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setTabletTab('explore');setView('plan');const weather=data?.environment.weather.find(w=>w.hour>=12&&w.temperatureK!==null);setSettings({...defaults,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH,temperatureK:weather?.temperatureK??defaults.temperatureK,windMps:weather?.windMps??defaults.windMps});}
-  useEffect(()=>{
-    if(!result||tabletTab!=='routes'||mapPanel)return;
-    const panel=document.querySelector<HTMLElement>('.mission-sidebar'),options=panel?.querySelector<HTMLElement>('.route-options');
-    if(panel&&options)panel.scrollTop+=options.getBoundingClientRect().top-panel.getBoundingClientRect().top-12;
-  },[result,tabletTab,mapPanel]);
+  function reset(){setSession(v=>v+1);setPauseMenu(false);const HOME=data?.meta.defaultStart??{x:0,y:0},GOAL=data?.meta.defaultGoal??{x:600,y:450};setTargetId(undefined);setGuide(false);updateDemoUrl(false);setPlaying(false);invalidate();setStart(HOME);setGoal(GOAL);setGoalChosen(true);setSelected(0);setMode('inspect');setInspection(HOME);setPose({...HOME,heading:0,elapsed:0});setBlocked(null);setTimeScale(storedPace());lastReturn.current={x:Infinity,y:Infinity};setTabletTab('explore');setView('plan');const weather=data?.environment.weather.find(w=>w.hour>=12&&w.temperatureK!==null);setSettings({...defaults,doseRateMicroGyH:data?.environment.radiation.rateMicroGyH??defaults.doseRateMicroGyH,temperatureK:weather?.temperatureK??defaults.temperatureK,windMps:weather?.windMps??defaults.windMps});}
   const scenarioHour=weatherHour+pose.elapsed/LMST_HOUR_SECONDS;
   const observed=data&&historicalAt(data.environment,scenarioHour);
   const currentTemperature=settings.conditionsMode==='historical'?observed?.temperatureK:settings.temperatureK;
@@ -243,7 +304,7 @@ export default function App(){
   const alerts=[...(!returning?route?.warnings??[]:[]),...(back?.warnings??[])];
   if(settings.conditionsMode==='historical'&&currentTemperature==null)alerts.push('Historical temperature unavailable at the current mission time.');
   if(currentTemperature!=null&&currentTemperature<settings.minTemperatureK)alerts.push('Current temperature is below the configured demonstration limit.');
-  if(blocked)alerts.push('Movement stopped: terrain limit, exclusion, or coverage boundary.');
+  if(blocked)alerts.push(stopText(blocked,settings.maxSlopeDeg));
   if(mw.hazard?.state==='inside'&&mw.hazard.zone)alerts.push(`You are inside a marked hazard area: ${mw.hazard.zone.label}.`);
   if(mw.walkDataError&&view==='walk')alerts.push(`${mw.walkDataError} Walking checks the 5 m team grid instead.`);
   if(progress&&progress.offRouteM>25)alerts.push('You are more than 25 m off the planned route.');
@@ -318,6 +379,23 @@ export default function App(){
   });
 
   const currentAlerts=Array.from(new Set(alerts));
+  const placeState={region:!!region,plannable:canPlan(region),data:!!data,dataError:!!dataError};
+  const routeState={data:!!data,goal:goalChosen,busy,previewable:!!previewSource,workflow:routeWorkflow,hasPaths:savedPaths.length>0};
+  const walkNow=()=>{if(subject==='prepared')startPrepared();setView('walk');};
+  function selectOption(i:number){setReturning(false);mw.setScienceSelected(false);setSelected(i);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}
+  const home=data?.meta.defaultStart??HOME,startMoved=Math.hypot(start.x-home.x,start.y-home.y)>1;
+  const regionTargets=SCIENCE.targets.filter(t=>t.regionId===(data?.meta.regionId??'gale-bradbury'));
+  const failureDetails=(d:RouteDiagnostics|undefined)=>d&&data?<RouteFailure diagnostics={d} data={data} manualCount={settings.exclusions.length} restrictions={restrictionFields} onField={openFields}/>:undefined;
+  const status:StatusState|undefined=tabletTab!=='routes'||routeWorkflow!=='new'||science||!goalChosen||!key?undefined
+    :busy?{kind:'planning'}:failed?{kind:'failed',failure:failed.failure,details:failureDetails(failed.details)}
+    :result?{kind:'done',routes:result.routes,selected,warning:resultWarning(result.routes[selected],settings)}
+    :outcome?{kind:'stale'}:{kind:'planning'};
+  const statusCard=(inline?:boolean)=>status&&<RouteStatusCard inline={inline} state={status} onSelect={selectOption} onFix={applyFix} onWalk={walkNow} onPreview={beginPreview}/>;
+  const stepThree=science?'Science walk selected':busy?'Planning…':failed?`No route: ${failed.failure.title}`:result?`${OPTION_LABEL[result.routes[selected].mode]}: ${resultLine(result.routes[selected])}`:goalChosen?'Starts by itself':'Set a destination first';
+  const pickHint=tabletTab==='routes'||tabletTab==='explore'?(mode==='goal'||mode==='start'||mode==='exclude'?<><span>{mode==='goal'?'Click the map to set the destination':mode==='start'?'Click the map to move the start. This restarts the walk.':'Click the map to add a no-go area'}</span>{pickNote&&<small>{pickNote}</small>}<button type="button" className="text-button" onClick={()=>{setMode('inspect');setPickNote('');}}>{mode==='exclude'?'Done':'Cancel'}</button></>:pickNote?<span>{pickNote}</span>:undefined):undefined;
+  const scienceFailure=mw.science.status==='failed'?mw.science.failure:undefined;
+  const scienceView=scienceFailure&&explainFailure({...failureInput(scienceFailure.diagnostics,scienceFailure.message),names:scienceFailure.leg?[scienceFailure.leg.from,scienceFailure.leg.to]:undefined});
+  const scienceFixes=scienceView?.fixes.filter(f=>f.kind!=='change-destination'&&f.kind!=='change-start')??[];
   const returnNotice=back?.atHabitat?'You are at the habitat.':returnError?`Return unavailable: ${returnError}`:back?.route?`${duration(back.route.metrics.durationS)} estimated return · terrain route available.`:'No return path available yet. Open the surface to request an estimate, or retry if unavailable.';
   return <>
     <nav inert={view==='plan'} className="mission-nav" aria-label="Main navigation">
@@ -325,8 +403,8 @@ export default function App(){
 </a>
 <div className="view-tabs">
 <button data-tour="station-tab" title="Explore global Mars datasets and dated observations. Mission time pauses at Station." aria-current={view==='globe'?'page':undefined} onClick={()=>setView('globe')}>Station</button>
-<button data-tour="tablet-tab" title="Open local Map, Routes, Field data, Display and Events over the paused surface." aria-current={view==='plan'?'page':undefined} disabled={!region} onClick={()=>setView('plan')}>Tablet</button>
-<button data-tour="hud-tab" title="Enter the surface; click terrain to resume walking. A route is optional." aria-current={view==='walk'?'page':undefined} disabled={!data||!canPlan(region)} onClick={()=>setView('walk')}>HUD · Surface</button>
+<BlockedButton data-tour="tablet-tab" title={region?'Open local Map, Routes, Field data, Display and Events over the paused surface.':undefined} aria-current={view==='plan'?'page':undefined} block={blockInfo(tabletTabBlock(placeState),'explore')} onClick={()=>setView('plan')}>Tablet</BlockedButton>
+<BlockedButton data-tour="hud-tab" title={data&&canPlan(region)?'Enter the surface; click terrain to resume walking. A route is optional.':undefined} aria-current={view==='walk'?'page':undefined} block={blockInfo(surfaceTabBlock(placeState))} onClick={()=>setView('walk')}>HUD · Surface</BlockedButton>
 </div>
 <span className="nav-site">{region?.shortName??'Choose a region'} <span className="live-dot"/> LAPTOP SIMULATION</span>
 </nav>
@@ -348,7 +426,7 @@ export default function App(){
     {dataError&&view!=='plan'&&<div className="data-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
     <div style={{display:view==='globe'&&stationTab==='atlas'?'block':'none'}}>
-<GlobeExplorer onSuggested={openSuggested} environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible} hasPlan={!!route} onPlanRoute={()=>{if(canPlan(region)){setRouteWorkflow('new');openTablet('routes');}}} walkChoice={region&&<WalkChoice setup={mw.setup} region={region.id} persistent={mw.persistent} onPick={id=>applySetup(mw.pickMission(id))}/>}/>
+<GlobeExplorer onSuggested={openSuggested} onRetryData={()=>setRetry(n=>n+1)}environmentCatalog={environmental.catalog} environmentSelection={environmentSelection} onEnvironmentChange={setEnvironmentSelection} geology={geology} geologySelection={geologySelection} onGeologySettings={setGeology} onGeologySelect={setGeologySelection} onDemo={startDemo} data={data} dataError={dataError} route={route} selectedRegionId={selectedRegionId} onRegionChange={changeRegion} onSurface={()=>setView('walk')} onExplore={()=>{if(canPlan(region)){setTabletTab('explore');setView('plan');}}} basemap={basemap} onBasemapChange={setBasemap} visible={basemapVisible} onVisibleChange={setBasemapVisible} opacity={basemapOpacity} onOpacityChange={setBasemapOpacity} overlays={overlays} onOverlayChange={changeOverlay} conditionsHour={weatherHour} conditionsVisible={conditionsVisible} onConditionsChange={setConditionsVisible} hasPlan={!!route} onPlanRoute={()=>{if(canPlan(region)){setRouteWorkflow('new');openTablet('routes');}}} walkChoice={region&&<WalkChoice setup={mw.setup} region={region.id} persistent={mw.persistent} onPick={id=>applySetup(mw.pickMission(id))}/>}/>
 </div>
     {context==='surface'&&data&&canPlan(region)&&<main aria-hidden={tabletOpen||undefined} className={`hud-page ${tabletOpen||pauseMenu?'surface-paused':''} ${visor?'visor-enabled':''}`}>
 <Suspense fallback={<div className="loading-data">Opening the surface HUD…</div>}>
@@ -432,16 +510,16 @@ export default function App(){
 <span className="eyebrow">ASTRONAUT TABLET · SIMULATED DEVICE</span>
 <h1>{region?.shortName??'Local exploration'}</h1>
 </div>
-<span className="tablet-paused">Ⅱ Surface paused</span>
+<span className="tablet-paused">Ⅱ {PAUSED_TABLET}</span>
 <button className="secondary" data-tour="close-tablet" onClick={()=>setView(canPlan(region)&&data?'walk':'globe')}>{canPlan(region)&&data?'Close tablet':'Back to Station'} <kbd>Esc</kbd>
 </button>
 </header>
       <nav className="tablet-tabs" aria-label="Tablet tools">{([['explore','Map','area'],['routes','Routes','route'],['field','Field data','note'],['setup','Display','helmet'],['events','Events','warning'],['closer','Look closer','look']] as const).map(([id,label,icon])=>
-<button key={id} data-tour={TAB_TOUR[id]} title={TAB_TITLES[id]} aria-label={label} disabled={id!=='explore'&&!canPlan(region)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</button>)}<Help tour="tablet-help" label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume. Tour plays the 2 minute tour on this app.</Help><TourStartButton tour="tablet-tour"/>
+<BlockedButton key={id} data-tour={TAB_TOUR[id]} title={TAB_TITLES[id]} aria-label={label} block={id==='explore'?undefined:blockInfo(toolTabBlock(placeState),id)} aria-pressed={tabletTab===id} onClick={()=>{setTabletTab(id);setMapPanel(undefined);setMode('inspect');}}><Icon name={icon}/>{label}{id==='field'&&fieldDraft&&<span className="draft-dot"> · draft</span>}</BlockedButton>)}<Help tour="tablet-help" label="Using the astronaut tablet">This is the astronaut’s simulated tablet, operated with your laptop’s mouse and keyboard. The surface and mission clock pause while it is open. Closing it retains your position; click terrain to resume. Tour plays the 2 minute tour on this app.</Help><TourStartButton tour="tablet-tour"/>
 </nav>
       {tabletTab!=='closer'&&<ContextGuide key={tabletTab} topic={tabletTab}/>}{fieldNotice&&<p className="field-notice" role="status">{fieldNotice}</p>}{dataError&&<div className="tablet-error" role="alert">{dataError} <button onClick={()=>setRetry(n=>n+1)}>Retry local data</button>
 </div>}
-      {error&&!routeFailure&&<div className="tablet-error" role="alert">{error}</div>}
+      {error&&<div className="tablet-error" role="alert">{error}</div>}
       {!canPlan(region)?<main className="empty-context">
 <h2>Orbital exploration only</h2>
 <p>Local numeric terrain is not prepared at {region?.shortName}. Visit a prepared Gale site to walk or use the local map.</p>
@@ -453,118 +531,106 @@ export default function App(){
 <button data-tour="plan-new-route" aria-pressed={routeWorkflow==='new'} onClick={()=>{setRouteWorkflow('new');setMapPanel(undefined);}}>Plan new route</button>
 <button data-tour="load-previous-path" aria-pressed={routeWorkflow==='saved'} onClick={()=>{setRouteWorkflow('saved');setMapPanel(undefined);setMode('inspect');}}>Load previous path</button>
 </div></div>
-{routeWorkflow==='saved'?<section aria-label="Previous paths panel" data-tour="previous-paths"><h1>Previous paths</h1>{data&&<TraverseHistory store={traverses} library={pathLibrary} data={data} onSave={name=>{const id=traverses.save(name,missionSettings,start,goal,!!reached,route?.mode);if(id)pathLibrary.toggle(id,true);}}/>}</section>:<>{guide&&<section className="science-guide" aria-label="Guided science example">
+{routeWorkflow==='saved'?<section aria-label="Previous paths panel" data-tour="previous-paths"><div className="section-label">PREVIOUS PATHS</div>{data&&<TraverseHistory store={traverses} library={pathLibrary} data={data} onSave={name=>{const id=traverses.save(name,missionSettings,start,goal,!!reached,route?.mode);if(id)pathLibrary.toggle(id,true);}}/>}</section>:<>
+<ol className="route-steps" aria-label="Plan a route in three steps">
+<li className="route-step is-done"><span className="route-step__n" aria-hidden="true">1</span><div className="route-step__text"><strong>Start</strong><small>{startMoved?`Map point · E ${start.x.toFixed(0)} / N ${start.y.toFixed(0)} m`:mw.boxwork?'Habitat H, by the crew rover':'Habitat H'}</small></div>
+<button type="button" className="secondary" aria-pressed={mode==='start'} title="Pick a new start on the map. This restarts the walk." onClick={()=>{setPickNote('');setMode(mode==='start'?'inspect':'start');}}>{mode==='start'?'Cancel':'Change'}</button></li>
+<li className={`route-step ${goalChosen?'is-done':'is-next'}`}><span className="route-step__n" aria-hidden="true">2</span><div className="route-step__text"><strong>Destination</strong><small>{goalChosen?(scienceTarget?.name??`Map point · ${distance(Math.hypot(goal.x-start.x,goal.y-start.y))} from the start`):'Not set yet'}</small></div>
+<button ref={step2} type="button" className="secondary" aria-pressed={mode==='goal'} onClick={()=>{setPickNote('');setMode(mode==='goal'?'inspect':'goal');}}>{mode==='goal'?'Cancel':goalChosen?'Change':'Pick on map'}</button></li>
+<li className={`route-step ${result&&!science?'is-done':goalChosen?'is-next':''}`}><span className="route-step__n" aria-hidden="true">3</span><div className="route-step__text"><strong>Plan route</strong><small>{stepThree}</small></div>
+<BlockedButton className="secondary" block={blockInfo(planBlock(routeState))} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</BlockedButton></li>
+</ol>
+{!goalChosen&&regionTargets.length>0&&<button type="button" className="text-button route-steps__alt" onClick={()=>setOpenMore(s=>({...s,targets:true}))}>Or choose a science destination</button>}
+<div className="route-status-inline">{statusCard(true)}</div>
+{guide&&<section className="science-guide" aria-label="Guided science example">
 <details>
 <summary>Guided Gale example · {scienceTarget?.name??'Choose a target'}</summary>
 <h3>{scienceTarget?.question??'Choose a geological question.'}</h3>
-<p>Inspect the target evidence, compare terrain routes, then enter the surface.</p>
+<p>Look at the evidence, plan the route, then walk it.</p>
 <button className="secondary" onClick={()=>{setMapPanel('evidence');setTabletTab('explore');}}>Inspect data evidence</button>
 <p className="caption">Visit areas are from later sols in 2012; Sol 10 weather is a separate scenario.</p>
 <button className="text-button" onClick={()=>{setGuide(false);updateDemoUrl(false);}}>Continue free exploration</button>
+<button className="text-button" onClick={startDemo}>Reset guided example</button>
 </details>
 </section>}
-        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} isDefault={!route} source={mw.scienceSource} habitat={start} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelectPrepared={()=>{mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} onSelectPlanned={()=>{mw.choosePlanned();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={mw.science.status==='failed'&&mw.science.failure.diagnostics?<RouteFailure diagnostics={mw.science.failure.diagnostics} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>:undefined}/>}
-        <div className="eyebrow">{region?.shortName.toUpperCase()} / EXCURSION</div>
-<h1>Plan your traverse.</h1>
-<p className="subtle">Compare from habitat to destination. Your astronaut stays where you left them.</p>{selectedRegionId==='gale-boxwork'&&<label>Orbital imagery<select aria-label="Boxwork imagery" value={imagery} onChange={e=>setImagery(e.target.value as 'colour'|'grey')}>
-<option value="colour">HiRISE colour mosaic</option>
-<option value="grey">HiRISE greyscale</option>
-</select>
-<small>Processed colour; not a true-colour claim. Display changes retain the mission.</small>
-</label>}
-        <details className="target-picker">
-<summary>Science destinations</summary>
+        {mw.boxwork&&data&&<ScienceWalkCard state={mw.science} selected={!!science} isDefault={!route} source={mw.scienceSource} habitat={start} userRestrictions={missionSettings.exclusions.length} onPlan={()=>{setPlaying(false);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};void mw.planScience(start,missionSettings);}} onSelectPrepared={()=>{mw.choosePrepared();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} onSelectPlanned={()=>{mw.choosePlanned();setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}} failure={scienceView?<div className="science-walk__why-not" role="alert"><p><b>{scienceView.title}</b> {scienceView.reason}</p>{scienceFixes.length>0&&<div className="button-row">{scienceFixes.map((f,i)=><button key={`${f.kind}-${i}`} type="button" className="secondary" onClick={()=>applyFix(f)}>{fixLabel(f)}</button>)}</div>}{scienceFailure?.diagnostics&&<details><summary>Details</summary>{failureDetails(scienceFailure.diagnostics)}</details>}</div>:undefined}/>}
+        {regionTargets.length>0||mw.boxwork?<details className="route-more" {...more('targets')}><summary><span>{regionTargets.length?'Science destinations':'Boxwork evidence'}</span><small>{scienceTarget?.name??(regionTargets.map(t=>t.name).join(', ')||'Curiosity rover evidence')}</small></summary>
 <ScienceTargets selected={targetId} onSelect={selectTarget} data={data} settings={missionSettings}/>
-</details>
-<section>
-<div className="section-label">01 / SET YOUR ENDPOINTS <Help label="About route endpoints">H is the habitat and return destination. D is your outbound destination. Planning compares these endpoints, even if you have already walked elsewhere. Only moving H or changing departure restarts the excursion.</Help></div>
-<div className="endpoint">
-<span className="point-label habitat">H</span>
-<div>
-<strong>Habitat / start</strong>
-<small>Placing a new habitat restarts the excursion.</small>
-<small>{start.x.toFixed(0)} E · {start.y.toFixed(0)} N m</small>
-</div>
-<button title="Click valid map terrain to move the habitat and restart the excursion." aria-pressed={mode==='start'} onClick={()=>setMode('start')}>Place</button>
-</div>
-<div className="endpoint">
-<span className="point-label destination">D</span>
-<div>
-<strong>Destination</strong>
-<small>{goal.x.toFixed(0)} E · {goal.y.toFixed(0)} N m</small>
-</div>
-<button title="Click valid map terrain to set a destination; your astronaut stays in place." aria-pressed={mode==='goal'} onClick={()=>setMode('goal')}>Place</button>
-</div>
+<p className="caption">Rover visit areas from published sources: examples to investigate, not new or exact sampling sites.</p>
+</details>:null}
+<details className="route-more" {...more('nogo')}><summary><span>No-go areas</span><small>{settings.exclusions.length} yours · {restrictionFields.length} field{mw.boxwork?` · hazard areas ${avoidHazards?'avoided':'not avoided'}`:''}</small></summary>
 <div className="button-row">
-<button className="secondary" aria-pressed={mode==='exclude'} onClick={()=>setMode(mode==='exclude'?'inspect':'exclude')}>＋ Exclusion</button>
-<button className="text-button" disabled={!settings.exclusions.length} onClick={()=>changeSettings({...settings,exclusions:[]})}>Clear exclusions</button>
+<button className="secondary" aria-pressed={mode==='exclude'} onClick={()=>{setPickNote('');setMode(mode==='exclude'?'inspect':'exclude');}}>{mode==='exclude'?'Done adding':'＋ Add no-go area'}</button>
+<BlockedButton className="text-button" block={settings.exclusions.length?undefined:{reason:'You have no no-go areas yet.'}} onClick={()=>changeSettings({...settings,exclusions:settings.exclusions.slice(0,-1)})}>Remove last</BlockedButton>
+<BlockedButton className="text-button" block={settings.exclusions.length?undefined:{reason:'You have no no-go areas yet.'}} onClick={()=>changeSettings({...settings,exclusions:[]})}>Clear all</BlockedButton>
+<InfoMark title="No-go areas" does="Click the map to add a 40 m circle. Routes and your steps keep out of it." coverage={<>{settings.exclusions.length} yours and {fieldExclusions(sharedFields).length} saved field restrictions (hidden annotations included). At most 30 areas in total. Field restrictions are edited in Field data.</>}/>
 </div>
-<p className="caption">Manual exclusions are user-declared 40 m areas. Edit field restrictions in Field data.</p>
-{mw.boxwork&&<div className="hazard-avoid"><label className="check"><input type="checkbox" aria-label="Avoid marked hazard areas" checked={avoidHazards} onChange={e=>{setAvoidHazards(e.target.checked);invalidate();lastReturn.current={x:Infinity,y:Infinity};}}/>Avoid marked hazard areas</label><InfoMark title="Avoid marked hazard areas" does={<>Sends the {HAZARD_ZONES.length} marked hazard areas to the route planner with the shortest and gentler routes. The planner takes circles only, so each area is covered completely by circles that can also block open ground up to two circle radii beyond its edge.</>} source="The team route planner accepts circles of 5 to 500 m radius, at most 30 per request. The hazard areas are drawn by the Marswalk team (assumption)." coverage={<>The circles share the 30-restriction budget with your manual exclusions and saved field restrictions. The map and the helmet draw the real hazard outlines, never the circles.</>}/>
-<p className="caption">{!avoidHazards?'Off: the shortest and gentler routes may cross the marked hazard areas.':hazardCircles&&!isFailure(hazardCircles)?`On: ${hazardCircles.exclusions.length} circles of ${hazardCircles.radiusM} m radius, ${30-missionSettings.exclusions.length-hazardCircles.exclusions.length} of 30 restrictions left after your own ${missionSettings.exclusions.length}.`:hazardCircles&&isFailure(hazardCircles)?hazardCircles.message:''}</p></div>}
-</section>
-        <section>
-<details className="advanced-assumptions">
-<summary>Mission assumptions & limits</summary><Help label="About mission assumptions">These values define a demonstration: speed, permitted terrain slope, excursion time and detector-dose budget. Historical gaps remain unknown. µGy is a rover-detector proxy, not an astronaut safety assessment. Details are in Help · controls &amp; symbols.</Help>
-<div className="section-label">DEMONSTRATION SETTINGS</div>
+{restrictionFields.length>0&&<button className="text-button" onClick={()=>openFields()}>Edit field restrictions</button>}
+{mw.boxwork&&<div className="hazard-avoid"><label className="check"><input type="checkbox" aria-label="Avoid marked hazard areas" checked={avoidHazards} onChange={e=>{setAvoidHazards(e.target.checked);invalidate();lastReturn.current={x:Infinity,y:Infinity};}}/>Avoid marked hazard areas</label><InfoMark title="Avoid marked hazard areas" does={<>Sends the {HAZARD_ZONES.length} marked hazard areas to the route planner with the shortest and gentler routes. The planner takes circles only, so each area is covered completely by circles that can also block open ground up to two circle radii beyond its edge.</>} source="The team route planner accepts circles of 5 to 500 m radius, at most 30 per request. The hazard areas are drawn by the Marswalk team (assumption)." coverage={<>{!avoidHazards?'Off: routes may cross the marked hazard areas.':hazardCircles&&!isFailure(hazardCircles)?`On: ${hazardCircles.exclusions.length} circles of ${hazardCircles.radiusM} m radius, ${30-missionSettings.exclusions.length-hazardCircles.exclusions.length} of 30 areas left after your own ${missionSettings.exclusions.length}.`:hazardCircles&&isFailure(hazardCircles)?hazardCircles.message:''} The map and the helmet draw the real hazard outlines, never the circles.</>}/></div>}
+</details>
+<details className="route-more route-more--limits" {...more('limits')}><summary><span>Limits</span><small>slope {settings.maxSlopeDeg}° · {settings.maxDurationMin} min · {settings.speedMps} m/s</small></summary>
 <div className="settings-grid">
           {([['speedMps','Walking speed','m/s',.1,3,.1],['maxSlopeDeg','Slope limit','°',1,45,1],['maxDurationMin','Time budget','min',1,480,1],['doseRateMicroGyH','Detector rate proxy','µGy/h',0,10000,.01],['maxDoseMicroGy','Dose proxy budget','µGy',.01,100000,1],['dwellMin','Destination stop','min',0,240,1]] as const).map(([key,label,unit,min,max,step])=>
 <label key={key}>{label}<span>
 <input aria-label={label} type="number" min={min} max={max} step={step} value={settings[key]} onChange={e=>{if(e.target.value!==''&&Number.isFinite(e.target.valueAsNumber))changeSettings({...settings,[key]:e.target.valueAsNumber});}}/> {unit}</span>
 </label>)}
         </div>
-<label>Departure (restarts excursion)<select aria-label="Historical hour" value={Math.floor(weatherHour)} onChange={e=>changeHour(Number(e.target.value))}>{data?.environment.weather.map(w=>
+<label>Departure (restarts the walk)<select aria-label="Historical hour" value={Math.floor(weatherHour)} onChange={e=>changeHour(Number(e.target.value))}>{data?.environment.weather.map(w=>
 <option key={w.hour} value={w.hour}>{String(w.hour).padStart(2,'0')}:00 LMST</option>)}</select>
 </label>
 <label className="conditions-mode">Conditions <select aria-label="Conditions mode" value={settings.conditionsMode} onChange={e=>changeSettings({...settings,conditionsMode:e.target.value as Settings['conditionsMode']})}>
 <option value="historical">Historical Sol {data?.environment.sol??10}</option>
 <option value="manual">Manual fixed scenario</option>
 </select>
-<InfoMark title="Conditions" does={<>Historical: REMS temperature changes along the excursion; wind remains an assumption. Manual: temperature and wind are held at the values you set.</>} source={data?.environment.weatherNote}/>
+<InfoMark title="Conditions" does={<>Historical: REMS temperature changes along the walk from the {lmstLabel(weatherHour)} departure; wind remains an assumption. Manual: temperature and wind are held at the values you set.</>} source={data?.environment.weatherNote}/>
 </label>
-<p className="caption">{settings.conditionsMode==='historical'?`Departure ${lmstLabel(weatherHour)} · REMS temperature changes along the excursion. Wind remains an assumption.`:'Temperature and wind held at the values below.'}</p>
 <details>
-<summary>Departure conditions and limits</summary>
+<summary>Weather and its limits</summary>
 <div className="settings-grid">{([['temperatureK','Temperature','K',100,350],['minTemperatureK','Minimum temperature','K',100,350],['windMps','Wind assumption','m/s',0,200],['maxWindMps','Maximum wind','m/s',0,200]] as const).map(([key,label,unit,min,max])=>
 <label key={key}>{label}<span>
-<input aria-label={label} disabled={key==='temperatureK'&&settings.conditionsMode==='historical'} type="number" min={min} max={max} step=".1" value={key==='temperatureK'&&settings.conditionsMode==='historical'?(observed?.temperatureK??''):settings[key]} onChange={e=>{if(e.target.value!==''&&Number.isFinite(e.target.valueAsNumber))changeSettings({...settings,[key]:e.target.valueAsNumber});}}/> {unit}</span>
+<input aria-label={label} disabled={key==='temperatureK'&&settings.conditionsMode==='historical'} title={key==='temperatureK'&&settings.conditionsMode==='historical'?'Set by the historical record. Choose Manual fixed scenario to type a value.':undefined} type="number" min={min} max={max} step=".1" value={key==='temperatureK'&&settings.conditionsMode==='historical'?(observed?.temperatureK??''):settings[key]} onChange={e=>{if(e.target.value!==''&&Number.isFinite(e.target.valueAsNumber))changeSettings({...settings,[key]:e.target.valueAsNumber});}}/> {unit}</span>
 </label>)}</div>
+{settings.conditionsMode==='historical'&&<p className="caption">Temperature comes from the historical record. Choose Manual fixed scenario to type it.</p>}
 </details>
-<p className="caption">Demonstration settings. Dose refers to a rover-detector proxy; limits are not astronaut safety standards.</p>
-<p className="caption" aria-label="Active route constraints">Slope limit {settings.maxSlopeDeg}° · {settings.exclusions.length} manual exclusions · {fieldExclusions(sharedFields).length} saved field restrictions (including hidden annotations).</p>
-</details>{error&&routeFailure&&data&&<RouteFailure diagnostics={routeFailure} data={data} manualCount={settings.exclusions.length} restrictions={sharedFields.filter(r=>r.kind==='obstacle'&&r.restrictTravel)} onField={openFields}/>}</section>
-        {result&&<section className="route-options" aria-label="Route alternatives">
-<div className="section-label">03 / CHOOSE YOUR TRAVERSE</div>{result.routes.map((r,i)=>
-<button className={`route-card ${selected===i&&!science?'selected':''}`} key={r.mode} aria-pressed={selected===i&&!science} onClick={()=>{setReturning(false);mw.setScienceSelected(false);setSelected(i);setProfileEdge(undefined);setBack(undefined);lastReturn.current={x:Infinity,y:Infinity};}}>
-<span>{r.mode==='shortest'?'01 / SHORTEST PERMITTED':'02 / GENTLER TERRAIN'}{result.recommendedIndex===i?(r.conditions.status==='within'?' · RECOMMENDED':' · FEWEST WARNINGS'):''}<b>{distance(r.metrics.distanceM)}</b>
+<p className="caption">Demonstration values, not astronaut safety standards. <InfoMark title="Limits" does="Speed, the steepest slope you may walk, the time budget and the detector-dose budget. Routes and your steps follow these values." source="Dose is a Curiosity RAD rover-detector proxy, not an astronaut dose." coverage="Historical gaps stay unknown."/></p>
+</details>
+{selectedRegionId==='gale-boxwork'&&<details className="route-more" {...more('imagery')}><summary><span>Orbital imagery</span><small>{imagery==='colour'?'HiRISE colour':'HiRISE greyscale'}</small></summary><label>Orbital imagery<select aria-label="Boxwork imagery" value={imagery} onChange={e=>setImagery(e.target.value as 'colour'|'grey')}>
+<option value="colour">HiRISE colour mosaic</option>
+<option value="grey">HiRISE greyscale</option>
+</select>
+</label><p className="caption">Processed colour; not a true-colour claim. Changing it keeps your mission.</p></details>}
+        {result&&!science&&route&&<details className="route-more route-options" aria-label="Route alternatives" {...more('details')}><summary><span>Route details</span><small>{OPTION_LABEL[route.mode]} · {route.conditions.status==='within'?'within your limits':route.conditions.status==='unknown'?'weather partly unknown':'over a limit'}</small></summary>{result.routes.map((r,i)=>
+<button className={`route-card ${selected===i?'selected':''}`} key={r.mode} aria-pressed={selected===i} onClick={()=>selectOption(i)}>
+<span>{r.mode==='shortest'?'SHORTEST':'EASIEST, GENTLER SLOPES'}{result.recommendedIndex===i?(r.conditions.status==='within'?' · SUGGESTED':' · FEWEST WARNINGS'):''}<b>{distance(r.metrics.distanceM)}</b>
 </span>
-<strong>{duration(r.metrics.durationS)} <small>outbound · {Math.round(r.metrics.ascentM)} m ascent</small>
+<strong>{duration(r.metrics.durationS)} <small>out · {Math.round(r.metrics.ascentM)} m climb</small>
 </strong>
-<small>{r.metrics.maxSlopeDeg.toFixed(1)}° max slope · {r.roundTripDoseMicroGy.toFixed(2)} µGy return-inclusive proxy</small>
-<small>Excursion including return: {duration(r.roundTripS)}</small>
-<small className={`condition-status ${r.conditions.status}`}>{r.conditions.status==='within'?'Within configured limits':r.conditions.status==='unknown'?'Conditions unknown':'Limits exceeded'} · minimum {r.conditions.minTemperatureK?.toFixed(1)??'unknown'} K</small>{(r.conditions.coldSeconds>0||r.conditions.unknownSeconds>0)&&<small>{(r.conditions.coldSeconds/60).toFixed(1)} min below limit · {(r.conditions.unknownSeconds/60).toFixed(1)} min unknown</small>}</button>)}{route&&<>{result.routes.every(r=>r.conditions.status!=='within')&&<p className="caption">Neither evaluated candidate is within all configured limits. Other possible routes have not been ruled out.</p>}<p className="caption">Recommendation compares these two candidates under temperature, time and detector-dose limits. It is not a constrained route optimum.</p>
+<small>{r.metrics.maxSlopeDeg.toFixed(1)}° steepest · {r.roundTripDoseMicroGy.toFixed(2)} µGy dose proxy there and back</small>
+<small>There and back: {duration(r.roundTripS)}</small>
+<small className={`condition-status ${r.conditions.status}`}>{r.conditions.status==='within'?'Within your limits':r.conditions.status==='unknown'?'Weather partly unknown':'Over a limit'} · coldest {r.conditions.minTemperatureK?.toFixed(1)??'unknown'} K</small>{(r.conditions.coldSeconds>0||r.conditions.unknownSeconds>0)&&<small>{(r.conditions.coldSeconds/60).toFixed(1)} min below limit · {(r.conditions.unknownSeconds/60).toFixed(1)} min unknown</small>}</button>)}
+<p className="caption">The suggestion compares these two routes on temperature, time and dose. Other routes may exist.</p>
 <div className="warning-list">{route.warnings.map(w=>
 <p role="status" key={w}>{w}</p>)}</div>{route.departures.length>0&&<details className="departure-comparison">
 <summary>Compare departure hours</summary>
-<p className="caption">Same round trip + stop, evaluated at every hour. Select a departure, then plan a route again. Dose: {route.roundTripDoseMicroGy.toFixed(2)} µGy at every departure (fixed rate).</p>
+<p className="caption">The same walk at every hour. Choosing an hour restarts the walk. Dose: {route.roundTripDoseMicroGy.toFixed(2)} µGy at every hour (fixed rate).</p>
 <div className="departure-grid">{route.departures.map(d=>
 <button key={d.departureHour} className={d.status} aria-label={`Depart ${d.departureHour}:00: ${d.status}`} aria-pressed={Math.floor(weatherHour)===d.departureHour} onClick={()=>changeHour(d.departureHour)}>{String(d.departureHour).padStart(2,'0')}:00<small>{d.minTemperatureK?.toFixed(0)??'-'} K · {d.status}</small>
 </button>)}</div>
-</details>}</>}</section>}
-
-        {guide&&<button className="secondary full" onClick={startDemo}>Reset guided example</button>}<button className="text-button reset" onClick={reset}>↺ Reset example excursion</button>
-<p className="caption">Restores example endpoints and mission settings. Saved field restrictions remain active; edit them in Field data.</p>
-      {result&&!science&&<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>}</>}</aside>
+</details>}
+<RouteExplanation routes={result.routes} selected={selected} edge={profileEdge} onEdge={setProfileEdge} settings={missionSettings}/>
+</details>}
+<div className="route-reset"><button className="text-button reset" onClick={reset}>↺ Reset example excursion</button><InfoMark title="Reset example excursion" does="Restores the example start, destination and limits." coverage="Saved field restrictions stay active; edit them in Field data."/></div>
+      </>}</aside>
       <section className="terrain-workspace" aria-label="Local terrain map">
 <header className="map-toolbar">
-<span>{mode==='inspect'?'LOCAL MAP':mode==='start'?'CLICK MAP · RESTART AT NEW HABITAT':mode==='goal'?'CLICK MAP · SET DESTINATION':'CLICK MAP · ADD EXCLUSION'}</span>
+<span>{mode==='inspect'?'LOCAL MAP':mode==='start'?'CLICK MAP · SET THE START':mode==='goal'?'CLICK MAP · SET DESTINATION':'CLICK MAP · ADD NO-GO AREA'}</span>
 <div>
 <button className="secondary" data-tour="map-layers" aria-expanded={mapPanel==='layers'} onClick={()=>setMapPanel(mapPanel==='layers'?undefined:'layers')}><Icon name="layers"/>Layers</button><Help label="About map layers">Imagery provides visual context; elevation and slope come from numeric terrain. Opacity only changes the display. Regional environmental bins and point readings retain their source footprint.</Help>
 <button className="secondary" data-tour="inspect-data" aria-expanded={mapPanel==='evidence'} onClick={()=>setMapPanel(mapPanel==='evidence'?undefined:'evidence')}><Icon name="look"/>Inspect data</button><Help label="About data inspection">Inspect a map location to read source, units, resolution, date, coverage and uncertainty. Missing coverage stays unknown.</Help>
 <button className="secondary" data-tour="log-here" onClick={logHere}><Icon name="note"/>Log here</button>
 </div>
 </header>
-        {data?<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={science?undefined:goal} routes={science?[science]:result?.routes} selected={science?0:selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onInspect={setInspection} zones={mw.zones} mapStops={mapStops} drills={drills} selectedStop={stopId} onStopSelect={setStopId}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
+        {data?<SurfaceMap events={activeEvents} traces={mapTraces} imagery={imagery} environmentLayer={environmentLayer} environmentOpacity={environmentSelection.opacity} active={view==='plan'&&(tabletTab==='explore'||tabletTab==='routes')} pose={pose} fields={sharedFields} selectedField={selectedField} onFieldSelect={openFields} data={data} start={start} goal={science||!goalChosen?undefined:goal} routes={science?[science]:result?.routes} selected={science?0:selected} geology={geology} targetId={targetId} onTargetSelect={selectTarget} highlightedEdge={profileEdge} exclusions={missionSettings.exclusions} overlays={overlays} mode={mode} onPick={pick} onMiss={()=>setPickNote('No map data there. Click inside the mapped area.')} onInspect={setInspection} zones={mw.zones} mapStops={mapStops} drills={drills} selectedStop={stopId} onStopSelect={setStopId}/>:<div className="loading-data">{dataError?'Local data unavailable.':'Opening the prepared terrain…'}</div>}
         <div className="trace-legend" aria-label="Traverse map legend"><span className="trace-legend__current" style={{color:CURRENT_WALK_COLOR}}>┄ Current walk</span>{savedTraces.map(t=><span key={t.id} style={{color:t.color}}>━ {t.label}</span>)}{activeEvents.length>0&&<span className="trace-legend__hazard">● Scenario area · solar: exposed outside green shelter</span>}</div>
         <div className="inspection" aria-label="Terrain inspection">
 <span>
@@ -575,6 +641,7 @@ export default function App(){
 <small>LOCAL MAX SLOPE</small>{measured?`${measured.slope.toFixed(1)}°`:'-'}</span>
 
 </div>{data&&(mw.zones||mapStops||drills)&&<div className="map-overlays"><HazardLegend zones={!!mw.zones} stops={!!mapStops} drills={!!drills}/>{stopId!==undefined&&mapStops&&<StopCard id={stopId} visited={mw.visited.has(stopId)} onClose={()=>setStopId(undefined)}/>}</div>}
+{data&&(pickHint||status)&&<MapStatusLayer hint={pickHint} status={statusCard()}/>}
 
 
       </section>
@@ -620,7 +687,7 @@ export default function App(){
 </>}</aside>}
       </div>
     {data&&canPlan(region)&&<FieldWorkspace active={view==='plan'&&tabletTab==='field'} data={data} records={sharedFields} draft={fieldDraft} onDraft={draft=>{setFieldDraft(draft);if(!draft)setFieldNotice(n=>n.startsWith('Your unfinished')?'':n);}} selected={selectedField} onSelect={setSelectedField} pose={pose} inspection={inspection} departureHour={weatherHour} exclusions={missionSettings.exclusions} onCommit={commitFields} onUndo={undoFields} canUndo={!!fieldStore.past.length} storageError={fieldStore.error} unread={fieldStore.unread} onRecover={fieldStore.recover}/>}
-    {view==='plan'&&tabletTab==='events'&&<EventsPanel events={events} elapsed={pose.elapsed} pose={pose} habitat={start} alerts={currentAlerts} onAdd={addEvent} onUpdate={updateEvent} onReturn={returnToHabitat} canReturn={!!back?.route} returnNotice={returnNotice}/>}
+    {view==='plan'&&tabletTab==='events'&&<EventsPanel events={events} elapsed={pose.elapsed} pose={pose} habitat={start} alerts={currentAlerts} onAdd={addEvent} onUpdate={updateEvent} onReturn={returnToHabitat} canReturn={!!back?.route} returnNotice={returnNotice} returnError={!!returnError} onRetryReturn={retryReturn} onSurface={()=>setView('walk')}/>}
     {view==='plan'&&tabletTab==='setup'&&<main className="tablet-setup">
 <div className="setup-stack">
 <FeatureSwitches setup={mw.setup} hud={hud} onToggle={id=>applySetup(mw.toggle(id),id)} onMission={id=>applySetup(mw.pickMission(id))}/>
@@ -630,7 +697,7 @@ export default function App(){
 <span className="eyebrow">SHARED MISSION</span>
 <h2>{region?.shortName}</h2>
 <p>{scienceTarget?.name??'Custom destination'} · {route?`${distance(route.metrics.distanceM)} planned`:'Free exploration · no route required'}</p>
-<p data-testid="tablet-position">E {pose.x.toFixed(1)} / N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</p>{canPlan(region)&&<MissionClocks sol={data?.environment.sol??10} hour={scenarioHour} historical={settings.conditionsMode==='historical'}/>}<button className="primary full" data-tour="display-return" disabled={!data} onClick={()=>setView('walk')}>Close tablet · return to surface</button>
+<p data-testid="tablet-position">E {pose.x.toFixed(1)} / N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</p>{canPlan(region)&&<MissionClocks sol={data?.environment.sol??10} hour={scenarioHour} historical={settings.conditionsMode==='historical'}/>}<BlockedButton className="primary full" data-tour="display-return" block={blockInfo(walkBlock(routeState))} onClick={()=>setView('walk')}>Close tablet · return to surface</BlockedButton>
 <button className="secondary full" onClick={()=>setTabletTab('explore')}>Explore local map →</button>
 <p className="caption">Walking pauses here. Display settings do not reset the excursion.</p>
 </aside>
@@ -662,9 +729,9 @@ export default function App(){
 <div>
 <span data-testid="tablet-explore-position">E {pose.x.toFixed(1)} · N {pose.y.toFixed(1)} m · {pose.elapsed.toFixed(1)} s elapsed</span>
 <span className="restriction-summary">{missionSettings.exclusions.length} active restrictions · {route?'Route selected':'Free exploration'}</span>
-</div>{tabletTab==='routes'?<>{route&&<button className="text-button" onClick={()=>{invalidate();lastReturn.current={x:Infinity,y:Infinity};}}>Clear guidance</button>}{routeWorkflow==='new'&&<button className="secondary plan-route-button" data-tour="plan-route" title="Calculate terrain route alternatives from habitat to destination using your current mission constraints." disabled={!data||busy} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</button>}{previewSource&&<button className="secondary" data-tour="preview-route" title={`Watch ${previewSource.name} from start to end in about a minute and a half. Nothing is walked or saved.`} disabled={!data} onClick={beginPreview}><Icon name="play"/>Preview route</button>}
-<button className="primary" data-tour="walk-route" disabled={!data} onClick={()=>{if(subject==='prepared')startPrepared();setView('walk');}}>{subject==='previous'?'Walk this path →':science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</button>
-</>:<button className="primary" data-tour="return-to-surface" disabled={!data} onClick={()=>setView('walk')}>Return to surface</button>}</footer>
+</div>{tabletTab==='routes'?<>{route&&<button className="text-button" title="Removes the route and the destination." onClick={clearRoute}>Clear route</button>}{routeWorkflow==='new'&&<BlockedButton className="secondary plan-route-button" data-tour="plan-route" title={goalChosen?'Plan the shortest and the easiest route from the start to the destination with your limits.':undefined} block={blockInfo(planBlock(routeState))} onClick={()=>{setMapPanel(undefined);void plan();}}>{busy?'Planning…':'Plan route'}</BlockedButton>}<BlockedButton className="secondary" data-tour="preview-route" title={previewSource?`Watch ${previewSource.name} from start to end in about a minute and a half. Nothing is walked or saved.`:undefined} block={blockInfo(previewBlock(routeState))} onClick={beginPreview}><Icon name="play"/>Preview route</BlockedButton>
+<BlockedButton className="primary" data-tour="walk-route" block={blockInfo(walkBlock(routeState))} onClick={walkNow}>{subject==='previous'?'Walk this path →':science||(!route&&prepared)?'Walk this route →':route?'Walk selected route →':'Enter surface'}</BlockedButton>
+</>:<BlockedButton className="primary" data-tour="return-to-surface" block={blockInfo(walkBlock(routeState))} onClick={()=>setView('walk')}>Return to surface</BlockedButton>}</footer>
     </TabletShell>
   </>;
 }

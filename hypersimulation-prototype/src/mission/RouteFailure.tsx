@@ -15,8 +15,8 @@ export default function RouteFailure({diagnostics,data,manualCount,restrictions,
     </div>)}
     {diagnostics.notes.map(note=><p key={note}>{note}</p>)}
     {diagnostics.activeExclusionCount>0&&<div><b>Active exclusions: {diagnostics.activeExclusionCount}</b>
-      <ul>{Array.from({length:manualCount},(_,i)=><li key={`manual-${i}`}>#{i+1} Manual exclusion{implicated.has(i)?' — covers an endpoint':''}. Use Clear exclusions to remove manual areas.</li>)}
-      {restrictions.map((record,i)=><li key={record.id}>#{manualCount+i+1} Saved field restriction: <button className="text-button" onClick={()=>onField(record.id)}>{record.title}</button>{implicated.has(manualCount+i)?' — covers an endpoint':''}{!record.visible?' (annotation hidden; restriction active)':''}.</li>)}</ul>
+      <ul>{Array.from({length:manualCount},(_,i)=><li key={`manual-${i}`}>#{i+1} Manual exclusion{implicated.has(i)?', covers an endpoint':''}. Use Clear exclusions to remove manual areas.</li>)}
+      {restrictions.map((record,i)=><li key={record.id}>#{manualCount+i+1} Saved field restriction: <button className="text-button" onClick={()=>onField(record.id)}>{record.title}</button>{implicated.has(manualCount+i)?', covers an endpoint':''}{!record.visible?' (annotation hidden; restriction active)':''}.</li>)}</ul>
     </div>}
     <details><summary>How terrain is checked</summary><p>{diagnostics.stepM} m planning grid · slope limit {diagnostics.slopeLimitDeg}°. Slopes are checked across the walking interpolation footprint, so nearby terrain can block an endpoint. Exclusions include a {(diagnostics.stepM/Math.sqrt(2)).toFixed(1)} m cell margin.</p><p>{data.meta.slopeDefinition}</p><p>Environmental limits are evaluated after a path is found; they do not cause this terrain rejection.</p></details>
     <p>{diagnostics.code==='same_cell'?'Choose endpoints in different planning cells.':diagnostics.code==='disconnected'?'Choose endpoints in the same connected area or review the stated constraints.':'Move a blocked endpoint or review the stated constraint.'} Compare again after editing. Constraints stay in effect until you edit them.</p>

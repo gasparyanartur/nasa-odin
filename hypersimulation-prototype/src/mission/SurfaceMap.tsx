@@ -22,6 +22,8 @@ interface Props {
   data: TerrainData; start: Point; goal?: Point; routes?: Alternative[]; selected: number;
   pose?: Pose; exclusions: Exclusion[]; overlays: OverlaySettings;
   mode?: PickMode; onPick?: (p: Point) => void; onInspect?: (p: Point) => void; mini?: boolean;
+  /** A click outside the valid terrain while picking a point, so the caller can say why nothing was placed. */
+  onMiss?: (p: Point) => void;
   zones?: HazardZone[]; mapStops?: MapStop[]; drills?: Point[]; selectedStop?: number; onStopSelect?: (id: number) => void; wayBack?: Point[];
   /** Minimap only: a north-up window centred on the pose, widened toward the kept points, with edge marks toward points outside it. */
   follow?: { keep: Point[]; marks: (Point & { label: string })[] };
@@ -152,7 +154,7 @@ export default function SurfaceMap(p: Props) {
   },[p,images,viewport,view.zoom,view.x,view.y,sharp,displaySize]);
   function normalized(e:React.PointerEvent<HTMLCanvasElement>){const r=e.currentTarget.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};}
   function select(at:{x:number;y:number}){
-    const q=mapPoint(current.current,at,p.data.meta.extentM);if(!sample(p.data,q))return;
+    const q=mapPoint(current.current,at,p.data.meta.extentM);if(!sample(p.data,q)){if(p.mode&&p.mode!=='inspect')p.onMiss?.(q);return;}
     p.onInspect?.(q);
     if(p.mode==='field'){p.onPick?.(q);return;}
     const tolerance=p.data.meta.extentM/current.current.zoom*24/(canvas.current?.clientWidth||800);

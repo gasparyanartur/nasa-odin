@@ -9,7 +9,6 @@ const TOAST_MS = 10_000;
 const RULES: [RegExp, IconName, string][] = [
   [/^Historical temperature unavailable/, 'thermo', 'Temperature unknown'],
   [/^Current temperature is below/, 'thermo', 'Below temperature limit'],
-  [/^Movement stopped/, 'nogo', 'Movement stopped'],
   [/inside a marked hazard area/, 'nogo', 'In hazard area'],
   [/off the planned route/, 'route', 'Off the planned route'],
   [/^Elapsed time exceeds/, 'time', 'Over the time budget'],
@@ -25,6 +24,8 @@ const RULES: [RegExp, IconName, string][] = [
 export function describeNotice(n: HudNotice): { icon: IconName; short: string } {
   if (n.kind === 'success') return { icon: 'check', short: 'Destination reached' };
   if (n.kind === 'stop') return { icon: 'stop', short: n.text };
+  // A refused step already says why and what to do in one short line; the helmet shows it whole.
+  if (/^Stopped: /.test(n.text)) return { icon: 'halt', short: n.text };
   for (const [re, icon, short] of RULES) if (re.test(n.text)) return { icon, short };
   return { icon: 'warning', short: n.text };
 }
