@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '../design/icons';
 
-export interface HudNotice { text: string; kind: 'warning' | 'success' }
+export interface HudNotice { text: string; kind: 'warning' | 'success' | 'stop' }
 interface Toast { id: number; notice: HudNotice }
 interface Entry { text: string; kind: HudNotice['kind']; active: boolean }
 
@@ -19,6 +19,7 @@ const RULES: [RegExp, IconName, string][] = [
 /** The pictogram and the one short line a helmet notice gets; the full sentence stays in the list and the Tablet. */
 export function describeNotice(n: HudNotice): { icon: IconName; short: string } {
   if (n.kind === 'success') return { icon: 'check', short: 'Destination reached' };
+  if (n.kind === 'stop') return { icon: 'stop', short: n.text };
   for (const [re, icon, short] of RULES) if (re.test(n.text)) return { icon, short };
   return { icon: 'warning', short: n.text };
 }
@@ -59,7 +60,7 @@ export function HudToast({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: ()
       <Icon name={shown.icon} />
       <span className="hud-toast__text" title={current.notice.text}>{shown.short}</span>
       <span className="sr-only">{current.notice.text}</span>
-      {current.notice.kind === 'warning' && <span className="hud-toast__tablet" title="Details on the Tablet"><Icon name="tablet" /><span className="sr-only">Details on the Tablet</span></span>}
+      {current.notice.kind !== 'success' && <span className="hud-toast__tablet" title="Details on the Tablet"><Icon name="tablet" /><span className="sr-only">Details on the Tablet</span></span>}
       <button type="button" className="hud-toast__close" aria-label="Dismiss notice" onClick={onDismiss}><Icon name="close" /><kbd aria-hidden="true">X</kbd></button>
     </p>}</div>;
 }

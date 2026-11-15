@@ -8,6 +8,8 @@ import { anchor, colorFor, type FieldRecord } from '../field/model';
 
 import { FULL_MAP, boundViewport, zoomViewport, mapPoint, type MapViewport } from './mapViewport';
 import { colorAt, layerRange, type ScalarLayer } from '../environment/model';
+import type { HazardZone } from '../marswalk/hazards';
+import { drawStops, drawWayBack, drawZones, type MapStop } from '../marswalk/hatch';
 
 export type PickMode = 'inspect' | 'start' | 'goal' | 'exclude' | 'field';
 interface Props {
@@ -17,6 +19,7 @@ interface Props {
   data: TerrainData; start: Point; goal?: Point; routes?: Alternative[]; selected: number;
   pose?: Pose; exclusions: Exclusion[]; overlays: OverlaySettings;
   mode?: PickMode; onPick?: (p: Point) => void; onInspect?: (p: Point) => void; mini?: boolean;
+  zones?: HazardZone[]; mapStops?: MapStop[]; drills?: Point[]; selectedStop?: number; onStopSelect?: (id: number) => void; wayBack?: Point[];
 }
 
 export default function SurfaceMap(p: Props) {
@@ -83,6 +86,8 @@ export default function SurfaceMap(p: Props) {
       for(const marker of p.data.evidence.markers){const[x,y]=pixel(marker);ctx.fillStyle='#b9dad7';ctx.fillRect(x-4,y-4,8,8);}
       ctx.restore();
     }
+    const css=800/(el.clientWidth||800)/viewport.zoom;
+    if(p.zones?.length)drawZones(ctx,p.zones,pixel,(p.mini?7:9)*css,css);
     p.exclusions.forEach(e=>{const [x,y]=pixel(e);ctx.beginPath();ctx.arc(x,y,e.radius/(2*half)*size,0,Math.PI*2);ctx.fillStyle='#e46e5d70';ctx.fill();ctx.strokeStyle='#ffb49b';ctx.lineWidth=2;ctx.stroke();});
     p.routes?.forEach((route,i)=>{
       ctx.beginPath();route.points.forEach(([x,y],j)=>{const q=pixel({x,y});if(j===0)ctx.moveTo(...q as [number,number]);else ctx.lineTo(...q as [number,number]);});
@@ -92,6 +97,8 @@ export default function SurfaceMap(p: Props) {
       const route=p.routes[p.selected],a=route.points[p.highlightedEdge],b=route.points[p.highlightedEdge+1];
       if(a&&b){ctx.beginPath();const pa=pixel({x:a[0],y:a[1]}),pb=pixel({x:b[0],y:b[1]});ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.strokeStyle='#fff7d4';ctx.lineWidth=11;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
     }
+    if(p.wayBack?.length)drawWayBack(ctx,p.wayBack,pixel,(p.mini?1.6:2)*css);
+    if(!p.mini&&(p.mapStops?.length||p.drills?.length))drawStops(ctx,p.mapStops??[],p.drills??[],pixel,css,p.selectedStop);
     const markerScale=p.mini?1:800/(el.clientWidth||800)/viewport.zoom;
     if(!p.mini)for(const target of SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury'))){const[x,y]=pixel(target.point);ctx.beginPath();ctx.arc(x,y,10*markerScale,0,Math.PI*2);ctx.fillStyle=target.id===p.targetId?'#ecd09c':'#2B2825';ctx.fill();ctx.strokeStyle='#e4d2a2';ctx.lineWidth=2*markerScale;ctx.stroke();ctx.fillStyle=target.id===p.targetId?'#26211C':'#ffe8b9';ctx.font=`bold ${11*markerScale}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(target.id==='rocknest'?'R':'Y',x,y);}
     for(const [label,v,color] of [['H',p.start,'#a9debd'],['D',p.goal,'#f4bc81']] as const){
@@ -121,6 +128,8 @@ export default function SurfaceMap(p: Props) {
     const tolerance=p.data.meta.extentM/current.current.zoom*24/(canvas.current?.clientWidth||800);
     const record=(!p.mode||p.mode==='inspect')?(p.fields??[]).filter(r=>r.visible).map(r=>({record:r,distance:Math.hypot(anchor(r).x-q.x,anchor(r).y-q.y)})).filter(r=>r.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.record:undefined;
     if(record&&p.onFieldSelect){p.onFieldSelect(record.id);return;}
+    const stop=(!p.mode||p.mode==='inspect')&&p.onStopSelect?(p.mapStops??[]).map(s=>({s,distance:Math.hypot(s.x-q.x,s.y-q.y)})).filter(s=>s.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.s:undefined;
+    if(stop){p.onStopSelect!(stop.id);return;}
     const target=!p.mode||p.mode==='inspect'?SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury')).map(t=>({target:t,distance:Math.hypot(t.point.x-q.x,t.point.y-q.y)})).filter(t=>t.distance<tolerance).sort((a,b)=>a.distance-b.distance)[0]?.target:undefined;
     if(target&&p.onTargetSelect)p.onTargetSelect(target.id);else p.onPick?.(q);
   }

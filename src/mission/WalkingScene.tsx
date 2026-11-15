@@ -5,11 +5,15 @@ import type { HudSettings } from './HudSettings';
 import { advanceWalk, type Alternative, type Point, type Pose, type Settings, type TerrainData } from './data';
 import type { GraphicsQuality } from './conditions';
 import { createSurface, type SurfaceEngine } from './surface/renderer';
+import type { HazardZone } from '../marswalk/hazards';
+
+export interface ExtraMark extends Point { id:string; label:string; mark?:string; compact?:boolean }
 
 interface Props {
   active:boolean;imagery:'colour'|'grey';onUnavailable:()=>void;onFailure:()=>void;fields:FieldRecord[];onFieldSelect:(id:string)=>void;hud:HudSettings;
   start:Point;goal:Point;next?:Point;data:TerrainData;route?:Alternative;settings:Settings;initialPose:Pose;
   timeScale:number;quality:GraphicsQuality;onPose:(p:Pose)=>void;onBlocked:(b:boolean)=>void;
+  extra?:ExtraMark[];zones?:HazardZone[];wayBack?:Point[];
 }
 export default function WalkingScene(p:Props){
   const canvas=useRef<HTMLCanvasElement>(null),engine=useRef<SurfaceEngine|null>(null),latest=useRef(p);latest.current=p;
@@ -21,6 +25,7 @@ export default function WalkingScene(p:Props){
     ...(p.hud.destination&&p.route?[{...p.goal,id:'destination',label:'Destination'}]:[]),
     ...(p.data.evidence?.markers??[]).filter(m=>p.hud.science.includes(m.id)),
     ...SCIENCE.targets.filter(t=>t.regionId===(p.data.meta.regionId??'gale-bradbury')&&p.hud.science.includes(t.id)).map(t=>({...t.point,id:t.id,label:t.name})),
+    ...(p.extra??[]),
   ]:[]),...p.fields.filter(r=>r.visible).map(r=>({...anchor(r),id:`field-${r.id}`,label:r.title}))];
   useEffect(()=>{if(!p.active&&document.pointerLockElement===canvas.current)document.exitPointerLock();},[p.active]);
   const currentPoints=useRef(points);currentPoints.current=points;
@@ -60,6 +65,7 @@ export default function WalkingScene(p:Props){
           const label=labels.current.get(point.id);if(!label)continue;
           const projected=view.project(point);label.hidden=!projected.visible;if(!projected.visible)continue;
           const {sx:x,sy:y}=projected,w=el.clientWidth,h=el.clientHeight;
+          if(label.dataset.compact){label.style.left=`${x}px`;label.style.top=`${y}px`;continue;}
           const clampX=(v:number)=>Math.max(85,Math.min(w-85,v));
           const minY=100,maxY=Math.max(minY,h-190),baseY=Math.max(minY,Math.min(maxY,y+30));
           let center=clampX(x),labelY=baseY,done=false;
@@ -81,13 +87,16 @@ export default function WalkingScene(p:Props){
     if(p.route)overlay('route','line',p.route.points.map(([x,y])=>({x,y})),'#ffe4a3');
     for(const r of p.fields.filter(r=>r.visible&&['unit','contact','obstacle'].includes(r.kind)&&!(r.kind==='obstacle'&&r.restrictTravel))){const points=r.kind==='obstacle'?Array.from({length:97},(_,i)=>({x:r.points[0].x+r.radiusM!*Math.cos(i/96*Math.PI*2),y:r.points[0].y+r.radiusM!*Math.sin(i/96*Math.PI*2)})):r.points;overlay(`field-${r.id}`,r.kind==='contact'?'line':'polygon',points,colorFor(r.kind));}
     p.settings.exclusions.forEach((e,i)=>overlay(`restriction-${i}`,'polygon',Array.from({length:97},(_,k)=>({x:e.x+e.radius*Math.cos(k/96*Math.PI*2),y:e.y+e.radius*Math.sin(k/96*Math.PI*2)})),'#ffaf85'));
+    // Hazard areas as ground hatch: scarp on the cased grid channel, loose ground on the crossed diagonals.
+    for(const z of p.zones??[]){const id=`zone-${z.id}`;ids.push(id);view.overlay(id,'polygon',z.polygon.map(([x,y])=>({x,y})),'#FFF3D6',z.hatch==='hatch-scarp'?'hatch-nogo':'cross');}
+    if(p.wayBack&&p.wayBack.length>1)overlay('way-back','line',p.wayBack,'#7A9DF0');
     return()=>ids.forEach(id=>view.remove(id));
-  },[ready,p.route,p.fields,p.settings.exclusions]);
+  },[ready,p.route,p.fields,p.settings.exclusions,p.zones,p.wayBack]);
   return <div className="walking-scene">
     <canvas className="surface-canvas" ref={canvas} aria-label="Measured surface simulator"/>
     {status&&<div className="surface-status" role="status">{status}</div>}
     {error&&<div className="scene-unavailable" role="alert"><p>{error}</p><button onClick={p.onUnavailable}>Open Tablet · keep mission</button></div>}
-    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)labels.current.set(point.id,el);else labels.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id} ${point.id.startsWith('field-')?'field-waypoint':''}`} data-waypoint={point.id}><span aria-hidden="true">◇</span><div className="waypoint-caption">{point.id.startsWith('field-')?<button aria-label={`Inspect field record ${point.label}`} onClick={()=>{if(!locked)p.onFieldSelect(point.id.slice(6));}}>{point.label}</button>:<b>{point.label}</b>}<small/></div></div>)}</div>
+    <div className="projected-waypoints" aria-label="Scene waypoint projections">{points.map(point=><div hidden key={point.id} ref={el=>{if(el)labels.current.set(point.id,el);else labels.current.delete(point.id);}} className={`projected-waypoint waypoint-${point.id} ${point.id.startsWith('field-')?'field-waypoint':''} ${'mark' in point&&point.mark?'stop-waypoint':''} ${'compact' in point&&point.compact?'is-compact':''}`} data-waypoint={point.id} data-compact={'compact' in point&&point.compact?'true':undefined}>{'mark' in point&&point.mark?<span aria-hidden="true" className="stop-waypoint__mark">{(point as ExtraMark).mark}</span>:<span aria-hidden="true">◇</span>}<div className="waypoint-caption">{point.id.startsWith('field-')?<button aria-label={`Inspect field record ${point.label}`} onClick={()=>{if(!locked)p.onFieldSelect(point.id.slice(6));}}>{point.label}</button>:<b>{point.label}</b>}<small/></div></div>)}</div>
     {ready&&p.active&&!locked&&!error&&<div className="walk-instructions"><span className="eyebrow">MANUAL SURFACE EXCURSION</span><h2>Take the next step.</h2><p>Click the terrain to begin. WASD to walk, mouse to look.<br/>Esc pauses the simulation and releases the mouse.<br/>Then select a field marker to inspect its record.</p><span>Measured terrain · simulated astronaut · illustrative lighting</span></div>}
     {locked&&<div className="reticle" aria-hidden="true">＋</div>}
   </div>;

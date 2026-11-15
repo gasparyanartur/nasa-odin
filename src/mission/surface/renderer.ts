@@ -8,7 +8,7 @@ export const projectedPoint=(p:Point,scale:{x:number;y:number})=>({x:p.x/scale.x
 export const groundPoint=(p:Point,scale:{x:number;y:number})=>({x:p.x*scale.x,y:p.y*scale.y});
 export interface SurfaceEngine {
   eye(p:Pose):void; project(p:Point):{visible:boolean;sx:number;sy:number;distance:number};
-  overlay(id:string,kind:'line'|'polygon'|'points',points:Point[],color:string):void;
+  overlay(id:string,kind:'line'|'polygon'|'points',points:Point[],color:string,pattern?:string):void;
   remove(id:string):void; quality(q:GraphicsQuality):void; dispose():void;
   onLost(fn:()=>void):()=>void; stats():unknown;
 }
@@ -42,7 +42,7 @@ export async function createSurface(canvas:HTMLCanvasElement,data:TerrainData,si
     const engine:SurfaceEngine={
       eye(p){const q=projectedPoint(p,scale);renderer.setEye({...q,heading_deg:p.heading*180/Math.PI,pitch_deg:(p.pitch??-.12)*180/Math.PI});},
       project(p){const q=projectedPoint(p,scale);return renderer.projectNavigation(q.x,q.y);},
-      overlay(id,kind,points,color){renderer.setOverlay(id,{kind,coords:points.map(p=>{const q=projectedPoint(p,scale);return[q.x,q.y];}),style:{color,casing:'#17231f',casing_px:0,width_px:2,size_px:7,pattern:'diagonal',hatch_color:color}});},
+      overlay(id,kind,points,color,pattern='diagonal'){renderer.setOverlay(id,{kind,coords:points.map(p=>{const q=projectedPoint(p,scale);return[q.x,q.y];}),style:{color,casing:'#17231f',casing_px:0,width_px:2,size_px:7,pattern,hatch_color:color}});},
       remove:id=>renderer.setOverlay(id,null),
       quality:q=>renderer.setDrawingRatio(drawingRatio(q,devicePixelRatio||1)),
       onLost:fn=>renderer.onContextLost(fn),stats:()=>renderer.getStats(),
